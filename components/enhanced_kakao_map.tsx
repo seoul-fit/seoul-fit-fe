@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -13,10 +15,56 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { MapPin, Settings, Layers, Search, RefreshCw, Info, Navigation } from "lucide-react";
+import { 
+  MapPin, Settings, Layers, Search, RefreshCw, Info, Navigation, 
+  Menu, Dumbbell, BookOpen, UtensilsCrossed, TreePine, Calendar,
+  Users, Clock, ExternalLink, Star
+} from "lucide-react";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// 카카오 맵 API 타입 정의
+interface KakaoLatLng {
+  getLat(): number;
+  getLng(): number;
+}
 
+interface KakaoMap {
+  setCenter(latlng: KakaoLatLng): void;
+  getLevel(): number;
+  setLevel(level: number): void;
+  relayout(): void;
+}
+
+interface KakaoMarker {
+  setMap(map: KakaoMap | null): void;
+}
+
+interface KakaoMapOptions {
+  center: KakaoLatLng;
+  level: number;
+}
+
+interface KakaoMarkerOptions {
+  position: KakaoLatLng;
+  title?: string;
+}
+
+interface KakaoMapsAPI {
+  Map: new (container: HTMLElement, options: KakaoMapOptions) => KakaoMap;
+  LatLng: new (lat: number, lng: number) => KakaoLatLng;
+  Marker: new (options: KakaoMarkerOptions) => KakaoMarker;
+  event: {
+    addListener: (target: KakaoMap | KakaoMarker, type: string, handler: () => void) => void;
+  };
+  load: (callback: () => void) => void;
+}
+
+interface WindowWithKakao extends Window {
+  kakao?: {
+    maps?: KakaoMapsAPI;
+  };
+}
+
+// 기존 타입 정의들
 interface MapStatus {
   loading: boolean;
   error: string | null;
@@ -29,7 +77,107 @@ interface LocationInfo {
   type: 'current' | 'searched';
 }
 
-export default function EnhancedKakaoMap() {
+interface FacilityType {
+  id: string;
+  name: string;
+  icon: React.ReactNode;
+  color: string;
+  enabled: boolean;
+}
+
+interface Facility {
+  id: string;
+  name: string;
+  type: string;
+  coords: { lat: number; lng: number };
+  address: string;
+  crowdLevel: 'low' | 'medium' | 'high';
+  distance: number;
+  isReservable: boolean;
+  operatingHours: string;
+  rating?: number;
+  description?: string;
+}
+
+const INITIAL_FACILITY_TYPES: FacilityType[] = [
+  { id: 'sports', name: '체육시설', icon: <Dumbbell className="h-4 w-4" />, color: '#3B82F6', enabled: true },
+  { id: 'culture', name: '문화시설', icon: <Calendar className="h-4 w-4" />, color: '#8B5CF6', enabled: true },
+  { id: 'food', name: '맛집', icon: <UtensilsCrossed className="h-4 w-4" />, color: '#EF4444', enabled: false },
+  { id: 'library', name: '도서관', icon: <BookOpen className="h-4 w-4" />, color: '#10B981', enabled: false },
+  { id: 'park', name: '공원', icon: <TreePine className="h-4 w-4" />, color: '#059669', enabled: false }
+];
+
+// 샘플 시설 데이터
+const SAMPLE_FACILITIES: Facility[] = [
+  {
+    id: '1',
+    name: '올림픽공원 체육관',
+    type: 'sports',
+    coords: { lat: 37.5219, lng: 127.1227 },
+    address: '서울특별시 송파구 올림픽로 424',
+    crowdLevel: 'medium',
+    distance: 1.2,
+    isReservable: true,
+    operatingHours: '06:00-22:00',
+    rating: 4.3,
+    description: '올림픽공원 내 종합 체육시설'
+  },
+  {
+    id: '2',
+    name: '세종문화회관',
+    type: 'culture',
+    coords: { lat: 37.5720, lng: 126.9794 },
+    address: '서울특별시 중구 세종대로 175',
+    crowdLevel: 'high',
+    distance: 0.8,
+    isReservable: true,
+    operatingHours: '09:00-18:00',
+    rating: 4.6,
+    description: '서울시 대표 문화예술 공연장'
+  },
+  {
+    id: '3',
+    name: '국립중앙도서관',
+    type: 'library',
+    coords: { lat: 37.5063, lng: 127.0366 },
+    address: '서울특별시 서초구 반포대로 201',
+    crowdLevel: 'low',
+    distance: 2.1,
+    isReservable: false,
+    operatingHours: '09:00-18:00',
+    rating: 4.4,
+    description: '국내 최대 규모의 국립도서관'
+  },
+  {
+    id: '4',
+    name: '광화문 맛집거리',
+    type: 'food',
+    coords: { lat: 37.5663, lng: 126.9779 },
+    address: '서울특별시 중구 세종대로 일대',
+    crowdLevel: 'high',
+    distance: 0.3,
+    isReservable: false,
+    operatingHours: '11:00-22:00',
+    rating: 4.1,
+    description: '전통과 현대가 어우러진 맛집 밀집지역'
+  },
+  {
+    id: '5',
+    name: '남산공원',
+    type: 'park',
+    coords: { lat: 37.5538, lng: 126.9810 },
+    address: '서울특별시 중구 회현동1가 100-177',
+    crowdLevel: 'medium',
+    distance: 1.5,
+    isReservable: false,
+    operatingHours: '24시간',
+    rating: 4.5,
+    description: '서울 도심 속 대표적인 자연휴식공간'
+  }
+];
+
+export default function SeoulFitMapApp() {
+  // 상태 관리
   const [mapStatus, setMapStatus] = useState<MapStatus>({
     loading: true,
     error: null,
@@ -37,9 +185,28 @@ export default function EnhancedKakaoMap() {
   });
   
   const [currentLocation, setCurrentLocation] = useState<LocationInfo | null>(null);
-  const [mapInstance, setMapInstance] = useState<any>(null);
-  const [mapLevel, setMapLevel] = useState(3);
+  const [mapInstance, setMapInstance] = useState<KakaoMap | null>(null);
+  const [mapLevel, setMapLevel] = useState<number>(3);
+  const [facilityTypes, setFacilityTypes] = useState<FacilityType[]>(INITIAL_FACILITY_TYPES);
+  const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
+  
+  // useRef로 마커 관리 (상태 변경으로 인한 리렌더링 방지)
+  const markersRef = useRef<KakaoMarker[]>([]);
 
+  // 활성화된 시설 필터링 (메모화로 성능 최적화)
+  const enabledFacilityTypes = useMemo(() => 
+    facilityTypes.filter(type => type.enabled), 
+    [facilityTypes]
+  );
+  
+  const visibleFacilities = useMemo(() => 
+    SAMPLE_FACILITIES.filter(facility => 
+      enabledFacilityTypes.some(type => type.id === facility.type)
+    ), 
+    [enabledFacilityTypes]
+  );
+
+  // 지도 초기화
   const initializeMap = useCallback(() => {
     const API_KEY = '8bb6267aba6b69af4605b7fd2dd75c96';
     
@@ -55,17 +222,19 @@ export default function EnhancedKakaoMap() {
     script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${API_KEY}&autoload=false&libraries=services`;
     
     script.onload = () => {
-      if ((window as any).kakao?.maps?.load) {
-        (window as any).kakao.maps.load(() => {
+      const windowWithKakao = window as WindowWithKakao;
+      if (windowWithKakao.kakao?.maps?.load) {
+        windowWithKakao.kakao.maps.load(() => {
           try {
             const container = document.getElementById('kakaoMap');
-            if (container) {
-              const options = {
-                center: new (window as any).kakao.maps.LatLng(37.5666805, 126.9784147),
+            if (container && windowWithKakao.kakao?.maps) {
+              const kakaoMaps = windowWithKakao.kakao.maps;
+              const options: KakaoMapOptions = {
+                center: new kakaoMaps.LatLng(37.5666805, 126.9784147),
                 level: mapLevel
               };
               
-              const map = new (window as any).kakao.maps.Map(container, options);
+              const map = new kakaoMaps.Map(container, options);
               setMapInstance(map);
               
               // 초기 위치 정보 설정
@@ -76,15 +245,14 @@ export default function EnhancedKakaoMap() {
               });
               
               // 지도 이벤트 리스너
-              (window as any).kakao.maps.event.addListener(map, 'tilesloaded', () => {
+              kakaoMaps.event.addListener(map, 'tilesloaded', () => {
                 setMapStatus({ loading: false, error: null, success: true });
               });
 
               // 줌 레벨 변경 이벤트
-              (window as any).kakao.maps.event.addListener(map, 'zoom_changed', () => {
+              kakaoMaps.event.addListener(map, 'zoom_changed', () => {
                 setMapLevel(map.getLevel());
               });
-              
             }
           } catch (error) {
             setMapStatus({ 
@@ -108,23 +276,73 @@ export default function EnhancedKakaoMap() {
     document.head.appendChild(script);
   }, [mapLevel]);
 
+  // 마커 업데이트 (useRef 사용으로 무한 루프 방지)
+  useEffect(() => {
+    if (!mapInstance || !mapStatus.success) return;
+
+    const windowWithKakao = window as WindowWithKakao;
+    if (!windowWithKakao.kakao?.maps) return;
+
+    const kakaoMaps = windowWithKakao.kakao.maps;
+
+    // 기존 마커 제거
+    markersRef.current.forEach(marker => marker.setMap(null));
+    markersRef.current = [];
+
+    // 새 마커 생성
+    const newMarkers = visibleFacilities.map(facility => {
+      const facilityType = facilityTypes.find(type => type.id === facility.type);
+      if (!facilityType) return null;
+
+      const markerPosition = new kakaoMaps.LatLng(
+        facility.coords.lat, 
+        facility.coords.lng
+      );
+
+      const marker = new kakaoMaps.Marker({
+        position: markerPosition,
+        title: facility.name
+      });
+
+      marker.setMap(mapInstance);
+
+      // 마커 클릭 이벤트
+      kakaoMaps.event.addListener(marker, 'click', () => {
+        setSelectedFacility(facility);
+      });
+
+      return marker;
+    }).filter((marker): marker is KakaoMarker => marker !== null);
+
+    markersRef.current = newMarkers;
+  }, [mapInstance, mapStatus.success, visibleFacilities, facilityTypes]);
+
+  // 선호도 토글
+  const toggleFacilityType = (typeId: string) => {
+    setFacilityTypes(prev => 
+      prev.map(type => 
+        type.id === typeId ? { ...type, enabled: !type.enabled } : type
+      )
+    );
+  };
+
   // 현재 위치로 이동
   const moveToCurrentLocation = useCallback(() => {
     if (navigator.geolocation && mapInstance) {
+      const windowWithKakao = window as WindowWithKakao;
+      if (!windowWithKakao.kakao?.maps) return;
+
+      const kakaoMaps = windowWithKakao.kakao.maps;
+
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
-          const moveLatLng = new (window as any).kakao.maps.LatLng(lat, lng);
+          const moveLatLng = new kakaoMaps.LatLng(lat, lng);
           
           mapInstance.setCenter(moveLatLng);
+          mapInstance.setLevel(3);
           
-          // 마커 추가
-          const marker = new (window as any).kakao.maps.Marker({
-            position: moveLatLng
-          });
-          marker.setMap(mapInstance);
-
           setCurrentLocation({
             address: `위도: ${lat.toFixed(6)}, 경도: ${lng.toFixed(6)}`,
             coords: { lat, lng },
@@ -150,10 +368,50 @@ export default function EnhancedKakaoMap() {
     }
   }, [mapInstance, initializeMap]);
 
+  // 혼잡도 색상
+  const getCrowdColor = (level: string): string => {
+    switch (level) {
+      case 'low': return 'bg-green-500';
+      case 'medium': return 'bg-yellow-500';
+      case 'high': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  // 혼잡도 텍스트
+  const getCrowdText = (level: string): string => {
+    switch (level) {
+      case 'low': return '여유';
+      case 'medium': return '보통';
+      case 'high': return '혼잡';
+      default: return '정보없음';
+    }
+  };
+
+  // 상태 표시 색상
+  const getStatusColor = (status: MapStatus): 'default' | 'destructive' | 'secondary' => {
+    if (status.loading) return 'secondary';
+    if (status.error) return 'destructive';
+    return 'default';
+  };
+
+  const getStatusText = (status: MapStatus): string => {
+    if (status.loading) return '지도 로딩중...';
+    if (status.error) return '오류 발생';
+    if (status.success) return '지도 로드 완료';
+    return '대기중';
+  };
+
   useEffect(() => {
     initializeMap();
 
+    // 컴포넌트 언마운트 시 정리
     return () => {
+      // 마커 정리
+      markersRef.current.forEach(marker => marker.setMap(null));
+      markersRef.current = [];
+      
+      // 스크립트 정리
       const scriptToRemove = document.querySelector('script[src*="dapi.kakao.com"]');
       if (scriptToRemove) {
         scriptToRemove.remove();
@@ -161,38 +419,75 @@ export default function EnhancedKakaoMap() {
     };
   }, [initializeMap]);
 
-  const getStatusColor = (status: MapStatus): 'default' | 'destructive' | 'secondary' => {
-    if (status.loading) return 'secondary';
-    if (status.error) return 'destructive';
-    return 'default';
-  };
-
-  const getStatusText = (status: MapStatus) => {
-    if (status.loading) return '지도 로딩중...';
-    if (status.error) return '오류 발생';
-    if (status.success) return '지도 로드 완료';
-    return '대기중';
-  };
-
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-4 space-y-4">
       {/* 헤더 섹션 */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">Seoul Fit Map</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Seoul Fit</h1>
+          <p className="text-sm md:text-base text-muted-foreground">
             AI 기반 공공시설 통합 네비게이터
           </p>
         </div>
         
         <div className="flex items-center gap-2">
-          <Badge variant={getStatusColor(mapStatus)} className="gap-1">
+          <Badge variant={getStatusColor(mapStatus)} className="gap-1 text-xs">
             <div className={`w-2 h-2 rounded-full ${
               mapStatus.success ? 'bg-green-500' : 
               mapStatus.error ? 'bg-red-500' : 'bg-yellow-500'
             }`} />
             {getStatusText(mapStatus)}
           </Badge>
+          
+          {/* 선호도 설정 시트 */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Menu className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle>선호도 설정</SheetTitle>
+              </SheetHeader>
+              <div className="space-y-6 py-4">
+                <div className="space-y-4">
+                  <Label className="text-sm font-medium">표시할 시설 유형</Label>
+                  {facilityTypes.map((type) => (
+                    <div key={type.id} className="flex items-center justify-between space-x-2">
+                      <div className="flex items-center space-x-3">
+                        <div style={{ color: type.color }}>
+                          {type.icon}
+                        </div>
+                        <Label htmlFor={type.id} className="text-sm">
+                          {type.name}
+                        </Label>
+                      </div>
+                      <Switch
+                        id={type.id}
+                        checked={type.enabled}
+                        onCheckedChange={() => toggleFacilityType(type.id)}
+                      />
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">현재 표시 중인 시설</Label>
+                  <div className="text-sm text-muted-foreground">
+                    총 {visibleFacilities.length}개 시설이 표시됩니다
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {enabledFacilityTypes.map((type) => (
+                      <Badge key={type.id} variant="secondary" className="text-xs">
+                        {type.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -223,7 +518,7 @@ export default function EnhancedKakaoMap() {
       )}
 
       {/* 메인 컨텐츠 */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* 지도 영역 */}
         <Card className="lg:col-span-3">
           <CardHeader className="pb-3">
@@ -254,116 +549,74 @@ export default function EnhancedKakaoMap() {
               
               <div 
                 id="kakaoMap"
-                className="w-full h-[500px] rounded-md border bg-muted"
+                className="w-full h-[400px] md:h-[500px] rounded-md border bg-muted"
               />
-              
-              {/* 지도 컨트롤 */}
-              <div className="absolute bottom-4 right-4 space-y-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => mapInstance?.setLevel(mapLevel - 1)}
-                  disabled={mapLevel <= 1}
-                >
-                  +
-                </Button>
-                <div className="text-center text-xs px-2 py-1 bg-background rounded border">
-                  {mapLevel}
-                </div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => mapInstance?.setLevel(mapLevel + 1)}
-                  disabled={mapLevel >= 14}
-                >
-                  -
-                </Button>
-              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* 사이드바 */}
-        <div className="space-y-4">
-          {/* 현재 위치 정보 */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                현재 위치
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {currentLocation ? (
-                <>
-                  <p className="text-sm text-muted-foreground">
-                    {currentLocation.address}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">
-                      {currentLocation.coords.lat.toFixed(4)}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {currentLocation.coords.lng.toFixed(4)}
-                    </Badge>
-                  </div>
-                </>
-              ) : (
-                <Skeleton className="h-16 w-full" />
-              )}
-            </CardContent>
-          </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">시설 정보</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {selectedFacility ? (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold text-base">{selectedFacility.name}</h3>
+                  <p className="text-sm text-muted-foreground">{selectedFacility.address}</p>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Badge className={`${getCrowdColor(selectedFacility.crowdLevel)} text-white text-xs`}>
+                    <Users className="w-3 h-3 mr-1" />
+                    {getCrowdText(selectedFacility.crowdLevel)}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    <MapPin className="w-3 h-3 mr-1" />
+                    {selectedFacility.distance}km
+                  </Badge>
+                </div>
 
-          {/* 빠른 액션 */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">빠른 액션</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button className="w-full justify-start" variant="outline">
-                <Search className="mr-2 h-4 w-4" />
-                주변 체육시설 찾기
-              </Button>
-              <Button className="w-full justify-start" variant="outline">
-                <MapPin className="mr-2 h-4 w-4" />
-                도서관 검색
-              </Button>
-              
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button className="w-full justify-start" variant="outline">
-                    <Info className="mr-2 h-4 w-4" />
-                    시설 상세 정보
-                  </Button>
-                </SheetTrigger>
-                <SheetContent>
-                  <SheetHeader>
-                    <SheetTitle>시설 상세 정보</SheetTitle>
-                  </SheetHeader>
-                  <div className="mt-6 space-y-4">
-                    <div className="space-y-2">
-                      <h3 className="font-medium">이용 현황</h3>
-                      <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                        <div className="h-full w-3/4 bg-primary rounded-full" />
-                      </div>
-                      <p className="text-sm text-muted-foreground">현재 75% 이용중</p>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <h3 className="font-medium">운영 시간</h3>
-                      <p className="text-sm">09:00 - 22:00</p>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <h3 className="font-medium">예상 대기시간</h3>
-                      <Badge variant="secondary">약 15분</Badge>
-                    </div>
+                {selectedFacility.rating && (
+                  <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                    <span className="text-sm font-medium">{selectedFacility.rating}</span>
                   </div>
-                </SheetContent>
-              </Sheet>
-            </CardContent>
-          </Card>
-        </div>
+                )}
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="w-4 h-4" />
+                    <span>{selectedFacility.operatingHours}</span>
+                  </div>
+                </div>
+
+                {selectedFacility.description && (
+                  <p className="text-sm text-muted-foreground">
+                    {selectedFacility.description}
+                  </p>
+                )}
+
+                {selectedFacility.isReservable && (
+                  <Button className="w-full" size="sm">
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    예약하기
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <MapPin className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-sm text-muted-foreground">
+                  지도의 마커를 클릭하여<br />
+                  상세 정보를 확인하세요
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
