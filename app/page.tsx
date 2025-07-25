@@ -1,103 +1,138 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useEffect } from 'react';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+export default function KakaoMap() {
+  useEffect(() => {
+    const API_KEY = '8bb6267aba6b69af4605b7fd2dd75c96';
+    
+    console.log('🔑 카카오 맵 로드 시작');
+
+    // 기존 스크립트 제거
+    const existingScript = document.querySelector('script[src*="dapi.kakao.com"]');
+    if (existingScript) {
+      existingScript.remove();
+      console.log('🗑️ 기존 스크립트 제거됨');
+    }
+
+    const script = document.createElement('script');
+    // autoload=false 추가! 이게 핵심입니다
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${API_KEY}&autoload=false`;
+    
+    script.onload = () => {
+      console.log('📜 스크립트 로드 완료');
+      console.log('🔍 현재 kakao 상태:', {
+        kakao: !!(window as any).kakao,
+        maps: !!(window as any).kakao?.maps,
+        load: !!(window as any).kakao?.maps?.load
+      });
+      
+      if ((window as any).kakao?.maps?.load) {
+        console.log('✅ kakao.maps.load 함수 발견! 초기화 시작...');
+        
+        (window as any).kakao.maps.load(() => {
+          console.log('🎉 kakao.maps.load 콜백 실행됨!');
+          console.log('🔍 LatLng 확인:', !!(window as any).kakao?.maps?.LatLng);
+          
+          if ((window as any).kakao?.maps?.LatLng) {
+            console.log('✅ LatLng 준비 완료!');
+            
+            const container = document.getElementById('kakaoMap');
+            if (container) {
+              try {
+                const options = {
+                  center: new (window as any).kakao.maps.LatLng(37.5666805, 126.9784147),
+                  level: 3
+                };
+                
+                const map = new (window as any).kakao.maps.Map(container, options);
+                console.log('🗺️ 지도 생성 성공!');
+                
+                const statusDiv = document.getElementById('status');
+                if (statusDiv) {
+                  statusDiv.innerHTML = '✅ 지도 로드 완료!';
+                  statusDiv.style.color = 'green';
+                }
+                
+                (window as any).kakao.maps.event.addListener(map, 'tilesloaded', () => {
+                  console.log('🎯 지도 타일 로드 완료!');
+                });
+                
+              } catch (error) {
+                console.error('❌ 지도 생성 실패:', error);
+                const container = document.getElementById('kakaoMap');
+                if (container) {
+                  container.innerHTML = `
+                    <div style="padding:20px;text-align:center;color:red;">
+                      지도 생성 실패: ${error}
+                    </div>
+                  `;
+                }
+              }
+            }
+          } else {
+            console.error('❌ load 콜백에서도 LatLng가 없음');
+          }
+        });
+      } else {
+        console.error('❌ kakao.maps.load 함수가 없음');
+      }
+    };
+
+    script.onerror = (error) => {
+      console.error('❌ 스크립트 로드 실패:', error);
+      const statusDiv = document.getElementById('status');
+      if (statusDiv) {
+        statusDiv.innerHTML = '❌ 스크립트 로드 실패';
+        statusDiv.style.color = 'red';
+      }
+    };
+
+    document.head.appendChild(script);
+
+    return () => {
+      const scriptToRemove = document.querySelector('script[src*="dapi.kakao.com"]');
+      if (scriptToRemove) {
+        scriptToRemove.remove();
+      }
+    };
+  }, []);
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+    <div style={{ padding: '20px' }}>
+      <h2>카카오 맵 🗺️</h2>
+      
+      <div 
+        id="status"
+        style={{ 
+          marginBottom: '10px', 
+          fontSize: '14px', 
+          color: '#007bff',
+          fontWeight: 'bold'
+        }}
+      >
+        🔄 autoload=false 방식으로 로딩중...
+      </div>
+      
+      <div 
+        id="kakaoMap"
+        style={{ 
+          width: '500px', 
+          height: '400px',
+          backgroundColor: '#f8f9fa',
+          border: '2px solid #28a745',
+          borderRadius: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '16px',
+          color: '#495057'
+        }}
+      >
+        ⏳ kakao.maps.load() 콜백 대기중...
+      </div>
     </div>
   );
 }
