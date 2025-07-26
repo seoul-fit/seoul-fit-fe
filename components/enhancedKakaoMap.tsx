@@ -190,6 +190,7 @@ export default function SeoulFitMapApp() {
   const [mapLevel, setMapLevel] = useState<number>(3);
   const [facilityTypes, setFacilityTypes] = useState<FacilityType[]>(INITIAL_FACILITY_TYPES);
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
+  const [initialLocationSet, setInitialLocationSet] = useState<boolean>(false);
 
   // useRef로 마커 관리 (상태 변경으로 인한 리렌더링 방지)
   const markersRef = useRef<KakaoMarker[]>([]);
@@ -238,7 +239,7 @@ export default function SeoulFitMapApp() {
               const map = new kakaoMaps.Map(container, options);
               setMapInstance(map);
 
-              // 초기 위치 정보 설정
+              // 기본 위치 정보
               setCurrentLocation({
                 address: '서울특별시 중구 세종대로 110',
                 coords: { lat: 37.5666805, lng: 126.9784147 },
@@ -359,6 +360,15 @@ export default function SeoulFitMapApp() {
       );
     }
   }, [mapInstance]);
+
+  // 초기 위치 현재 위치로 변경되도록
+  useEffect(() => {
+    // 지도 로드가 완료되고 아직 초기 위치가 설정되지 않았을 때
+    if (mapStatus.success && mapInstance && !initialLocationSet) {
+      setInitialLocationSet(true); // 중복 실행 방지
+      moveToCurrentLocation();
+    }
+  }, [mapStatus.success, mapInstance, initialLocationSet, moveToCurrentLocation]);
 
   // 지도 새로고침
   const refreshMap = useCallback(() => {
