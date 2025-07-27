@@ -39,6 +39,13 @@ interface KakaoMarker {
   setMap(map: KakaoMap | null): void;
 }
 
+interface KakaoCustomOverlay {
+  setMap(map: KakaoMap | null): void;
+  setPosition(position: KakaoLatLng): void;
+  setContent(content: string | HTMLElement): void;
+  getPosition(): KakaoLatLng;
+}
+
 interface KakaoMapOptions {
   center: KakaoLatLng;
   level: number;
@@ -49,12 +56,21 @@ interface KakaoMarkerOptions {
   title?: string;
 }
 
+interface KakaoCustomOverlayOptions {
+  position: KakaoLatLng;
+  content: string | HTMLElement;
+  xAnchor?: number;
+  yAnchor?: number;
+  zIndex?: number;
+}
+
 interface KakaoMapsAPI {
   Map: new (container: HTMLElement, options: KakaoMapOptions) => KakaoMap;
   LatLng: new (lat: number, lng: number) => KakaoLatLng;
   Marker: new (options: KakaoMarkerOptions) => KakaoMarker;
+  CustomOverlay: new (options: KakaoCustomOverlayOptions) => KakaoCustomOverlay;
   event: {
-    addListener: (target: KakaoMap | KakaoMarker, type: string, handler: () => void) => void;
+    addListener: (target: KakaoMap | KakaoMarker | KakaoCustomOverlay, type: string, handler: () => void) => void;
   };
   load: (callback: () => void) => void;
 }
@@ -103,9 +119,9 @@ interface Facility {
 const INITIAL_FACILITY_TYPES: FacilityType[] = [
   { id: 'sports', name: '체육시설', icon: <Dumbbell className="h-4 w-4" />, color: '#3B82F6', enabled: true },
   { id: 'culture', name: '문화시설', icon: <Calendar className="h-4 w-4" />, color: '#8B5CF6', enabled: true },
-  { id: 'food', name: '맛집', icon: <UtensilsCrossed className="h-4 w-4" />, color: '#EF4444', enabled: false },
-  { id: 'library', name: '도서관', icon: <BookOpen className="h-4 w-4" />, color: '#10B981', enabled: false },
-  { id: 'park', name: '공원', icon: <TreePine className="h-4 w-4" />, color: '#059669', enabled: false }
+  { id: 'food', name: '맛집', icon: <UtensilsCrossed className="h-4 w-4" />, color: '#EF4444', enabled: true },
+  { id: 'library', name: '도서관', icon: <BookOpen className="h-4 w-4" />, color: '#10B981', enabled: true },
+  { id: 'park', name: '공원', icon: <TreePine className="h-4 w-4" />, color: '#059669', enabled: true }
 ];
 
 // 샘플 시설 데이터
@@ -177,6 +193,76 @@ const SAMPLE_FACILITIES: Facility[] = [
   }
 ];
 
+// 커스텀 마커
+const createCustomMarkerContent = (facilityType: FacilityType, crowdLevel: string, facilityId: string): string => {
+  // 혼잡도에 따른 배경색
+  const getCrowdBgColor = (level: string): string => {
+    switch (level) {
+      case 'low': return '#10B981';
+      case 'medium': return '#F59E0B';
+      case 'high': return '#EF4444';
+      default: return '#6B7280';
+    }
+  };
+
+  // 아이콘 SVG 생성
+  const getIconSVG = (typeId: string): string => {
+    switch (typeId) {
+      case 'sports':
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg>`;
+      case 'culture':
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>`;
+      case 'food':
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M17 2v20"/><path d="M15 2h4v6h-4z"/></svg>`;
+      case 'library':
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>`;
+      case 'park':
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13v8"/><path d="m12 3 4 4H8l4-4Z"/><path d="m12 3 4 4H8l4-4Z"/><path d="M8 7h8v4H8z"/></svg>`;
+      default:
+        return ``;
+    }
+  };
+
+  const crowdBgColor = getCrowdBgColor(crowdLevel);
+  const iconSVG = getIconSVG(facilityType.id);
+
+  return `
+    <div id="marker-${facilityId}" class="custom-marker" style="
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background-color: ${crowdBgColor};
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      z-index: 1000;
+    "
+    onmouseover="this.style.transform='scale(1.1)'; this.style.zIndex='1001';"
+    onmouseout="this.style.transform='scale(1)'; this.style.zIndex='1000';"
+    >
+      <div style="color: white; display: flex; align-items: center; justify-content: center;">
+        ${iconSVG}
+      </div>
+      <div style="
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 8px solid ${crowdBgColor};
+      "></div>
+    </div>
+  `;
+};
+
 export default function SeoulFitMapApp() {
   // 상태 관리
   const [mapStatus, setMapStatus] = useState<MapStatus>({
@@ -192,8 +278,8 @@ export default function SeoulFitMapApp() {
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
   const [initialLocationSet, setInitialLocationSet] = useState<boolean>(false);
 
-  // useRef로 마커 관리 (상태 변경으로 인한 리렌더링 방지)
-  const markersRef = useRef<KakaoMarker[]>([]);
+  // useRef로 커스텀 오버레이 관리
+  const customOverlaysRef = useRef<KakaoCustomOverlay[]>([]);
 
   // 활성화된 시설 필터링 (메모화로 성능 최적화)
   const enabledFacilityTypes = useMemo(() =>
@@ -278,7 +364,7 @@ export default function SeoulFitMapApp() {
     document.head.appendChild(script);
   }, [mapLevel]);
 
-  // 마커 업데이트 (useRef 사용으로 무한 루프 방지)
+  // 커스텀 마커 업데이트 (기존 마커 대신 CustomOverlay 사용)
   useEffect(() => {
     if (!mapInstance || !mapStatus.success) return;
 
@@ -287,36 +373,54 @@ export default function SeoulFitMapApp() {
 
     const kakaoMaps = windowWithKakao.kakao.maps;
 
-    // 기존 마커 제거
-    markersRef.current.forEach(marker => marker.setMap(null));
-    markersRef.current = [];
+    // 기존 커스텀 오버레이 제거
+    customOverlaysRef.current.forEach(overlay => overlay.setMap(null));
+    customOverlaysRef.current = [];
 
-    // 새 마커 생성
-    const newMarkers = visibleFacilities.map(facility => {
+    // 새 커스텀 오버레이 생성
+    const newOverlays = visibleFacilities.map(facility => {
       const facilityType = facilityTypes.find(type => type.id === facility.type);
       if (!facilityType) return null;
 
-      const markerPosition = new kakaoMaps.LatLng(
+      const overlayPosition = new kakaoMaps.LatLng(
           facility.coords.lat,
           facility.coords.lng
       );
 
-      const marker = new kakaoMaps.Marker({
-        position: markerPosition,
-        title: facility.name
+      // 커스텀 마커 HTML 생성 - facility.id 전달
+      const markerContent = createCustomMarkerContent(facilityType, facility.crowdLevel, facility.id);
+
+      // CustomOverlay 생성
+      const customOverlay = new kakaoMaps.CustomOverlay({
+        position: overlayPosition,
+        content: markerContent,
+        xAnchor: 0.5,  // 중앙 정렬
+        yAnchor: 1,    // 하단 정렬 (핀 포인트)
+        zIndex: 1000
       });
 
-      marker.setMap(mapInstance);
+      customOverlay.setMap(mapInstance);
 
-      // 마커 클릭 이벤트
-      kakaoMaps.event.addListener(marker, 'click', () => {
-        setSelectedFacility(facility);
-      });
+      // 마커 클릭 이벤트를 위한 고유 ID로 이벤트 리스너 추가
+      setTimeout(() => {
+        const markerId = `marker-${facility.id}`;
+        const markerElement = document.getElementById(markerId);
+        if (markerElement) {
+          // 기존 이벤트 리스너 제거 후 새로 추가 (중복 방지)
+          markerElement.replaceWith(markerElement.cloneNode(true));
+          const newMarkerElement = document.getElementById(markerId);
+          if (newMarkerElement) {
+            newMarkerElement.addEventListener('click', () => {
+              setSelectedFacility(facility);
+            });
+          }
+        }
+      }, 100);
 
-      return marker;
-    }).filter((marker): marker is KakaoMarker => marker !== null);
+      return customOverlay;
+    }).filter((overlay): overlay is KakaoCustomOverlay => overlay !== null);
 
-    markersRef.current = newMarkers;
+    customOverlaysRef.current = newOverlays;
   }, [mapInstance, mapStatus.success, visibleFacilities, facilityTypes]);
 
   // 선호도 토글
@@ -418,9 +522,9 @@ export default function SeoulFitMapApp() {
 
     // 컴포넌트 언마운트 시 정리
     return () => {
-      // 마커 정리
-      markersRef.current.forEach(marker => marker.setMap(null));
-      markersRef.current = [];
+      // 커스텀 오버레이 정리
+      customOverlaysRef.current.forEach(overlay => overlay.setMap(null));
+      customOverlaysRef.current = [];
 
       // 스크립트 정리
       const scriptToRemove = document.querySelector('script[src*="dapi.kakao.com"]');
