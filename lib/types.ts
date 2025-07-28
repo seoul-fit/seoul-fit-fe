@@ -110,14 +110,14 @@ export interface UserLocation {
 }
 
 export interface MapState {
-    isLoaded: boolean
-    isLoading: boolean
-    error: string | null
-    mapInstance: any
-    userLocation: UserLocation | null
-    selectedFacility: Facility | null
-    visibleFacilities: Facility[]
-    mapLevel: number
-    preferences: UserPreferences
-    isLocationPermissionGranted: boolean
+    isLoaded: boolean;
+    isLoading: boolean;
+    error: string | null;
+    mapInstance: unknown | null;
+    userLocation: UserLocation | null;
+    selectedFacility: Facility | null;
+    visibleFacilities: Facility[];
+    mapLevel: number;
+    preferences: UserPreferences;
+    isLocationPermissionGranted: boolean;
 }
