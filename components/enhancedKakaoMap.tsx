@@ -559,14 +559,35 @@ export default function SeoulFitMapApp() {
 
             {/* 알림 버튼 */}
             <div className="relative">
-              <Button variant="outline" size="icon">
-                <Bell className="h-4 w-4" />
-                {notificationCount > 0 && (
-                    <div className="absolute -top-2 -right-2 h-5 w-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center min-w-[1.25rem]">
-                      {notificationCount > 99 ? '99+' : notificationCount}
-                    </div>
-                )}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Bell className="h-4 w-4" />
+                    {notificationCount > 0 && (
+                        <div className="absolute -top-2 -right-2 h-5 w-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center min-w-[1.25rem]">
+                          {notificationCount > 99 ? '99+' : notificationCount}
+                        </div>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-53">
+                  <DropdownMenuItem>
+                    알림 목록
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Menu className="mr-2 h-4 w-4" />
+                    알림 1
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Menu className="mr-2 h-4 w-4" />
+                    알림 2
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Menu className="mr-2 h-4 w-4" />
+                    알림 3
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             {/* 선호도 설정 시트 */}
