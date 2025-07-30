@@ -18,7 +18,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import {
   MapPin, Settings, Layers, Search, RefreshCw, Info, Navigation,
   Menu, Dumbbell, BookOpen, UtensilsCrossed, TreePine, Calendar,
-  Users, Clock, ExternalLink, Star
+  Users, Clock, ExternalLink, Star, Bell
 } from "lucide-react";
 import LoginButton from "@/components/LoginButton";
 
@@ -277,6 +277,7 @@ export default function SeoulFitMapApp() {
   const [facilityTypes, setFacilityTypes] = useState<FacilityType[]>(INITIAL_FACILITY_TYPES);
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
   const [initialLocationSet, setInitialLocationSet] = useState<boolean>(false);
+  const [notificationCount, setNotificationCount] = useState<number>(3);
 
   // useRef로 커스텀 오버레이 관리
   const customOverlaysRef = useRef<KakaoCustomOverlay[]>([]);
@@ -555,6 +556,18 @@ export default function SeoulFitMapApp() {
             </Badge>
 
             <LoginButton />
+
+            {/* 알림 버튼 */}
+            <div className="relative">
+              <Button variant="outline" size="icon">
+                <Bell className="h-4 w-4" />
+                {notificationCount > 0 && (
+                    <div className="absolute -top-2 -right-2 h-5 w-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center min-w-[1.25rem]">
+                      {notificationCount > 99 ? '99+' : notificationCount}
+                    </div>
+                )}
+              </Button>
+            </div>
 
             {/* 선호도 설정 시트 */}
             <Sheet>
