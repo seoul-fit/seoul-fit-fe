@@ -121,3 +121,20 @@ export interface MapState {
     preferences: UserPreferences;
     isLocationPermissionGranted: boolean;
 }
+
+// 혼잡도 데이터
+export interface CongestionData {
+    AREA_NM: string;         // 장소명
+    AREA_CD: string;         // 장소코드
+    AREA_CONGEST_LVL: string; // 혼잡도 레벨 (여유, 보통, 약간 붐빔, 붐빔)
+    AREA_CONGEST_MSG: string; // 혼잡도 메시지
+}
+
+// 서울시 실시간 인구데이터 응답값
+export interface SeoulApiResponse {
+    RESULT: {
+        'RESULT.CODE': string;
+        'RESULT.MESSAGE': string;
+    };
+    'SeoulRtd.citydata_ppltn': CongestionData[];
+}

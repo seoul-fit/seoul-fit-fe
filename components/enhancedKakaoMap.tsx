@@ -18,9 +18,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import {
   MapPin, Settings, Layers, Search, RefreshCw, Info, Navigation,
   Menu, Dumbbell, BookOpen, UtensilsCrossed, TreePine, Calendar,
-  Users, Clock, ExternalLink, Star, Bell
+  Users, Clock, ExternalLink, Star, Bell, Eye, EyeOff
 } from "lucide-react";
 import LoginButton from "@/components/LoginButton";
+import { CongestionData } from '@/lib/types';
+import { getNearestCongestionData, getCongestionClass, getCongestionColor } from '@/services/congestion';
 
 // 카카오 맵 API 타입 정의
 interface KakaoLatLng {
@@ -278,9 +280,57 @@ export default function SeoulFitMapApp() {
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
   const [initialLocationSet, setInitialLocationSet] = useState<boolean>(false);
   const [notificationCount, setNotificationCount] = useState<number>(3);
+  const [showCongestion, setShowCongestion] = useState<boolean>(false); // 혼잡도 표시 여부
+  const [congestionData, setCongestionData] = useState<CongestionData | null>(null); // 혼잡도 데이터
+  const [congestionLoading, setCongestionLoading] = useState<boolean>(false); // 혼잡도 로딩 상태
+  const [congestionError, setCongestionError] = useState<string | null>(null); // 혼잡도 에러
 
   // useRef로 커스텀 오버레이 관리
   const customOverlaysRef = useRef<KakaoCustomOverlay[]>([]);
+
+  // 혼잡도 조회
+  const fetchCongestionData = useCallback(async (lat: number, lng: number) => {
+    setCongestionLoading(true);
+    setCongestionError(null);
+
+    try {
+      // 현재 위치 기준으로 가장 가까운 장소의 혼잡도 조회
+      const data = await getNearestCongestionData(lat, lng);
+
+      if (data) {
+        setCongestionData(data);
+        setCongestionError(null);
+      } else {
+        console.warn('혼잡도 데이터가 없습니다.');
+        setCongestionError('현재 위치 주변의 혼잡도 정보를 찾을 수 없습니다.');
+        setCongestionData(null);
+      }
+    } catch (error) {
+      console.error('혼잡도 데이터 조회 실패:', error);
+      setCongestionError('혼잡도 정보를 불러오는데 실패했습니다.');
+      setCongestionData(null);
+    } finally {
+      setCongestionLoading(false);
+    }
+  }, []);
+
+  // 혼잡도 버튼
+  const toggleCongestionDisplay = useCallback(async () => {
+    const newShowState = !showCongestion;
+    setShowCongestion(newShowState);
+
+    if (newShowState && currentLocation && !congestionData) {
+      // 혼잡도 데이터가 없으면 새로 조회
+      await fetchCongestionData(currentLocation.coords.lat, currentLocation.coords.lng);
+    }
+  }, [showCongestion, congestionData, fetchCongestionData, currentLocation]);
+
+  // 혼잡도 새로고침
+  const refreshCongestionData = useCallback(async () => {
+    if (currentLocation) {
+      await fetchCongestionData(currentLocation.coords.lat, currentLocation.coords.lng);
+    }
+  }, [fetchCongestionData, currentLocation]);
 
   // 활성화된 시설 필터링 (메모화로 성능 최적화)
   const enabledFacilityTypes = useMemo(() =>
@@ -442,19 +492,26 @@ export default function SeoulFitMapApp() {
       const kakaoMaps = windowWithKakao.kakao.maps;
 
       navigator.geolocation.getCurrentPosition(
-          (position) => {
+          async (position) => {
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
             const moveLatLng = new kakaoMaps.LatLng(lat, lng);
 
+            // 지도 중심 이동
             mapInstance.setCenter(moveLatLng);
             mapInstance.setLevel(3);
 
+            // 현재 위치 정보 업데이트
             setCurrentLocation({
               address: `위도: ${lat.toFixed(6)}, 경도: ${lng.toFixed(6)}`,
               coords: { lat, lng },
               type: 'current'
             });
+
+            // 혼잡도 표시가 켜져 있으면 새로운 위치의 혼잡도 조회
+            if (showCongestion) {
+              await fetchCongestionData(lat, lng);
+            }
           },
           (error) => {
             setMapStatus(prev => ({
@@ -464,7 +521,7 @@ export default function SeoulFitMapApp() {
           }
       );
     }
-  }, [mapInstance]);
+  }, [mapInstance, showCongestion, fetchCongestionData]);
 
   // 초기 위치 현재 위치로 변경되도록
   useEffect(() => {
@@ -660,6 +717,14 @@ export default function SeoulFitMapApp() {
           </div>
         </div>
 
+        {/* 혼잡도 에러 알림 */}
+        {congestionError && showCongestion && (
+            <Alert variant="destructive">
+              <Info className="h-4 w-4" />
+              <AlertDescription>{congestionError}</AlertDescription>
+            </Alert>
+        )}
+
         {/* 에러 알림 */}
         {mapStatus.error && (
             <Alert variant="destructive">
@@ -676,13 +741,27 @@ export default function SeoulFitMapApp() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">실시간 지도</CardTitle>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm">
-                    <Search className="mr-2 h-4 w-4" />
-                    검색
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Layers className="mr-2 h-4 w-4" />
-                    레이어
+                  {/* 혼잡도 상태 표시 배지 */}
+                  {showCongestion && congestionData && (
+                      <Badge
+                          className={`${getCongestionClass(congestionData.AREA_CONGEST_LVL)} text-xs`}
+                      >
+                        <Users className="mr-1 h-3 w-3" />
+                        {congestionData.AREA_CONGEST_LVL}
+                      </Badge>
+                  )}
+
+                  {/* 혼잡도 보기/숨기기 버튼 */}
+                  <Button
+                      variant={showCongestion ? "default" : "outline"}
+                      size="sm"
+                      onClick={toggleCongestionDisplay}
+                      disabled={congestionLoading}
+                      className="flex items-center gap-2"
+                  >
+                    {showCongestion ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    혼잡도 {showCongestion ? '숨기기' : '보기'}
+                    {congestionLoading && <div className="ml-1 h-3 w-3 animate-spin rounded-full border border-gray-300 border-t-blue-600" />}
                   </Button>
                 </div>
               </div>
@@ -702,6 +781,85 @@ export default function SeoulFitMapApp() {
                     id="kakaoMap"
                     className="w-full h-[400px] md:h-[500px] rounded-md border bg-muted"
                 />
+
+                {/* 혼잡도 정보 패널 (오버레이) */}
+                {showCongestion && (
+                    <div className="absolute top-4 right-4 z-10 bg-white rounded-lg shadow-lg p-3 max-w-xs">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-semibold text-gray-800">근처 주요 장소 혼잡도</h4>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={refreshCongestionData}
+                            disabled={congestionLoading}
+                            className="h-6 w-6 p-0"
+                        >
+                          <RefreshCw className={`h-3 w-3 ${congestionLoading ? 'animate-spin' : ''}`} />
+                        </Button>
+                      </div>
+
+                      {congestionLoading ? (
+                          <div className="flex items-center justify-center py-4">
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                              <div className="h-4 w-4 animate-spin rounded-full border border-gray-300 border-t-blue-600" />
+                              조회중...
+                            </div>
+                          </div>
+                      ) : congestionData ? (
+                          <div className="space-y-2">
+                            {/* 장소명 */}
+                            <div className="text-xs text-gray-600 truncate">
+                              📍 {congestionData.AREA_NM}
+                            </div>
+
+                            {/* 혼잡도 레벨 */}
+                            <div className="flex items-center justify-between">
+                              <Badge
+                                  className={`${getCongestionClass(congestionData.AREA_CONGEST_LVL)} text-xs`}
+                              >
+                                {congestionData.AREA_CONGEST_LVL}
+                              </Badge>
+                            </div>
+
+                            {/* 혼잡도 메시지 */}
+                            {congestionData.AREA_CONGEST_MSG && (
+                                <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                                  💬 {congestionData.AREA_CONGEST_MSG}
+                                </div>
+                            )}
+                          </div>
+                      ) : congestionError ? (
+                          <div className="text-xs text-red-500 text-center py-2">
+                            정보를 불러올 수 없습니다
+                          </div>
+                      ) : (
+                          <div className="text-xs text-gray-500 text-center py-2">
+                            혼잡도 정보가 없습니다
+                          </div>
+                      )}
+
+                      {/* 혼잡도 범례 */}
+                      <div className="mt-3 pt-2 border-t border-gray-200">
+                        <div className="text-xs font-medium text-gray-600 mb-1">범례</div>
+                        <div className="grid grid-cols-2 gap-1 text-xs">
+                          {[
+                            { level: '여유', color: getCongestionColor('여유') },
+                            { level: '보통', color: getCongestionColor('보통') },
+                            { level: '약간 붐빔', color: getCongestionColor('약간 붐빔') },
+                            { level: '붐빔', color: getCongestionColor('붐빔') },
+                          ].map(({ level, color }) => (
+                              <div key={level} className="flex items-center gap-1">
+                                <div
+                                    className="w-2 h-2 rounded-full"
+                                    style={{ backgroundColor: color }}
+                                />
+                                <span className="text-gray-600">{level}</span>
+                              </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -712,6 +870,30 @@ export default function SeoulFitMapApp() {
               <CardTitle className="text-lg">시설 정보</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* 혼잡도 요약 */}
+              {showCongestion && congestionData && (
+                  <div className="space-y-2 mb-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-orange-600" />
+                      <span className="text-sm font-medium">주변 혼잡도</span>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">장소 : </span>
+                        <span className="font-medium truncate ml-2">{congestionData.AREA_NM}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">상태 : </span>
+                        <Badge
+                            className={`${getCongestionClass(congestionData.AREA_CONGEST_LVL)} text-xs ml-2`}
+                        >
+                          {congestionData.AREA_CONGEST_LVL}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+              )}
+
               {selectedFacility ? (
                   <div className="space-y-4">
                     <div>
