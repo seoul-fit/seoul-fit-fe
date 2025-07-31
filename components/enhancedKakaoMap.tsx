@@ -32,6 +32,7 @@ interface KakaoLatLng {
 
 interface KakaoMap {
   setCenter(latlng: KakaoLatLng): void;
+  getCenter(): KakaoLatLng;
   getLevel(): number;
   setLevel(level: number): void;
   relayout(): void;
@@ -288,6 +289,9 @@ export default function SeoulFitMapApp() {
   // useRef로 커스텀 오버레이 관리
   const customOverlaysRef = useRef<KakaoCustomOverlay[]>([]);
 
+  // 지도 이벤트 리스너 중복 실행 방지
+  const mapEventListenersSetRef = useRef<boolean>(false);
+
   // 혼잡도 조회
   const fetchCongestionData = useCallback(async (lat: number, lng: number) => {
     setCongestionLoading(true);
@@ -313,6 +317,33 @@ export default function SeoulFitMapApp() {
       setCongestionLoading(false);
     }
   }, []);
+
+  // 지도 중앙 위치 업데이트
+  const updateMapCenterLocation = useCallback(async (map: KakaoMap) => {
+    const windowWithKakao = window as WindowWithKakao;
+    if (!windowWithKakao.kakao?.maps) return;
+
+    try {
+      // 현재 지도 중심 좌표 가져오기
+      const center = map.getCenter();
+      const lat = center.getLat();
+      const lng = center.getLng();
+
+      // 현재 위치 정보 업데이트
+      setCurrentLocation({
+        address: `위도: ${lat.toFixed(6)}, 경도: ${lng.toFixed(6)}`,
+        coords: { lat, lng },
+        type: 'current'
+      });
+
+      // 혼잡도 표시가 켜져 있으면 새로운 위치의 혼잡도 조회
+      if (showCongestion) {
+        await fetchCongestionData(lat, lng);
+      }
+    } catch (error) {
+      console.error('지도 중심 위치 업데이트 실패:', error);
+    }
+  }, [showCongestion, fetchCongestionData]);
 
   // 혼잡도 버튼
   const toggleCongestionDisplay = useCallback(async () => {
@@ -350,6 +381,7 @@ export default function SeoulFitMapApp() {
     const API_KEY = '8bb6267aba6b69af4605b7fd2dd75c96';
 
     setMapStatus({ loading: true, error: null, success: false });
+    mapEventListenersSetRef.current = false; // 지도 이벤트 리스너 초기화
 
     // 기존 스크립트 정리
     const existingScript = document.querySelector('script[src*="dapi.kakao.com"]');
@@ -384,14 +416,31 @@ export default function SeoulFitMapApp() {
               });
 
               // 지도 이벤트 리스너
-              kakaoMaps.event.addListener(map, 'tilesloaded', () => {
-                setMapStatus({ loading: false, error: null, success: true });
-              });
+              if (!mapEventListenersSetRef.current) {
+                // 지도 로드 완료 이벤트
+                kakaoMaps.event.addListener(map, 'tilesloaded', () => {
+                  setMapStatus({ loading: false, error: null, success: true });
+                });
 
-              // 줌 레벨 변경 이벤트
-              kakaoMaps.event.addListener(map, 'zoom_changed', () => {
-                setMapLevel(map.getLevel());
-              });
+                // 줌 레벨 변경 이벤트 - 지도 중심 위치도 함께 업데이트
+                kakaoMaps.event.addListener(map, 'zoom_changed', () => {
+                  const newLevel = map.getLevel();
+                  setMapLevel(newLevel);
+                  updateMapCenterLocation(map); // 줌 변경 시 중심 위치 업데이트
+                });
+
+                // 지도 이동 완료 이벤트 - 드래그로 이동했을 때
+                kakaoMaps.event.addListener(map, 'dragend', () => {
+                  updateMapCenterLocation(map); // 드래그 완료 시 중심 위치 업데이트
+                });
+
+                // 지도 중심 좌표 변경 이벤트 - 프로그래밍 방식으로 중심이 변경되었을 때
+                kakaoMaps.event.addListener(map, 'center_changed', () => {
+                  updateMapCenterLocation(map); // 중심 좌표 변경 시 위치 업데이트
+                });
+
+                mapEventListenersSetRef.current = true; // 중복 등록 방지 플래그 설정
+              }
             }
           } catch (error) {
             setMapStatus({
@@ -413,7 +462,7 @@ export default function SeoulFitMapApp() {
     };
 
     document.head.appendChild(script);
-  }, [mapLevel]);
+  }, [mapLevel, updateMapCenterLocation]);
 
   // 커스텀 마커 업데이트 (기존 마커 대신 CustomOverlay 사용)
   useEffect(() => {
