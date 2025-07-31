@@ -1,8 +1,8 @@
 'use client';
 
-import { useAuthStore } from '@/store/authStore';
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import {useAuthStore} from '@/store/authStore';
+import {useEffect, useState} from 'react';
+import {Button} from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -10,9 +10,9 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { User, LogOut, Settings, UserCircle } from 'lucide-react';
+import {Badge} from '@/components/ui/badge';
+import {Skeleton} from '@/components/ui/skeleton';
+import {LogOut, Settings, User, UserCircle} from 'lucide-react';
 
 interface LoginButtonProps {
     variant?: 'default' | 'compact' | 'minimal'
@@ -28,38 +28,25 @@ export default function LoginButton({ variant = 'default', className = '' }: Log
             await checkAuthStatus();
             setIsLoading(false);
         };
-        checkAuth();
+        checkAuth().then();
     }, [checkAuthStatus]);
 
+    // 로그인 - 카카오 인가 코드 요청
     const handleLogin = () => {
-        // 카카오 OAuth2 파라미터 설정
         const KAKAO_CLIENT_ID = '349f89103b32e7135ad6f15e0a73509b';
-        const REDIRECT_URI = 'http://localhost:3000/auth/callback';
-        const STATE = Math.random().toString(36).substring(2, 15); // CSRF 방지용 랜덤 상태값
-
-        // 카카오 OAuth2 URL 구성
-        const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?` +
-            `client_id=${KAKAO_CLIENT_ID}&` +
-            `redirect_uri=${encodeURIComponent(REDIRECT_URI)}&` +
-            `response_type=code&` +
-            `state=${STATE}&` +
-            `scope=profile_nickname,profile_image,account_email`;
-
-        // 상태값을 로컬스토리지에 저장 (보안 검증용)
-        localStorage.setItem('kakao_oauth_state', STATE);
-
-        // 카카오 로그인 페이지로 리다이렉트
-        window.location.href = kakaoAuthUrl;
+        const REDIRECT_URI = 'http://localhost:3000/auth/callback'; // app/auth/page.tsx로 리다이렉트
+        window.location.href = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${KAKAO_CLIENT_ID}&redirect_uri=${REDIRECT_URI}`;
     };
 
+    // 로그아웃 - TODO 카카오로 요청? or 백엔드로 요청?
     const handleLogout = async () => {
         try {
-            const token = useAuthStore.getState().token;
-            if (token) {
+            const accessToken = useAuthStore.getState().accessToken;
+            if (accessToken) {
                 await fetch('http://localhost:8080/api/auth/logout', {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
+                        'Authorization': `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',
                     },
                 });
@@ -92,30 +79,26 @@ export default function LoginButton({ variant = 'default', className = '' }: Log
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm" className={`gap-2 h-8 ${className}`}>
-                            {user.profileImage ? (
+                            {user.profile ? (
                                 <img
-                                    src={user.profileImage}
-                                    alt={user.nickname}
-                                    className="w-4 h-4 rounded-full"
-                                    onError={(e) => {
-                                        const target = e.target as HTMLImageElement
-                                        target.src = '/default-profile.png'
-                                    }}
+                                    src={user.profile}
+                                    alt="프로필"
+                                    className="w-6 h-6 rounded-full"
                                 />
                             ) : (
-                                <UserCircle className="w-4 h-4" />
+                                <UserCircle className="w-5 h-5" />
                             )}
                             <span className="max-w-16 truncate text-xs">
-                {user.nickname}
-              </span>
+                                {user.name}
+                            </span>
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
                         <div className="flex items-center gap-2 p-2">
-                            {user.profileImage ? (
+                            {user.profile ? (
                                 <img
-                                    src={user.profileImage}
-                                    alt={user.nickname}
+                                    src={user.profile}
+                                    alt={user.name}
                                     className="w-8 h-8 rounded-full"
                                     onError={(e) => {
                                         const target = e.target as HTMLImageElement
@@ -128,7 +111,7 @@ export default function LoginButton({ variant = 'default', className = '' }: Log
                                 </div>
                             )}
                             <div className="flex flex-col">
-                                <span className="font-medium text-sm">{user.nickname}</span>
+                                <span className="font-medium text-sm">{user.name}</span>
                                 {user.email && (
                                     <span className="text-xs text-muted-foreground">{user.email}</span>
                                 )}
@@ -158,7 +141,7 @@ export default function LoginButton({ variant = 'default', className = '' }: Log
             return (
                 <Badge variant="outline" className={`gap-1 ${className}`}>
                     <UserCircle className="w-3 h-3" />
-                    <span className="max-w-12 truncate text-xs">{user.nickname}</span>
+                    <span className="max-w-12 truncate text-xs">{user.name}</span>
                 </Badge>
             )
         }
@@ -167,10 +150,10 @@ export default function LoginButton({ variant = 'default', className = '' }: Log
         return (
             <div className={`flex items-center gap-2 bg-background/90 backdrop-blur-sm rounded-lg shadow-lg px-3 py-2 border ${className}`}>
                 <div className="flex items-center gap-2">
-                    {user.profileImage ? (
+                    {user.profile ? (
                         <img
-                            src={user.profileImage}
-                            alt={user.nickname}
+                            src={user.profile}
+                            alt={user.name}
                             className="w-6 h-6 rounded-full border"
                             onError={(e) => {
                                 const target = e.target as HTMLImageElement
@@ -181,8 +164,8 @@ export default function LoginButton({ variant = 'default', className = '' }: Log
                         <UserCircle className="w-6 h-6" />
                     )}
                     <span className="text-sm font-medium max-w-20 truncate">
-            {user.nickname}
-          </span>
+                        {user.name}
+                    </span>
                 </div>
                 <Button
                     variant="ghost"
