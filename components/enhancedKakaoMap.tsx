@@ -400,20 +400,27 @@ export default function SeoulFitMapApp() {
             const container = document.getElementById('kakaoMap');
             if (container && windowWithKakao.kakao?.maps) {
               const kakaoMaps = windowWithKakao.kakao.maps;
+
+              // 현재 위치가 없으면 서울시청을 기본값으로 사용
+              const initialLat = currentLocation?.coords.lat || 37.5666805;
+              const initialLng = currentLocation?.coords.lng || 126.9784147;
+
               const options: KakaoMapOptions = {
-                center: new kakaoMaps.LatLng(37.5666805, 126.9784147),
+                center: new kakaoMaps.LatLng(initialLat, initialLng),
                 level: mapLevel
               };
 
               const map = new kakaoMaps.Map(container, options);
               setMapInstance(map);
 
-              // 기본 위치 정보
-              setCurrentLocation({
-                address: '서울특별시 중구 세종대로 110',
-                coords: { lat: 37.5666805, lng: 126.9784147 },
-                type: 'current'
-              });
+              // 현재 위치 정보가 없을 때만 기본 위치 정보 설정
+              if (!currentLocation) {
+                setCurrentLocation({
+                  address: '서울특별시 중구 세종대로 110',
+                  coords: { lat: 37.5666805, lng: 126.9784147 },
+                  type: 'current'
+                });
+              }
 
               // 지도 이벤트 리스너
               if (!mapEventListenersSetRef.current) {
