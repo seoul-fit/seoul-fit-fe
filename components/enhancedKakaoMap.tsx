@@ -21,8 +21,9 @@ import {
   Users, Clock, ExternalLink, Star, Bell, Eye, EyeOff
 } from "lucide-react";
 import LoginButton from "@/components/LoginButton";
-import { CongestionData } from '@/lib/types';
-import { getNearestCongestionData, getCongestionClass, getCongestionColor } from '@/services/congestion';
+import { CongestionData, WeatherData } from '@/lib/types';
+import { getCongestionClass, getCongestionColor, getNearestCongestionData } from '@/services/congestion';
+import { getNearestWeatherData } from "@/services/weather";
 
 // 카카오 맵 API 타입 정의
 interface KakaoLatLng {
@@ -285,6 +286,10 @@ export default function SeoulFitMapApp() {
   const [congestionData, setCongestionData] = useState<CongestionData | null>(null); // 혼잡도 데이터
   const [congestionLoading, setCongestionLoading] = useState<boolean>(false); // 혼잡도 로딩 상태
   const [congestionError, setCongestionError] = useState<string | null>(null); // 혼잡도 에러
+  const [showWeather, setShowWeather] = useState<boolean>(false); // 날씨 표시 여부
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null); // 날씨 데이터
+  const [weatherLoading, setWeatherLoading] = useState<boolean>(false); // 날씨 로딩 상태
+  const [weatherError, setWeatherError] = useState<string | null>(null); // 날씨 에러
 
   // useRef로 커스텀 오버레이 관리
   const customOverlaysRef = useRef<KakaoCustomOverlay[]>([]);
@@ -318,6 +323,32 @@ export default function SeoulFitMapApp() {
     }
   }, []);
 
+  // 날씨 조회
+  const fetchWeatherData = useCallback(async (lat: number, lng: number) => {
+    setWeatherLoading(true);
+    setWeatherError(null);
+
+    try {
+      // 현재 위치 기준으로 가장 가까운 장소의 날씨 조회
+      const data = await getNearestWeatherData(lat, lng);
+
+      if (data) {
+        setWeatherData(data);
+        setWeatherError(null);
+      } else {
+        console.warn('날씨 데이터가 없습니다.');
+        setWeatherError('현재 위치 주변의 날씨 정보를 찾을 수 없습니다.');
+        setWeatherData(null);
+      }
+    } catch (error) {
+      console.error('날씨 데이터 조회 실패:', error);
+      setWeatherError('날씨 정보를 불러오는데 실패했습니다.');
+      setWeatherData(null);
+    } finally {
+      setWeatherLoading(false);
+    }
+  }, []);
+
   // 지도 중앙 위치 업데이트
   const updateMapCenterLocation = useCallback(async (map: KakaoMap) => {
     const windowWithKakao = window as WindowWithKakao;
@@ -340,10 +371,15 @@ export default function SeoulFitMapApp() {
       if (showCongestion) {
         await fetchCongestionData(lat, lng);
       }
+
+      // 날씨 표시가 켜져 있으면 새로운 위치의 날씨 조회
+      if (showWeather) {
+        await fetchWeatherData(lat, lng);
+      }
     } catch (error) {
       console.error('지도 중심 위치 업데이트 실패:', error);
     }
-  }, [showCongestion, fetchCongestionData]);
+  }, [showCongestion, fetchCongestionData, showWeather, fetchWeatherData]);
 
   // 혼잡도 버튼
   const toggleCongestionDisplay = useCallback(async () => {
@@ -363,7 +399,25 @@ export default function SeoulFitMapApp() {
     }
   }, [fetchCongestionData, currentLocation]);
 
-  // 활성화된 시설 필터링 (메모화로 성능 최적화)
+  // 날씨 버튼
+  const toggleWeatherDisplay = useCallback(async () => {
+    const newShowState = !showWeather;
+    setShowWeather(newShowState);
+
+    if (newShowState && currentLocation && !weatherData) {
+      // 날씨 데이터가 없으면 새로 조회
+      await fetchWeatherData(currentLocation.coords.lat, currentLocation.coords.lng);
+    }
+  }, [showWeather, weatherData, fetchWeatherData, currentLocation]);
+
+  // 날씨 새로고침
+  const refreshWeatherData = useCallback(async () => {
+    if (currentLocation) {
+      await fetchWeatherData(currentLocation.coords.lat, currentLocation.coords.lng);
+    }
+  }, [fetchWeatherData, currentLocation]);
+
+  // 활성화된 시설 필터링
   const enabledFacilityTypes = useMemo(() =>
           facilityTypes.filter(type => type.enabled),
       [facilityTypes]
@@ -469,7 +523,7 @@ export default function SeoulFitMapApp() {
     };
 
     document.head.appendChild(script);
-  }, [mapLevel, updateMapCenterLocation]);
+  }, [currentLocation, mapLevel, updateMapCenterLocation]);
 
   // 커스텀 마커 업데이트 (기존 마커 대신 CustomOverlay 사용)
   useEffect(() => {
@@ -485,7 +539,7 @@ export default function SeoulFitMapApp() {
     customOverlaysRef.current = [];
 
     // 새 커스텀 오버레이 생성
-    const newOverlays = visibleFacilities.map(facility => {
+    customOverlaysRef.current = visibleFacilities.map(facility => {
       const facilityType = facilityTypes.find(type => type.id === facility.type);
       if (!facilityType) return null;
 
@@ -526,8 +580,6 @@ export default function SeoulFitMapApp() {
 
       return customOverlay;
     }).filter((overlay): overlay is KakaoCustomOverlay => overlay !== null);
-
-    customOverlaysRef.current = newOverlays;
   }, [mapInstance, mapStatus.success, visibleFacilities, facilityTypes]);
 
   // 선호도 토글
@@ -568,6 +620,11 @@ export default function SeoulFitMapApp() {
             if (showCongestion) {
               await fetchCongestionData(lat, lng);
             }
+
+            // 날씨 표시가 켜져 있으면 새로운 위치의 날씨 조회
+            if (showWeather) {
+              await fetchWeatherData(lat, lng);
+            }
           },
           (error) => {
             setMapStatus(prev => ({
@@ -577,7 +634,7 @@ export default function SeoulFitMapApp() {
           }
       );
     }
-  }, [mapInstance, showCongestion, fetchCongestionData]);
+  }, [mapInstance, showCongestion, fetchCongestionData, showWeather, fetchWeatherData]);
 
   // 초기 위치 현재 위치로 변경되도록
   useEffect(() => {
@@ -781,6 +838,14 @@ export default function SeoulFitMapApp() {
             </Alert>
         )}
 
+        {/* 날씨 에러 알림 */}
+        {weatherError && showWeather && (
+            <Alert variant="destructive">
+              <Info className="h-4 w-4" />
+              <AlertDescription>{weatherError}</AlertDescription>
+            </Alert>
+        )}
+
         {/* 에러 알림 */}
         {mapStatus.error && (
             <Alert variant="destructive">
@@ -819,6 +884,19 @@ export default function SeoulFitMapApp() {
                     혼잡도 {showCongestion ? '숨기기' : '보기'}
                     {congestionLoading && <div className="ml-1 h-3 w-3 animate-spin rounded-full border border-gray-300 border-t-blue-600" />}
                   </Button>
+
+                  {/* 날씨 보기/숨기기 버튼 */}
+                  <Button
+                      variant={showWeather ? "default" : "outline"}
+                      size="sm"
+                      onClick={toggleWeatherDisplay}
+                      disabled={weatherLoading}
+                      className="flex items-center gap-2"
+                  >
+                    {showWeather ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    날씨 {showWeather ? '숨기기' : '보기'}
+                    {weatherLoading && <div className="ml-1 h-3 w-3 animate-spin rounded-full border border-gray-300 border-t-blue-600" />}
+                  </Button>
                 </div>
               </div>
             </CardHeader>
@@ -838,9 +916,9 @@ export default function SeoulFitMapApp() {
                     className="w-full h-[400px] md:h-[500px] rounded-md border bg-muted"
                 />
 
-                {/* 혼잡도 정보 패널 (오버레이) */}
+                {/* 혼잡도 정보 패널 */}
                 {showCongestion && (
-                    <div className="absolute top-4 right-4 z-10 bg-white rounded-lg shadow-lg p-3 max-w-xs">
+                    <div className="absolute top-4 left-4 z-10 bg-white rounded-lg shadow-lg p-3 max-w-xs">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="text-sm font-semibold text-gray-800">근처 주요 장소 혼잡도</h4>
                         <Button
@@ -914,6 +992,79 @@ export default function SeoulFitMapApp() {
                           ))}
                         </div>
                       </div>
+                    </div>
+                )}
+
+                {/* 날씨 정보 패널 */}
+                {showWeather && (
+                    <div className="absolute top-4 right-4 z-10 bg-white rounded-lg shadow-lg p-3 max-w-xs">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-semibold text-gray-800">근처 날씨</h4>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={refreshWeatherData}
+                            disabled={weatherLoading}
+                            className="h-6 w-6 p-0"
+                        >
+                          <RefreshCw className={`h-3 w-3 ${weatherLoading ? 'animate-spin' : ''}`} />
+                        </Button>
+                      </div>
+
+                      {weatherLoading ? (
+                          <div className="flex items-center justify-center py-4">
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                              <div className="h-4 w-4 animate-spin rounded-full border border-gray-300 border-t-blue-600" />
+                              조회중...
+                            </div>
+                          </div>
+                      ) : weatherData ? (
+                          <div className="space-y-2">
+                            {/* 장소명 */}
+                            <div className="text-xs text-gray-600 truncate">
+                              📍 {weatherData.AREA_NM}
+                            </div>
+
+                            {/* 기온 */}
+                            {weatherData.TEMP && (
+                                <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                                  🌡️ 현재 기온 {weatherData.TEMP}도
+                                  <br/>
+                                  🌡️ 체감 기온 {weatherData.SENSIBLE_TEMP}도
+                                  <br/>
+                                  🔆 오늘 최고 기온 {weatherData.MAX_TEMP}도
+                                  <br/>
+                                  🌙 오늘 최저 기온 {weatherData.MIN_TEMP}도
+                                </div>
+                            )}
+
+                            {/* 날씨 메시지 */}
+                            {weatherData.PCP_MSG && (
+                                <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                                  {weatherData.PCP_MSG}
+                                  <br/>
+                                  {weatherData.UV_MSG}
+                                </div>
+                            )}
+
+                            {/* 미세먼지 */}
+                            {weatherData.PM25_INDEX && (
+                                <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                                  미세먼지 : {weatherData.PM10_INDEX}
+                                  <br/>
+                                  초미세먼지 : {weatherData.PM25_INDEX}
+                                </div>
+                            )}
+                          </div>
+                      ) : weatherError ? (
+                          <div className="text-xs text-red-500 text-center py-2">
+                            정보를 불러올 수 없습니다
+                          </div>
+                      ) : (
+                          <div className="text-xs text-gray-500 text-center py-2">
+                            날씨 정보가 없습니다
+                          </div>
+                      )}
                     </div>
                 )}
               </div>

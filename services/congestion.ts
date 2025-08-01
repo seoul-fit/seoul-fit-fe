@@ -1,8 +1,5 @@
 import {CongestionData} from '@/lib/types';
 
-const API_KEY = '54686b446870656134356f6e634454';
-const BASE_URL = 'http://openapi.seoul.go.kr:8088';
-
 /**
  * 현재 위치에서 가장 가까운 장소의 혼잡도 정보 조회
  * (API Route를 통해 API 호출)
@@ -26,6 +23,7 @@ export async function getNearestCongestionData(lat: number, lng: number): Promis
             headers: {
                 'Content-Type': 'application/json',
             },
+            cache: 'no-cache',
         });
 
         if (!response.ok) {

@@ -130,11 +130,20 @@ export interface CongestionData {
     AREA_CONGEST_MSG: string; // 혼잡도 메시지
 }
 
-// 서울시 실시간 인구데이터 응답값
-export interface SeoulApiResponse {
-    RESULT: {
-        'RESULT.CODE': string;
-        'RESULT.MESSAGE': string;
-    };
-    'SeoulRtd.citydata_ppltn': CongestionData[];
+// 날씨 데이터
+export interface WeatherData {
+    AREA_NM: string; // 장소명
+    AREA_CD: string; // 장소코드
+    WEATHER_STTS: string; // 날씨 현황
+    TEMP: string; // 기온
+    SENSIBLE_TEMP: string; // 체감온도
+    MAX_TEMP: string; // 일 최고온도
+    MIN_TEMP: string; // 일 최저온도
+    HUMIDITY: string; // 습도
+    PRECIPITATION: string; // 강수량
+    PCP_MSG: string; // 강수 관련 메시지
+    UV_INDEX_LVL: string; // 자외선 지수 단계
+    UV_MSG: string; // 자외선 메시지
+    PM25_INDEX: string; // 초미세먼지 정도
+    PM10_INDEX: string; // 미세먼지 정
 }
