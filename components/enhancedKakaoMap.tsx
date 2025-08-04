@@ -1,29 +1,39 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {Button} from "@/components/ui/button";
+import {Badge} from "@/components/ui/badge";
+import {Skeleton} from "@/components/ui/skeleton";
+import {Alert, AlertDescription} from "@/components/ui/alert";
+import {Switch} from "@/components/ui/switch";
+import {Label} from "@/components/ui/label";
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
+import {Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger} from "@/components/ui/sheet";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import {
-  MapPin, Settings, Layers, Search, RefreshCw, Info, Navigation,
-  Menu, Dumbbell, BookOpen, UtensilsCrossed, TreePine, Calendar,
-  Users, Clock, ExternalLink, Star, Bell, Eye, EyeOff
+  Bell,
+  BookOpen,
+  Calendar,
+  Clock,
+  Dumbbell,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  Info,
+  MapPin,
+  Menu,
+  Navigation,
+  RefreshCw,
+  Settings,
+  Star,
+  TreePine,
+  Users,
+  UtensilsCrossed
 } from "lucide-react";
 import LoginButton from "@/components/LoginButton";
-import { CongestionData, WeatherData } from '@/lib/types';
-import { getCongestionClass, getCongestionColor, getNearestCongestionData } from '@/services/congestion';
-import { getNearestWeatherData } from "@/services/weather";
+import {CongestionData, WeatherData} from '@/lib/types';
+import {getCongestionClass, getCongestionColor, getNearestCongestionData} from '@/services/congestion';
+import {getNearestWeatherData} from '@/services/weather';
 
 // 카카오 맵 API 타입 정의
 interface KakaoLatLng {
@@ -282,10 +292,14 @@ export default function SeoulFitMapApp() {
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
   const [initialLocationSet, setInitialLocationSet] = useState<boolean>(false);
   const [notificationCount, setNotificationCount] = useState<number>(3);
+
+  // 혼잡도
   const [showCongestion, setShowCongestion] = useState<boolean>(false); // 혼잡도 표시 여부
   const [congestionData, setCongestionData] = useState<CongestionData | null>(null); // 혼잡도 데이터
   const [congestionLoading, setCongestionLoading] = useState<boolean>(false); // 혼잡도 로딩 상태
   const [congestionError, setCongestionError] = useState<string | null>(null); // 혼잡도 에러
+
+  // 날씨
   const [showWeather, setShowWeather] = useState<boolean>(false); // 날씨 표시 여부
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null); // 날씨 데이터
   const [weatherLoading, setWeatherLoading] = useState<boolean>(false); // 날씨 로딩 상태
@@ -523,7 +537,7 @@ export default function SeoulFitMapApp() {
     };
 
     document.head.appendChild(script);
-  }, [currentLocation, mapLevel, updateMapCenterLocation]);
+  }, [mapLevel, updateMapCenterLocation]);
 
   // 커스텀 마커 업데이트 (기존 마커 대신 CustomOverlay 사용)
   useEffect(() => {
@@ -999,7 +1013,7 @@ export default function SeoulFitMapApp() {
                 {showWeather && (
                     <div className="absolute top-4 right-4 z-10 bg-white rounded-lg shadow-lg p-3 max-w-xs">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-semibold text-gray-800">근처 날씨</h4>
+                        <h4 className="text-sm font-semibold text-gray-800">근처 주요 장소 혼잡도</h4>
                         <Button
                             variant="ghost"
                             size="sm"
@@ -1062,11 +1076,12 @@ export default function SeoulFitMapApp() {
                           </div>
                       ) : (
                           <div className="text-xs text-gray-500 text-center py-2">
-                            날씨 정보가 없습니다
+                            혼잡도 정보가 없습니다
                           </div>
                       )}
                     </div>
                 )}
+
               </div>
             </CardContent>
           </Card>
