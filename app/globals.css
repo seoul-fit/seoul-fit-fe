@@ -120,3 +120,6 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* 마커 애니메이션 추가 */
+@import "../styles/marker-animations.css";
