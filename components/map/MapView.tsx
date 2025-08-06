@@ -19,6 +19,7 @@ import type {
   WeatherData, 
   Facility, 
 } from '@/lib/types';
+import type { KakaoMap } from '@/lib/kakao-map';
 
 interface MapViewProps {
   loading?: boolean;
@@ -38,8 +39,8 @@ interface MapViewProps {
 }
 
 interface MapViewPropsExtended extends MapViewProps {
-  mapInstance?: any;
-  mapStatus?: any;
+  mapInstance?: KakaoMap | null;
+  mapStatus?: { success: boolean; loading: boolean; error: string | null };
 }
 
 export const MapView: React.FC<MapViewPropsExtended> = ({
@@ -62,10 +63,10 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
 }) => {
   const { visibleFacilities } = useFacilities();
 
-  const [selectedFacility, setSelectedFacility] = useState<any>(null);
+  const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
 
-  const handleFacilitySelect = useCallback((facility: any) => {
+  const handleFacilitySelect = useCallback((facility: Facility) => {
     setSelectedFacility(facility);
     setIsBottomSheetOpen(true);
   }, []);
