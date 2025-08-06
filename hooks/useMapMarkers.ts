@@ -6,8 +6,8 @@ import type { Facility, FacilityCategory } from '@/lib/types';
 import { FACILITY_CONFIGS } from '@/lib/facilityIcons';
 
 interface UseMapMarkersProps {
-  mapInstance: KakaoMap | null;
-  mapStatus: { success: boolean; loading: boolean; error: string | null };
+  mapInstance: KakaoMap | null | undefined;
+  mapStatus: { success: boolean; loading: boolean; error: string | null } | undefined;
   visibleFacilities: Facility[];
   onFacilitySelect: (facility: Facility) => void;
 }
@@ -34,7 +34,7 @@ export const useMapMarkers = ({
 
   // 마커 생성
   const createMarkers = useCallback(() => {
-    if (!mapInstance || !mapStatus.success) return;
+    if (!mapInstance || !mapStatus?.success) return;
 
     const windowWithKakao = window as WindowWithKakao;
     if (!windowWithKakao.kakao?.maps) return;
