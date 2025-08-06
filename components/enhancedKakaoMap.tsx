@@ -20,7 +20,7 @@ export default function SeoulFitMapApp() {
   const [searchQuery, setSearchQuery] = useState('');
 
   // 상태 관리
-  const [mapStatus, setMapStatus] = useState<MapStatus>({
+  const [mapStatus] = useState<MapStatus>({
     loading: true,
     error: null,
     success: false

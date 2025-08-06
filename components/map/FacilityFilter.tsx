@@ -164,7 +164,7 @@ export const FacilityFilter: React.FC<FacilityFilterProps> = ({
               <p className="text-xs text-gray-500">표시중</p>
               <p className="text-sm font-medium text-blue-600">
                 {Object.entries(preferences)
-                  .filter(([_, enabled]) => enabled)
+                  .filter(([, enabled]) => enabled)
                   .reduce((sum, [category]) => 
                     sum + (facilityCountByCategory[category as FacilityCategory] || 0), 0
                   )}
@@ -174,7 +174,7 @@ export const FacilityFilter: React.FC<FacilityFilterProps> = ({
               <p className="text-xs text-gray-500">숨김</p>
               <p className="text-sm font-medium text-gray-400">
                 {Object.entries(preferences)
-                  .filter(([_, enabled]) => !enabled)
+                  .filter(([, enabled]) => !enabled)
                   .reduce((sum, [category]) => 
                     sum + (facilityCountByCategory[category as FacilityCategory] || 0), 0
                   )}

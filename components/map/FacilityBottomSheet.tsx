@@ -1,7 +1,7 @@
 // components/map/FacilityBottomSheet.tsx
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, ChevronUp, ChevronDown, MapPin, Clock, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Facility } from '@/lib/types';
@@ -65,12 +65,12 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
     setIsDragging(true);
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging) return;
     setCurrentY(e.clientY);
-  };
+  }, [isDragging]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     if (!isDragging) return;
     
     const deltaY = currentY - startY;
@@ -88,7 +88,7 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
     setIsDragging(false);
     setStartY(0);
     setCurrentY(0);
-  };
+  }, [isDragging, currentY, startY, isExpanded, onClose]);
 
   useEffect(() => {
     if (isDragging) {
@@ -99,7 +99,7 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDragging]);
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   if (!facility || !isOpen) return null;
 

@@ -2,6 +2,7 @@
 
 import {useAuthStore} from '@/store/authStore';
 import {useEffect, useState} from 'react';
+import Image from 'next/image';
 import {Button} from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -80,9 +81,11 @@ export default function LoginButton({ variant = 'default', className = '' }: Log
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm" className={`gap-2 h-8 ${className}`}>
                             {user.profile ? (
-                                <img
+                                <Image
                                     src={user.profile}
                                     alt="프로필"
+                                    width={24}
+                                    height={24}
                                     className="w-6 h-6 rounded-full"
                                 />
                             ) : (
@@ -96,14 +99,12 @@ export default function LoginButton({ variant = 'default', className = '' }: Log
                     <DropdownMenuContent align="end" className="w-48">
                         <div className="flex items-center gap-2 p-2">
                             {user.profile ? (
-                                <img
+                                <Image
                                     src={user.profile}
                                     alt={user.name}
+                                    width={32}
+                                    height={32}
                                     className="w-8 h-8 rounded-full"
-                                    onError={(e) => {
-                                        const target = e.target as HTMLImageElement
-                                        target.src = '/default-profile.png'
-                                    }}
                                 />
                             ) : (
                                 <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
@@ -151,14 +152,12 @@ export default function LoginButton({ variant = 'default', className = '' }: Log
             <div className={`flex items-center gap-2 bg-background/90 backdrop-blur-sm rounded-lg shadow-lg px-3 py-2 border ${className}`}>
                 <div className="flex items-center gap-2">
                     {user.profile ? (
-                        <img
+                        <Image
                             src={user.profile}
                             alt={user.name}
+                            width={24}
+                            height={24}
                             className="w-6 h-6 rounded-full border"
-                            onError={(e) => {
-                                const target = e.target as HTMLImageElement
-                                target.src = '/default-profile.png'
-                            }}
                         />
                     ) : (
                         <UserCircle className="w-6 h-6" />

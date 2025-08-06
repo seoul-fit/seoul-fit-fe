@@ -23,19 +23,7 @@ function AuthContent() {
         isNewUser: boolean;
     }
 
-    // User Token 정보 (백엔드 응답)
-    interface AuthTokenResponse {
-        accessToken: string;
-        refreshToken: string;
-        expiresIn: number;
-    }
 
-    // Login 정보 (백엔드 응답)
-    interface LoginResponse {
-        user: UserInfoResponse['user'];
-        accessToken: string;
-        refreshToken: string;
-    }
 
     const [userInfo, setUserInfo] = useState<UserInfoResponse['user'] | null>(null);
 

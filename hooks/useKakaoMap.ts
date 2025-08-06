@@ -114,17 +114,9 @@ export const useKakaoMap = ({ containerId, center, level = 3 }: UseKakaoMapOptio
     }
   }, [mapInstance]);
 
-  const setLevel = useCallback((newLevel: number, animate: boolean = true) => {
+  const setLevel = useCallback((newLevel: number) => {
     if (mapInstance) {
-      if (animate && typeof window !== 'undefined') {
-        const windowWithKakao = window as WindowWithKakao;
-        if (windowWithKakao.kakao?.maps) {
-          // 부드러운 줌 애니메이션
-          mapInstance.setLevel(newLevel, { animate: { duration: 350 } });
-        }
-      } else {
-        mapInstance.setLevel(newLevel);
-      }
+      mapInstance.setLevel(newLevel);
     }
   }, [mapInstance]);
 

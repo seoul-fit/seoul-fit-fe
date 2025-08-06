@@ -117,7 +117,7 @@ export const useMapMarkers = ({
       .filter((overlay): overlay is KakaoCustomOverlay => overlay !== null);
 
     customOverlaysRef.current = newOverlays;
-  }, [mapInstance, mapStatus.success, visibleFacilities, onFacilitySelect, clearMarkers]);
+  }, [mapInstance, mapStatus?.success, visibleFacilities, onFacilitySelect, clearMarkers]);
 
   // 특정 시설의 마커 하이라이트
   const highlightMarker = useCallback((facilityId: string, highlight: boolean = true) => {

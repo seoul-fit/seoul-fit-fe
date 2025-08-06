@@ -2,6 +2,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { Check, LogOut, Settings, User } from 'lucide-react';
 import { X } from 'lucide-react';
 import type { UserPreferences, FacilityCategory } from '@/lib/types';
@@ -97,9 +98,11 @@ export default function SideBar({
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <div className="flex items-center space-x-3">
                   {userProfile?.profileImage ? (
-                    <img 
+                    <Image 
                       src={userProfile.profileImage} 
                       alt="프로필" 
+                      width={40}
+                      height={40}
                       className="w-10 h-10 rounded-full"
                     />
                   ) : (
