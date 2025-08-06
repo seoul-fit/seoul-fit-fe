@@ -83,7 +83,7 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
   return (
     <div className="relative w-full h-full">
       {/* 로딩 오버레이 */}
-      {(loading || mapStatus.loading) && (
+      {(loading || mapStatus?.loading) && (
         <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm rounded-md">
           <div className="flex flex-col items-center justify-center h-full space-y-3">
             <Skeleton className="h-8 w-8 rounded-full" />
@@ -96,10 +96,10 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
       <div id="kakaoMap" className="w-full h-full" />
 
       {/* 지도 오류 */}
-      {mapStatus.error && (
+      {mapStatus?.error && (
         <div className="absolute inset-4 z-20 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg shadow-lg text-center">
-            <p className="text-red-600 mb-4">{mapStatus.error}</p>
+            <p className="text-red-600 mb-4">{mapStatus?.error}</p>
             <Button onClick={() => window.location.reload()}>
               <RefreshCw className="h-4 w-4 mr-2" />
               새로고침
