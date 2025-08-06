@@ -39,8 +39,8 @@ interface MapViewProps {
 }
 
 interface MapViewPropsExtended extends MapViewProps {
-  mapInstance?: KakaoMap | null;
-  mapStatus?: { success: boolean; loading: boolean; error: string | null };
+  mapInstance?: KakaoMap | null | undefined;
+  mapStatus?: { success: boolean; loading: boolean; error: string | null } | undefined;
 }
 
 export const MapView: React.FC<MapViewPropsExtended> = ({
