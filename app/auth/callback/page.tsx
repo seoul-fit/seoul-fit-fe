@@ -80,33 +80,17 @@ function AuthContent() {
 
                 const tokenData = await tokenResponse.json();
 
-                console.log('카카오 토큰 획득 성공');
-
-                // Step 3 : 액세스 토큰으로 백엔드에 카카오 사용자 정보 조회 (Next.js → Spring Boot → Kakao로 요청)
-                const userResponse = await fetch('https://localhost:8080/api/auth/me', {
-                    headers: {
-                        'Authorization': `Bearer ${tokenData.access_token}`,
-                        'Content-Type': 'application/json',
-                    },
-                });
-
-                if (!userResponse.ok) {
-                    handleError('카카오 사용자 정보 조회 실패');
-                    return;
-                }
-
-                const kakaoUser = await userResponse.json();
-
-                console.log('카카오 사용자 정보:', kakaoUser);
-
-                // Step 4 : 백엔드에 사용자 존재 여부 확인
-                const checkResponse = await fetch(
-                    `http://localhost:8080/api/auth/oauth/check?provider=KAKAO&oauthUserId=${kakaoUser.id}`,
+                // Step 3 : 백엔드에 사용자 존재 여부 확인
+                const checkResponse = await fetch('http://localhost:8080/api/auth/oauth/check',
                     {
-                        method: 'GET',
+                        method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
+                        body: JSON.stringify({
+                            provider: 'KAKAO',
+                            oauthUserId: tokenData.user.id.toString()
+                        }),
                     }
                 );
 
@@ -118,7 +102,7 @@ function AuthContent() {
                 const checkResult = await checkResponse.json();
 
                 if (checkResult.exists) {
-                    // Step 5-1: 기존 사용자 → 로그인
+                    // Step 4-1: 기존 사용자 → 로그인
                     const loginResponse = await fetch('http://localhost:8080/api/auth/oauth/login', {
                         method: 'POST',
                         headers: {
@@ -126,7 +110,7 @@ function AuthContent() {
                         },
                         body: JSON.stringify({
                             provider: 'KAKAO',
-                            oauthUserId: kakaoUser.id.toString()
+                            oauthUserId: tokenData.user.id
                         }),
                     });
 
@@ -141,13 +125,13 @@ function AuthContent() {
                     setStatus('success');
                     setTimeout(() => router.push('/'), 1500);
                 } else {
-                    // Step 5-2: 신규 사용자 → 회원가입
+                    // Step 4-2: 신규 사용자 → 회원가입
                     setUserInfo({
                         provider: 'KAKAO',
-                        oauthId: kakaoUser.id.toString(),
-                        name: kakaoUser.kakao_account?.profile?.name || '사용자',
-                        email: kakaoUser.kakao_account?.email || '',
-                        profile: kakaoUser.kakao_account?.profile?.profile_image_url || ''
+                        oauthId: tokenData.user.id,
+                        name: tokenData.user.name,
+                        email: tokenData.user.email,
+                        profile: tokenData.user.profile
                     });
                     setStatus('need_signup');
                 }

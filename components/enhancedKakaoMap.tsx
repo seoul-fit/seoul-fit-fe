@@ -55,8 +55,9 @@ export default function SeoulFitMapApp() {
         isLoggedIn={false} // TODO: 실제 로그인 상태로 교체
         userProfile={undefined} // TODO: 실제 사용자 정보로 교체
         onLogin={() => {
-          // TODO: 카카오 로그인 로직 구현
-          console.log('카카오 로그인 시도');
+          const KAKAO_CLIENT_ID = '349f89103b32e7135ad6f15e0a73509b';
+          const REDIRECT_URI = 'http://localhost:3000/auth/callback';
+          window.location.href = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${KAKAO_CLIENT_ID}&redirect_uri=${REDIRECT_URI}`;
         }}
         onLogout={() => {
           // TODO: 로그아웃 로직 구현
