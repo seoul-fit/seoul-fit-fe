@@ -48,8 +48,27 @@ export const MapControls: React.FC<MapControlsProps> = ({
     return <Users className="h-4 w-4" />;
   };
 
-  // 혼잡도 레벨에 따른 색상 클래스
-  const getCongestionColorClass = (level?: string) => {
+  // 혼잡도 레벨에 따른 버튼 색상 클래스
+  const getCongestionButtonClass = (level?: string) => {
+    if (!showCongestion) {
+      return 'bg-white/90 hover:bg-white text-gray-700';
+    }
+    
+    if (!level) {
+      return 'bg-blue-500 hover:bg-blue-600 shadow-blue-200 text-white';
+    }
+    
+    switch (level) {
+      case '여유': return 'bg-green-500 hover:bg-green-600 shadow-green-200 text-white';
+      case '보통': return 'bg-yellow-500 hover:bg-yellow-600 shadow-yellow-200 text-white';
+      case '약간 붐빔': return 'bg-orange-500 hover:bg-orange-600 shadow-orange-200 text-white';
+      case '붐빔': return 'bg-red-500 hover:bg-red-600 shadow-red-200 text-white';
+      default: return 'bg-blue-500 hover:bg-blue-600 shadow-blue-200 text-white';
+    }
+  };
+
+  // 혼잡도 레벨에 따른 배지 색상 클래스
+  const getCongestionBadgeClass = (level?: string) => {
     if (!level) return 'bg-gray-500';
     switch (level) {
       case '여유': return 'bg-green-500';
@@ -91,26 +110,19 @@ export const MapControls: React.FC<MapControlsProps> = ({
             className={`
               h-12 w-12 p-0 rounded-full shadow-lg border border-white/20 backdrop-blur-sm
               hover:scale-105 transition-all duration-200 relative group
-              ${showCongestion ? 
-                'bg-blue-500 hover:bg-blue-600 shadow-blue-200 text-white' : 
-                'bg-white/90 hover:bg-white text-gray-700'
-              }
+              ${getCongestionButtonClass(congestionData?.AREA_CONGEST_LVL)}
             `}
             title={showCongestion ? "혼잡도 숨기기" : "혼잡도 보기"}
           >
             {getCongestionIcon()}
           </Button>
           
-          {/* 혼잡도 상태 배지 */}
-          {showCongestion && congestionData && (
-            <div className="absolute -bottom-1 -right-1">
-              <div 
-                className={`
-                  h-4 w-4 rounded-full border-2 border-white shadow-sm
-                  ${getCongestionColorClass(congestionData.AREA_CONGEST_LVL)}
-                `}
-                title={congestionData.AREA_CONGEST_LVL}
-              />
+          {/* 혼잡도 레벨 표시 */}
+          {congestionData?.AREA_CONGEST_LVL && (
+            <div className={`absolute -top-1 -right-1 text-white text-xs px-1 rounded-full border border-white shadow-sm min-w-[20px] text-center ${
+              getCongestionBadgeClass(congestionData.AREA_CONGEST_LVL)
+            }`}>
+              {congestionData.AREA_CONGEST_LVL.slice(0, 2)}
             </div>
           )}
 
