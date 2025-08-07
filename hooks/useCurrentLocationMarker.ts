@@ -6,12 +6,14 @@ interface UseCurrentLocationMarkerProps {
   mapInstance: KakaoMap | null;
   mapStatus: { success: boolean };
   currentLocation: { coords: { lat: number; lng: number } } | null;
+  onLocationChange?: (lat: number, lng: number) => void;
 }
 
 export const useCurrentLocationMarker = ({
   mapInstance,
   mapStatus,
-  currentLocation
+  currentLocation,
+  onLocationChange
 }: UseCurrentLocationMarkerProps) => {
   const markerRef = useRef<KakaoMarker | null>(null);
 
@@ -29,13 +31,32 @@ export const useCurrentLocationMarker = ({
       markerRef.current.setMap(null);
     }
 
-    // 새 마커 생성 (카카오 기본 마커)
+    // 새 마커 생성 (드래그 가능한 마커)
     const marker = new kakaoMaps.Marker({
       position: new kakaoMaps.LatLng(lat, lng),
-      title: '현재 위치'
+      title: '현재 위치 (드래그하여 이동 가능)',
+      draggable: true
     });
 
     marker.setMap(mapInstance);
+    
+    // 드래그 종료 시 위치 업데이트
+    kakaoMaps.event.addListener(marker, 'dragend', () => {
+      const position = marker.getPosition();
+      const newLat = position.getLat();
+      const newLng = position.getLng();
+      
+      console.log('새로운 위치:', newLat, newLng);
+      
+      // 지도 중심을 마커 위치로 이동
+      mapInstance.setCenter(position);
+      
+      // 위치 변경 콜백 호출
+      if (onLocationChange) {
+        onLocationChange(newLat, newLng);
+      }
+    });
+    
     markerRef.current = marker;
   }, [mapInstance, mapStatus.success]);
 

@@ -121,6 +121,14 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
         onMoveToCurrentLocation={onMoveToCurrentLocation || (() => {})}
       />
 
+      {/* 혼잡도 패널 오버레이 */}
+      {showCongestion && (
+        <div 
+          className="fixed inset-0 z-24" 
+          onClick={onToggleCongestion}
+        />
+      )}
+
       {/* 혼잡도 패널 (아이콘 우측에 위치) */}
       {showCongestion && (
         <div className="absolute top-4 right-20 z-25">
@@ -137,6 +145,14 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
             />
           </div>
         </div>
+      )}
+
+      {/* 날씨 패널 오버레이 */}
+      {showWeather && (
+        <div 
+          className="fixed inset-0 z-24" 
+          onClick={onToggleWeather}
+        />
       )}
 
       {/* 날씨 패널 (아이콘 우측에 위치) */}

@@ -1,7 +1,7 @@
 // components/map/MapContainer.tsx
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
 
@@ -29,13 +29,6 @@ export default function MapContainer({}: MapContainerProps = {}) {
 
   // 위치 관련 hooks
   const { currentLocation, moveToCurrentLocation } = useLocation(mapInstance);
-  
-  // 현재 위치 마커 표시
-  useCurrentLocationMarker({
-    mapInstance,
-    mapStatus,
-    currentLocation
-  });
 
   // 혼잡도 관련 hooks
   const {
@@ -44,7 +37,8 @@ export default function MapContainer({}: MapContainerProps = {}) {
     congestionLoading,
     congestionError,
     toggleCongestionDisplay,
-    refreshCongestionData
+    refreshCongestionData,
+    fetchCongestionData
   } = useCongestion();
 
   // 날씨 관련 hooks
@@ -58,12 +52,34 @@ export default function MapContainer({}: MapContainerProps = {}) {
     fetchWeatherData
   } = useWeather();
 
-  // 현재 위치가 설정되면 자동으로 날씨 데이터 로드
+  // 위치 변경 핸들러
+  const handleLocationChange = useCallback(async (lat: number, lng: number) => {
+    // 혼잡도 데이터 업데이트 (항상 업데이트)
+    await fetchCongestionData(lat, lng);
+    
+    // 날씨 데이터 업데이트 (항상 업데이트)
+    await fetchWeatherData(lat, lng);
+  }, [fetchCongestionData, fetchWeatherData]);
+
+  // 현재 위치 마커 표시
+  useCurrentLocationMarker({
+    mapInstance,
+    mapStatus,
+    currentLocation,
+    onLocationChange: handleLocationChange
+  });
+
+  // 현재 위치가 설정되면 자동으로 날씨와 혼잡도 데이터 로드
   useEffect(() => {
-    if (currentLocation && !weatherData) {
-      fetchWeatherData(currentLocation.coords.lat, currentLocation.coords.lng);
+    if (currentLocation) {
+      if (!weatherData) {
+        fetchWeatherData(currentLocation.coords.lat, currentLocation.coords.lng);
+      }
+      if (!congestionData) {
+        fetchCongestionData(currentLocation.coords.lat, currentLocation.coords.lng);
+      }
     }
-  }, [currentLocation, weatherData, fetchWeatherData]);
+  }, [currentLocation, weatherData, congestionData, fetchWeatherData, fetchCongestionData]);
 
   // 혼잡도 토글 핸들러
   const handleToggleCongestion = async () => {
