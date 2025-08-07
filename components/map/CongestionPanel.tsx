@@ -28,7 +28,7 @@ export const CongestionPanel: React.FC<CongestionPanelProps> = ({
       <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white rounded-t-lg">
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
-          <h4 className="text-sm font-semibold text-gray-800">실시간 혼잡도</h4>
+          <h4 className="text-sm font-semibold text-gray-800">실시간 근처 주요 장소 혼잡도</h4>
         </div>
         <Button
           variant="ghost"
