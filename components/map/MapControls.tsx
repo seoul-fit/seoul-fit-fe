@@ -100,10 +100,6 @@ export const MapControls: React.FC<MapControlsProps> = ({
               hover:scale-105 transition-all duration-200 relative group
               ${getCongestionButtonClass(congestionData?.AREA_CONGEST_LVL)}
             `}
-            title={showCongestion ? 
-              `혼잡도 숨기기${congestionData?.AREA_CONGEST_LVL ? ` (${congestionData.AREA_CONGEST_LVL})` : ''}` : 
-              "혼잡도 보기"
-            }
           >
             {getCongestionIcon()}
           </Button>
