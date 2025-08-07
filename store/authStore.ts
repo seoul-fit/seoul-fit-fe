@@ -10,7 +10,7 @@ interface User {
     name: string;
     status: string;
     oauthProvider: string; // 카카오(kakao), 구글(google), 네이버(naver), 애플(apple)
-    oauthId: string;
+    oauthUserId: string;
     profile: string;
     interests: Array<{
         id: number;

@@ -8,17 +8,17 @@ function AuthContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const {setAuth} = useAuthStore();
-    const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'need_signup'>('loading');
+    const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'need_signup' | 'success_signup'>('loading');
     const [errorMessage, setErrorMessage] = useState('');
 
     // User 정보 (백엔드 응답)
     interface UserInfoResponse {
         user: {
             provider: string;
-            oauthId: string;
-            name: string; // kakao nickname deprecated
+            oauthUserId: string;
+            nickname: string;
             email: string;
-            profile: string; // kakao profile_image deprecated
+            profileImageUrl: string;
         };
         isNewUser: boolean;
     }
@@ -26,6 +26,23 @@ function AuthContent() {
 
 
     const [userInfo, setUserInfo] = useState<UserInfoResponse['user'] | null>(null);
+    const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+
+    const interestOptions = [
+        { value: 'WEATHER', label: '날씨', emoji: '🌤️' },
+        { value: 'CULTURE', label: '문화생활', emoji: '🎭' },
+        { value: 'TRAFFIC', label: '교통', emoji: '🚗' },
+        { value: 'BIKE_SHARING', label: '따릉이', emoji: '🚲' },
+        { value: 'CONGESTION', label: '인구혼잡도', emoji: '👥' }
+    ];
+
+    const handleInterestChange = (value: string) => {
+        setSelectedInterests(prev => 
+            prev.includes(value) 
+                ? prev.filter(item => item !== value)
+                : [...prev, value]
+        );
+    };
 
     // Exception Hanlder
     const handleError = useCallback((errorMsg: string, shouldRedirect: boolean = true) => {
@@ -61,17 +78,19 @@ function AuthContent() {
                 }
 
                 // Step 2 : 인가 코드로 백엔드에 토큰 요청 (Next.js → Spring Boot → Kakao로 요청)
-                const tokenResponse = await fetch(
-                    `http://localhost:8080/api/auth/oauth/token?` +
-                    `grant_type=authorization_code&` +
-                    `client_id=349f89103b32e7135ad6f15e0a73509b&` +
-                    `redirect_uri=${encodeURIComponent('http://localhost:3000/auth/callback')}&` +
-                    `code=${code}`, {
-                        method: 'GET',
+                const tokenResponse = await fetch('http://localhost:8080/api/auth/oauth/authorizecheck',
+                    {
+                        method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                    });
+                        body: JSON.stringify({
+                            provider: 'KAKAO',
+                            authorizationCode: code,
+                            redirectUri: 'http://localhost:3000/auth/callback'
+                        }),
+                    }
+                );
 
                 if (!tokenResponse.ok) {
                     handleError('카카오 토큰 요청 실패');
@@ -89,7 +108,9 @@ function AuthContent() {
                         },
                         body: JSON.stringify({
                             provider: 'KAKAO',
-                            oauthUserId: tokenData.user.id.toString()
+                            authorizationCode: code,
+                            redirectUri: 'http://localhost:3000/auth/callback',
+                            oauthUserId: tokenData.oauthUserId
                         }),
                     }
                 );
@@ -110,7 +131,9 @@ function AuthContent() {
                         },
                         body: JSON.stringify({
                             provider: 'KAKAO',
-                            oauthUserId: tokenData.user.id
+                            authorizationCode: code,
+                            redirectUri: 'http://localhost:3000/auth/callback',
+                            oauthUserId: checkResult.userId
                         }),
                     });
 
@@ -128,10 +151,10 @@ function AuthContent() {
                     // Step 4-2: 신규 사용자 → 회원가입
                     setUserInfo({
                         provider: 'KAKAO',
-                        oauthId: tokenData.user.id,
-                        name: tokenData.user.name,
-                        email: tokenData.user.email,
-                        profile: tokenData.user.profile
+                        oauthUserId: tokenData.oauthUserId,
+                        nickname: tokenData.nickname,
+                        email: tokenData.email,
+                        profileImageUrl: tokenData.profileImageUrl
                     });
                     setStatus('need_signup');
                 }
@@ -154,12 +177,21 @@ function AuthContent() {
         try {
             setStatus('loading');
 
+            const signUpData = {
+                provider: userInfo.provider,
+                oauthUserId: userInfo.oauthUserId,
+                nickname: userInfo.nickname || 'tester',
+                email: userInfo.email || 'test@test.com',
+                profileImageUrl: userInfo.profileImageUrl || 'https://example.com/profile.jpg',
+                interests: selectedInterests
+            };
+
             const signUpResponse = await fetch('http://localhost:8080/api/auth/oauth/signup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(userInfo),
+                body: JSON.stringify(signUpData),
             });
 
             if (!signUpResponse.ok) {
@@ -170,14 +202,14 @@ function AuthContent() {
             const signUpResult = await signUpResponse.json();
 
             setAuth(signUpResult.user, signUpResult.accessToken);
-            setStatus('success');
+            setStatus('success_signup');
             setTimeout(() => router.push('/'), 1500);
         } catch (error) {
             console.error('Sign up failed:', error);
             setStatus('error');
             setErrorMessage(error instanceof Error ? error.message : '회원가입 중 오류가 발생했습니다.');
         }
-    }, [userInfo, setAuth, handleError, router]);
+    }, [userInfo, selectedInterests, setAuth, handleError, router]);
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -232,10 +264,22 @@ function AuthContent() {
                         </div>
                         <h2 className="text-xl font-semibold text-gray-800 mb-4">회원가입이 필요합니다</h2>
 
-                        <div className="text-left bg-gray-50 p-4 rounded-lg mb-4">
-                            <p className="text-sm text-gray-600 mb-2">카카오 계정 정보</p>
-                            <p className="text-sm"><strong>이름 : </strong> {userInfo.name}</p>
-                            <p className="text-sm"><strong>이메일 : </strong> {userInfo.email}</p>
+                        <div className="mb-6">
+                            <h3 className="text-sm font-medium text-gray-700 mb-3">관심 분야를 선택해주세요</h3>
+                            <div className="space-y-2">
+                                {interestOptions.map((option) => (
+                                    <label key={option.value} className="flex items-center p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedInterests.includes(option.value)}
+                                            onChange={() => handleInterestChange(option.value)}
+                                            className="w-4 h-4 text-yellow-400 border-gray-300 rounded focus:ring-yellow-400"
+                                        />
+                                        <span className="ml-2 text-lg">{option.emoji}</span>
+                                        <span className="ml-2 text-sm text-gray-700">{option.label}</span>
+                                    </label>
+                                ))}
+                            </div>
                         </div>
 
                         <button
@@ -251,6 +295,20 @@ function AuthContent() {
                         >
                             취소
                         </button>
+                    </>
+                )}
+
+                {status === 'success_signup' && (
+                    <>
+                        <div
+                            className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
+                            </svg>
+                        </div>
+                        <h2 className="text-xl font-semibold text-gray-800 mb-2">회원가입 성공!</h2>
+                        <p className="text-gray-600">메인 페이지로 이동합니다...</p>
                     </>
                 )}
             </div>
