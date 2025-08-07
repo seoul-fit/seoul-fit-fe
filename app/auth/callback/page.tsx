@@ -44,7 +44,7 @@ function AuthContent() {
         );
     };
 
-    // Exception Hanlder
+    // Exception Handler
     const handleError = useCallback((errorMsg: string, shouldRedirect: boolean = true) => {
         console.error('Authentication error:', errorMsg);
 
@@ -58,6 +58,20 @@ function AuthContent() {
 
         return false;
     }, [router]);
+
+    // 카카오 재로그인을 위한 리다이렉트 함수
+    const redirectToKakaoLogin = useCallback(() => {
+        const KAKAO_CLIENT_ID = '349f89103b32e7135ad6f15e0a73509b';
+        const REDIRECT_URI = encodeURIComponent('http://localhost:3000/auth/callback');
+        const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${KAKAO_CLIENT_ID}&redirect_uri=${REDIRECT_URI}`;
+
+        // 현재 상태를 로컬스토리지에 저장 (로그인 시도 중임을 표시)
+        localStorage.setItem('kakao_login_attempt', 'true');
+        localStorage.setItem('kakao_login_type', 'existing_user');
+
+        // 카카오 인증 페이지로 리다이렉트
+        window.location.href = kakaoAuthUrl;
+    }, []);
 
     // 로그인 버튼 클릭 후 프로세스
     useEffect(() => {
@@ -77,9 +91,20 @@ function AuthContent() {
                     return;
                 }
 
-                // Step 2 : 인가 코드로 백엔드에 토큰 요청 (Next.js → Spring Boot → Kakao로 요청)
-                const tokenResponse = await fetch('http://localhost:8080/api/auth/oauth/authorizecheck',
-                    {
+                // 로컬스토리지에서 로그인 시도 상태 확인
+                const isLoginAttempt = localStorage.getItem('kakao_login_attempt');
+                const loginType = localStorage.getItem('kakao_login_type');
+
+                // 기존 사용자 재로그인 시도인지 확인
+                if (isLoginAttempt && loginType === 'existing_user') {
+                    console.log('기존 사용자 재로그인 시도 감지');
+
+                    // 로컬스토리지 정리
+                    localStorage.removeItem('kakao_login_attempt');
+                    localStorage.removeItem('kakao_login_type');
+
+                    // 바로 로그인 API 호출
+                    const loginResponse = await fetch('http://localhost:8080/api/auth/oauth/login', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -89,10 +114,40 @@ function AuthContent() {
                             authorizationCode: code,
                             redirectUri: 'http://localhost:3000/auth/callback'
                         }),
+                    });
+
+                    if (!loginResponse.ok) {
+                        const errorData = await loginResponse.text();
+                        console.error('로그인 실패:', errorData);
+                        handleError('로그인에 실패했습니다. 다시 시도해주세요.');
+                        return;
                     }
-                );
+
+                    const loginData = await loginResponse.json();
+                    console.log('로그인 성공:', loginData);
+
+                    setAuth(loginData.user, loginData.accessToken);
+                    setStatus('success');
+                    setTimeout(() => router.push('/'), 1500);
+                    return;
+                }
+
+                // Step 2 : 인가 코드로 백엔드에 사용자 정보 요청
+                const tokenResponse = await fetch('http://localhost:8080/api/auth/oauth/authorizecheck', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        provider: 'KAKAO',
+                        authorizationCode: code,
+                        redirectUri: 'http://localhost:3000/auth/callback'
+                    }),
+                });
 
                 if (!tokenResponse.ok) {
+                    const errorData = await tokenResponse.text();
+                    console.error('토큰 요청 실패:', errorData);
                     handleError('카카오 토큰 요청 실패');
                     return;
                 }
@@ -100,22 +155,22 @@ function AuthContent() {
                 const tokenData = await tokenResponse.json();
 
                 // Step 3 : 백엔드에 사용자 존재 여부 확인
-                const checkResponse = await fetch('http://localhost:8080/api/auth/oauth/check',
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            provider: 'KAKAO',
-                            authorizationCode: code,
-                            redirectUri: 'http://localhost:3000/auth/callback',
-                            oauthUserId: tokenData.oauthUserId
-                        }),
-                    }
-                );
+                const checkResponse = await fetch('http://localhost:8080/api/auth/oauth/check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        provider: 'KAKAO',
+                        authorizationCode: code,
+                        redirectUri: 'http://localhost:3000/auth/callback',
+                        oauthUserId: tokenData.oauthUserId
+                    }),
+                });
 
                 if (!checkResponse.ok) {
+                    const errorData = await checkResponse.text();
+                    console.error('사용자 존재 여부 확인 실패:', errorData);
                     handleError('사용자 존재 여부 확인 실패');
                     return;
                 }
@@ -123,31 +178,11 @@ function AuthContent() {
                 const checkResult = await checkResponse.json();
 
                 if (checkResult.exists) {
-                    // Step 4-1: 기존 사용자 → 로그인
-                    const loginResponse = await fetch('http://localhost:8080/api/auth/oauth/login', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            provider: 'KAKAO',
-                            authorizationCode: code,
-                            redirectUri: 'http://localhost:3000/auth/callback',
-                            oauthUserId: checkResult.userId
-                        }),
-                    });
-
-                    if (!loginResponse.ok) {
-                        handleError('로그인 실패');
-                        return;
-                    }
-
-                    const loginData = await loginResponse.json();
-
-                    setAuth(loginData.user, loginData.accessToken);
-                    setStatus('success');
-                    setTimeout(() => router.push('/'), 1500);
+                    console.log('기존 사용자 감지 - 카카오 재인증 필요');
+                    // Step 4-1: 기존 사용자 → 카카오 재인증으로 리다이렉트
+                    redirectToKakaoLogin();
                 } else {
+                    console.log('신규 사용자 감지 - 회원가입 진행');
                     // Step 4-2: 신규 사용자 → 회원가입
                     setUserInfo({
                         provider: 'KAKAO',
@@ -168,7 +203,7 @@ function AuthContent() {
         };
 
         handleCallback().then();
-    }, [searchParams, setAuth, router, handleError]);
+    }, [searchParams, setAuth, router, handleError, redirectToKakaoLogin]);
 
     // 회원가입
     const handleSignUp = useCallback(async () => {
@@ -195,6 +230,8 @@ function AuthContent() {
             });
 
             if (!signUpResponse.ok) {
+                const errorData = await signUpResponse.text();
+                console.error('회원가입 실패:', errorData);
                 handleError('회원가입 실패');
                 return;
             }
@@ -209,123 +246,124 @@ function AuthContent() {
             setStatus('error');
             setErrorMessage(error instanceof Error ? error.message : '회원가입 중 오류가 발생했습니다.');
         }
-    }, [userInfo, selectedInterests, setAuth, handleError, router]);
+    }, [userInfo, selectedInterests, setAuth, router, handleError]);
 
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50">
-            <div className="text-center bg-white p-8 rounded-lg shadow-md max-w-md w-full mx-4">
-                {status === 'loading' && (
-                    <>
-                        <div
-                            className="w-12 h-12 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                        <h2 className="text-xl font-semibold text-gray-800 mb-2">로그인 처리 중</h2>
-                        <p className="text-gray-600">잠시만 기다려주세요...</p>
-                    </>
-                )}
-
-                {status === 'success' && (
-                    <>
-                        <div
-                            className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor"
-                                 viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
-                            </svg>
-                        </div>
-                        <h2 className="text-xl font-semibold text-gray-800 mb-2">로그인 성공!</h2>
-                        <p className="text-gray-600">메인 페이지로 이동합니다...</p>
-                    </>
-                )}
-
-                {status === 'error' && (
-                    <>
-                        <div
-                            className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                      d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </div>
-                        <h2 className="text-xl font-semibold text-gray-800 mb-2">로그인 실패</h2>
-                        <p className="text-gray-600 mb-2">{errorMessage}</p>
-                        <p className="text-sm text-gray-500 mt-2">3초 후 메인 페이지로 이동합니다...</p>
-                    </>
-                )}
-
-                {status === 'need_signup' && userInfo && (
-                    <>
-                        <div
-                            className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor"
-                                 viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                            </svg>
-                        </div>
-                        <h2 className="text-xl font-semibold text-gray-800 mb-4">회원가입이 필요합니다</h2>
-
-                        <div className="mb-6">
-                            <h3 className="text-sm font-medium text-gray-700 mb-3">관심 분야를 선택해주세요</h3>
-                            <div className="space-y-2">
-                                {interestOptions.map((option) => (
-                                    <label key={option.value} className="flex items-center p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedInterests.includes(option.value)}
-                                            onChange={() => handleInterestChange(option.value)}
-                                            className="w-4 h-4 text-yellow-400 border-gray-300 rounded focus:ring-yellow-400"
-                                        />
-                                        <span className="ml-2 text-lg">{option.emoji}</span>
-                                        <span className="ml-2 text-sm text-gray-700">{option.label}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={handleSignUp}
-                            className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-2 px-4 rounded-lg mb-2 transition-colors"
-                        >
-                            회원가입 완료하기
-                        </button>
-
-                        <button
-                            onClick={() => router.push('/')}
-                            className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors"
-                        >
-                            취소
-                        </button>
-                    </>
-                )}
-
-                {status === 'success_signup' && (
-                    <>
-                        <div
-                            className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor"
-                                 viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
-                            </svg>
-                        </div>
-                        <h2 className="text-xl font-semibold text-gray-800 mb-2">회원가입 성공!</h2>
-                        <p className="text-gray-600">메인 페이지로 이동합니다...</p>
-                    </>
-                )}
+    if (status === 'loading') {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-lg text-gray-600">로그인 처리 중...</p>
+                </div>
             </div>
-        </div>
-    );
+        );
+    }
+
+    if (status === 'success') {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="text-6xl mb-4">✅</div>
+                    <h2 className="text-2xl font-bold text-green-600 mb-2">로그인 성공!</h2>
+                    <p className="text-gray-600">메인 페이지로 이동합니다...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (status === 'success_signup') {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="text-6xl mb-4">🎉</div>
+                    <h2 className="text-2xl font-bold text-green-600 mb-2">회원가입 완료!</h2>
+                    <p className="text-gray-600">메인 페이지로 이동합니다...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (status === 'error') {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="text-6xl mb-4">❌</div>
+                    <h2 className="text-2xl font-bold text-red-600 mb-2">오류 발생</h2>
+                    <p className="text-gray-600 mb-4">{errorMessage}</p>
+                    <p className="text-sm text-gray-500">잠시 후 메인 페이지로 이동합니다...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (status === 'need_signup') {
+        return (
+            <div className="min-h-screen bg-gray-50 py-12">
+                <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
+                    <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">회원가입</h2>
+
+                    {/* 사용자 정보 표시 */}
+                    <div className="mb-6 text-center">
+                        <img
+                            src={userInfo?.profileImageUrl || '/default-profile.png'}
+                            alt="Profile"
+                            className="w-20 h-20 rounded-full mx-auto mb-3"
+                        />
+                        <h3 className="text-lg font-semibold text-gray-800">{userInfo?.nickname}</h3>
+                        <p className="text-gray-600 text-sm">{userInfo?.email}</p>
+                    </div>
+
+                    {/* 관심사 선택 */}
+                    <div className="mb-6">
+                        <h4 className="text-lg font-medium text-gray-800 mb-3">관심사를 선택해주세요</h4>
+                        <div className="space-y-2">
+                            {interestOptions.map((option) => (
+                                <label
+                                    key={option.value}
+                                    className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        value={option.value}
+                                        checked={selectedInterests.includes(option.value)}
+                                        onChange={() => handleInterestChange(option.value)}
+                                        className="mr-3"
+                                    />
+                                    <span className="text-lg mr-2">{option.emoji}</span>
+                                    <span className="text-gray-800">{option.label}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 회원가입 버튼 */}
+                    <button
+                        onClick={handleSignUp}
+                        disabled={selectedInterests.length === 0}
+                        className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    >
+                        회원가입 완료
+                    </button>
+
+                    <p className="text-xs text-gray-500 text-center mt-3">
+                        최소 1개 이상의 관심사를 선택해주세요
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    return null;
 }
 
-export default function AuthCallback() {
+export default function AuthCallbackPage() {
     return (
-        // Suspense : Async component loading 처리
         <Suspense fallback={
-            <div className="flex items-center justify-center min-h-screen">
-                <div
-                    className="w-8 h-8 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
             </div>
         }>
-            <AuthContent/>
+            <AuthContent />
         </Suspense>
     );
 }
