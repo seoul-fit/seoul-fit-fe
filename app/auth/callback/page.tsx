@@ -127,6 +127,7 @@ function AuthContent() {
                     console.log('로그인 성공:', loginData);
 
                     setAuth(loginData.user, loginData.accessToken);
+                    localStorage.setItem('access_token', loginData.accessToken);
                     setStatus('success');
                     setTimeout(() => router.push('/'), 1500);
                     return;
@@ -301,18 +302,6 @@ function AuthContent() {
             <div className="min-h-screen bg-gray-50 py-12">
                 <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
                     <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">회원가입</h2>
-
-                    {/* 사용자 정보 표시 */}
-                    <div className="mb-6 text-center">
-                        <img
-                            src={userInfo?.profileImageUrl || '/default-profile.png'}
-                            alt="Profile"
-                            className="w-20 h-20 rounded-full mx-auto mb-3"
-                        />
-                        <h3 className="text-lg font-semibold text-gray-800">{userInfo?.nickname}</h3>
-                        <p className="text-gray-600 text-sm">{userInfo?.email}</p>
-                    </div>
-
                     {/* 관심사 선택 */}
                     <div className="mb-6">
                         <h4 className="text-lg font-medium text-gray-800 mb-3">관심사를 선택해주세요</h4>

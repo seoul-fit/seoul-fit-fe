@@ -7,6 +7,7 @@ import {Info} from "lucide-react";
 import Header from './layout/Header';
 import SideBar from './layout/SideBar';
 import MapContainer from './map/MapContainer';
+import {useAuthStore} from "../store/authStore";
 
 // 기존 타입 정의들
 interface MapStatus {
@@ -18,6 +19,7 @@ export default function SeoulFitMapApp() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { preferences, togglePreference } = usePreferences();
   const [searchQuery, setSearchQuery] = useState('');
+  const { clearAuth } = useAuthStore();
 
   // 상태 관리
   const [mapStatus] = useState<MapStatus>({
@@ -57,9 +59,13 @@ export default function SeoulFitMapApp() {
           const REDIRECT_URI = 'http://localhost:3000/auth/callback';
           window.location.href = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${KAKAO_CLIENT_ID}&redirect_uri=${REDIRECT_URI}`;
         }}
-        onLogout={() => {
-          // TODO: 로그아웃 로직 구현
-          console.log('로그아웃 시도');
+        onLogout={async () => {
+          console.log("로그아웃 시도...");
+          if (!confirm("로그아웃 하시겠습니까?")) return;
+          const accessToken = localStorage.getItem('access_token');
+          console.log("ACCESS_TOKEN ::::: " + accessToken);
+          localStorage.removeItem('access_token');
+          clearAuth();
         }}
       />
 

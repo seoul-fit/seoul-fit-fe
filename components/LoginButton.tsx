@@ -44,7 +44,7 @@ export default function LoginButton({ variant = 'default', className = '' }: Log
         try {
             const accessToken = useAuthStore.getState().accessToken;
             if (accessToken) {
-                await fetch('http://localhost:8080/api/auth/logout', {
+                await fetch('http://localhost:8080/api/auth/oauth/logout', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
