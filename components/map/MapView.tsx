@@ -11,13 +11,14 @@ import { WeatherPanel } from './WeatherPanel';
 import { MapControls } from './MapControls';
 import { MapStatusIndicator } from './MapStatusIndicator';
 import { FacilityBottomSheet } from './FacilityBottomSheet';
-import { useFacilities } from '@/hooks/useFacilities';
 import { useMapMarkers } from '@/hooks/useMapMarkers';
+import { useFacilities } from '@/hooks/useFacilities';
+import { FACILITY_CATEGORIES } from '@/lib/types';
 
 import type { 
   CongestionData, 
   WeatherData, 
-  Facility, 
+  Facility
 } from '@/lib/types';
 import type { KakaoMap } from '@/lib/kakao-map';
 
@@ -41,6 +42,8 @@ interface MapViewProps {
 interface MapViewPropsExtended extends MapViewProps {
   mapInstance?: KakaoMap | null | undefined;
   mapStatus?: { success: boolean; loading: boolean; error: string | null } | undefined;
+  visibleFacilities?: Facility[];
+  allFacilities?: Facility[];
 }
 
 export const MapView: React.FC<MapViewPropsExtended> = ({
@@ -59,9 +62,14 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
   onToggleWeather,
   onMoveToCurrentLocation,
   mapInstance,
-  mapStatus
+  mapStatus,
+  visibleFacilities = [],
+  allFacilities = []
 }) => {
-  const { visibleFacilities } = useFacilities();
+  // 내부에서 선호도 관리
+  const { visibleFacilities: filteredFacilities, preferences, toggleCategory } = useFacilities({
+    facilities: allFacilities
+  });
 
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
@@ -71,10 +79,12 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
     setIsBottomSheetOpen(true);
   }, []);
 
+  // POI 선택 핸들러 제거 - 이제 Facility로 통합됨
+
   const { markersCount } = useMapMarkers({
     mapInstance,
     mapStatus,
-    visibleFacilities,
+    visibleFacilities: filteredFacilities,
     onFacilitySelect: handleFacilitySelect
   });
 
@@ -172,6 +182,38 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
           </div>
         </div>
       )}
+
+      {/* 카테고리 토글 버튼 */}
+      <div className="absolute top-4 left-4 z-30 flex gap-2">
+        {Object.entries(FACILITY_CATEGORIES).map(([key, category]) => {
+          const count = allFacilities.filter(f => f.category === category).length;
+          const isActive = preferences?.[category];
+          
+          if (count === 0) return null;
+          
+          return (
+            <Button
+              key={category}
+              variant={isActive ? "default" : "outline"}
+              size="sm"
+              onClick={() => toggleCategory(category)}
+              className={`text-xs ${
+                isActive 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-white/90 text-gray-700'
+              }`}
+            >
+              {key === 'SPORTS' && '체육'}
+              {key === 'CULTURE' && '문화'}
+              {key === 'RESTAURANT' && '맛집'}
+              {key === 'LIBRARY' && '도서관'}
+              {key === 'PARK' && '공원'}
+              {key === 'BIKE' && '따릉이'}
+              ({count})
+            </Button>
+          );
+        })}
+      </div>
 
       {/* 상태 표시기 */}
       <MapStatusIndicator

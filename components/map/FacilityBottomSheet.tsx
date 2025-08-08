@@ -2,10 +2,12 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, ChevronUp, ChevronDown, MapPin, Clock, Phone } from 'lucide-react';
+import { X, ChevronUp, ChevronDown, MapPin, Clock, Phone, Users, Cloud, Thermometer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { Facility } from '@/lib/types';
+import type { Facility, CongestionData, WeatherData } from '@/lib/types';
 import { FACILITY_CONFIGS } from '@/lib/facilityIcons';
+import { getNearestCongestionData } from '@/services/congestion';
+import { getNearestWeatherData } from '@/services/weather';
 
 interface FacilityBottomSheetProps {
   facility: Facility | null;
@@ -22,13 +24,36 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
   const [startY, setStartY] = useState(0);
   const [currentY, setCurrentY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [congestionData, setCongestionData] = useState<CongestionData | null>(null);
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+  const [loading, setLoading] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setIsExpanded(false);
+      // 시설 정보가 열릴 때 혼잡도와 날씨 데이터 로드
+      if (facility) {
+        loadAdditionalData(facility.position.lat, facility.position.lng);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, facility]);
+
+  const loadAdditionalData = async (lat: number, lng: number) => {
+    setLoading(true);
+    try {
+      const [congestion, weather] = await Promise.all([
+        getNearestCongestionData(lat, lng),
+        getNearestWeatherData(lat, lng)
+      ]);
+      setCongestionData(congestion);
+      setWeatherData(weather);
+    } catch (error) {
+      console.error('추가 데이터 로드 실패:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setStartY(e.touches[0].clientY);
@@ -200,12 +225,107 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
           {/* 확장된 내용 */}
           {isExpanded && (
             <div className="space-y-4">
+              {/* 혼잡도 정보 */}
+              <div className="border-t pt-4">
+                <h4 className="font-medium text-gray-900 mb-2 flex items-center">
+                  <Users className="w-4 h-4 mr-2" />
+                  혼잡도 정보
+                </h4>
+                {loading ? (
+                  <p className="text-sm text-gray-500">로딩 중...</p>
+                ) : congestionData ? (
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">지역:</span>
+                      <span className="text-gray-900">{congestionData.AREA_NM}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">혼잡도:</span>
+                      <span className={`font-medium ${
+                        congestionData.AREA_CONGEST_LVL === '여유' ? 'text-green-600' :
+                        congestionData.AREA_CONGEST_LVL === '보통' ? 'text-yellow-600' :
+                        congestionData.AREA_CONGEST_LVL === '약간 붐빔' ? 'text-orange-600' :
+                        'text-red-600'
+                      }`}>
+                        {congestionData.AREA_CONGEST_LVL}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      {congestionData.AREA_CONGEST_MSG}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">혼잡도 정보 없음</p>
+                )}
+              </div>
+
+              {/* 날씨 정보 */}
+              <div className="border-t pt-4">
+                <h4 className="font-medium text-gray-900 mb-2 flex items-center">
+                  <Cloud className="w-4 h-4 mr-2" />
+                  날씨 정보
+                </h4>
+                {loading ? (
+                  <p className="text-sm text-gray-500">로딩 중...</p>
+                ) : weatherData ? (
+                  <div className="space-y-2 text-sm">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <span className="text-gray-500">날씨:</span>
+                        <span className="ml-2 text-gray-900">{weatherData.WEATHER_STTS}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">기온:</span>
+                        <span className="ml-2 text-gray-900">{weatherData.TEMP}°C</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">체감:</span>
+                        <span className="ml-2 text-gray-900">{weatherData.SENSIBLE_TEMP}°C</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">습도:</span>
+                        <span className="ml-2 text-gray-900">{weatherData.HUMIDITY}%</span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mt-2">
+                      <div>
+                        <span className="text-gray-500">미세먼지:</span>
+                        <span className="ml-2 text-gray-900">{weatherData.PM10_INDEX}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">초미세:</span>
+                        <span className="ml-2 text-gray-900">{weatherData.PM25_INDEX}</span>
+                      </div>
+                    </div>
+                    {weatherData.UV_INDEX_LVL && (
+                      <div className="mt-2">
+                        <span className="text-gray-500">자외선:</span>
+                        <span className="ml-2 text-gray-900">{weatherData.UV_INDEX_LVL}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">날씨 정보 없음</p>
+                )}
+              </div>
+
+              {/* 기본 시설 정보 */}
               <div className="border-t pt-4">
                 <h4 className="font-medium text-gray-900 mb-2">시설 정보</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-500">카테고리:</span>
                     <span className="ml-2 text-gray-900">{config.label}</span>
+                  </div>
+                  {facility.distance && (
+                    <div>
+                      <span className="text-gray-500">거리:</span>
+                      <span className="ml-2 text-gray-900">{facility.distance.toFixed(1)}km</span>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-gray-500">예약:</span>
+                    <span className="ml-2 text-gray-900">{facility.isReservable ? '가능' : '불가'}</span>
                   </div>
                   {facility.position && (
                     <div>

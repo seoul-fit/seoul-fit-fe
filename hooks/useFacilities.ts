@@ -1,5 +1,5 @@
 // hooks/useFacilities.ts
-import { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { 
   FACILITY_CATEGORIES, 
   type FacilityCategory, 
@@ -7,74 +7,8 @@ import {
   type UserPreferences 
 } from '@/lib/types';
 
-// 샘플 시설 데이터
-const SAMPLE_FACILITIES: Facility[] = [
-  {
-    id: '1',
-    name: '올림픽공원 체육관',
-    category: FACILITY_CATEGORIES.SPORTS,
-    position: { lat: 37.5219, lng: 127.1227 },
-    address: '서울특별시 송파구 올림픽로 424',
-    congestionLevel: 'medium',
-    distance: 1.2,
-    isReservable: true,
-    operatingHours: '06:00-22:00',
-    rating: 4.3,
-    description: '올림픽공원 내 종합 체육시설'
-  },
-  {
-    id: '2',
-    name: '세종문화회관',
-    category: FACILITY_CATEGORIES.CULTURE,
-    position: { lat: 37.5720, lng: 126.9794 },
-    address: '서울특별시 중구 세종대로 175',
-    congestionLevel: 'high',
-    distance: 0.8,
-    isReservable: true,
-    operatingHours: '09:00-18:00',
-    rating: 4.6,
-    description: '서울시 대표 문화예술 공연장'
-  },
-  {
-    id: '3',
-    name: '국립중앙도서관',
-    category: FACILITY_CATEGORIES.LIBRARY,
-    position: { lat: 37.5063, lng: 127.0366 },
-    address: '서울특별시 서초구 반포대로 201',
-    congestionLevel: 'low',
-    distance: 2.1,
-    isReservable: false,
-    operatingHours: '09:00-18:00',
-    rating: 4.4,
-    description: '국내 최대 규모의 국립도서관'
-  },
-  {
-    id: '4',
-    name: '광화문 맛집거리',
-    category: FACILITY_CATEGORIES.RESTAURANT, // 'food' → 'restaurant'로 수정
-    position: { lat: 37.5663, lng: 126.9779 },
-    address: '서울특별시 중구 세종대로 일대',
-    congestionLevel: 'high',
-    distance: 0.3,
-    isReservable: false,
-    operatingHours: '11:00-22:00',
-    rating: 4.1,
-    description: '전통과 현대가 어우러진 맛집 밀집지역'
-  },
-  {
-    id: '5',
-    name: '남산공원',
-    category: FACILITY_CATEGORIES.PARK,
-    position: { lat: 37.5538, lng: 126.9810 },
-    address: '서울특별시 중구 회현동1가 100-177',
-    congestionLevel: 'medium',
-    distance: 1.5,
-    isReservable: false,
-    operatingHours: '24시간',
-    rating: 4.5,
-    description: '서울 도심 속 대표적인 자연휴식공간'
-  }
-];
+// 하드코딩된 시설 데이터 제거 - POI 데이터만 사용
+const SAMPLE_FACILITIES: Facility[] = [];
 
 // 기본 사용자 선호도 (모든 시설 타입 활성화)
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -83,6 +17,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   [FACILITY_CATEGORIES.RESTAURANT]: true,
   [FACILITY_CATEGORIES.LIBRARY]: true,
   [FACILITY_CATEGORIES.PARK]: true,
+  [FACILITY_CATEGORIES.BIKE]: true,
 };
 
 export interface UseFacilitiesOptions {
@@ -97,7 +32,14 @@ export const useFacilities = (options: UseFacilitiesOptions = {}) => {
   } = options;
 
   const [preferences, setPreferences] = useState<UserPreferences>(initialPreferences);
-  const [facilities] = useState<Facility[]>(externalFacilities || SAMPLE_FACILITIES);
+  const [facilities, setFacilities] = useState<Facility[]>(externalFacilities || []);
+
+  // externalFacilities가 변경되면 facilities 업데이트
+  React.useEffect(() => {
+    if (externalFacilities) {
+      setFacilities(externalFacilities);
+    }
+  }, [externalFacilities]);
 
   // 활성화된 카테고리 목록 (메모화)
   const enabledCategories = useMemo(() => 

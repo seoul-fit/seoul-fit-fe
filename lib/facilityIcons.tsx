@@ -1,6 +1,6 @@
 // lib/facilityIcons.tsx
 import React from 'react';
-import { Dumbbell, Calendar, UtensilsCrossed, BookOpen, TreePine } from 'lucide-react';
+import { Dumbbell, Calendar, UtensilsCrossed, BookOpen, TreePine, Bike } from 'lucide-react';
 import { FACILITY_CATEGORIES, type FacilityCategory } from '@/lib/types';
 
 export interface FacilityConfig {
@@ -46,6 +46,13 @@ export const FACILITY_CONFIGS: Record<FacilityCategory, FacilityConfig> = {
     label: '공원',
     description: '도시공원, 산책로, 쉼터 등',
     svgIcon: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13v8"/><path d="m12 3 4 4H8l4-4Z"/><path d="m12 3 4 4H8l4-4Z"/><path d="M8 7h8v4H8z"/></svg>`
+  },
+  [FACILITY_CATEGORIES.BIKE]: {
+    icon: <Bike className="w-5 h-5" />,
+    color: 'bg-lime-500',
+    label: '따릉이',
+    description: '공용자전거 대여소',
+    svgIcon: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="m14 17 6-6"/><path d="M6 17h6s.5-1 0-3-1-3 0-3"/></svg>`
   }
 };
 
@@ -60,6 +67,19 @@ export const getCrowdColor = (crowdLevel: 'low' | 'medium' | 'high'): string => 
     case 'low': return '#10B981';
     case 'medium': return '#F59E0B';
     case 'high': return '#EF4444';
+    default: return '#6B7280';
+  }
+};
+
+// 카테고리별 색상 반환 함수
+export const getCategoryColor = (category: FacilityCategory): string => {
+  switch (category) {
+    case FACILITY_CATEGORIES.SPORTS: return '#3B82F6'; // blue-500
+    case FACILITY_CATEGORIES.CULTURE: return '#A855F7'; // purple-500
+    case FACILITY_CATEGORIES.RESTAURANT: return '#EF4444'; // red-500
+    case FACILITY_CATEGORIES.LIBRARY: return '#10B981'; // green-500
+    case FACILITY_CATEGORIES.PARK: return '#059669'; // emerald-600
+    case FACILITY_CATEGORIES.BIKE: return '#84CC16'; // lime-500
     default: return '#6B7280';
   }
 };

@@ -1,9 +1,62 @@
 // utils/marker.ts
 import type { FacilityCategory } from '@/lib/types';
-import { getFacilityIconSVG, getCrowdColor } from '@/lib/facilityIcons';
+import { getFacilityIconSVG, getCategoryColor } from '@/lib/facilityIcons';
 
 /**
- * 카카오맵 커스텀 마커 HTML 컨텐츠 생성
+ * POI 마커 HTML 콘텐츠 생성
+ * @param poiName POI 이름
+ * @param poiCode POI 코드
+ * @returns HTML 문자열
+ */
+export const createPOIMarkerContent = (
+  poiName: string,
+  poiCode: string
+): string => {
+  return `
+    <div 
+      id="poi-marker-${poiCode}" 
+      class="poi-marker"
+      data-poi-code="${poiCode}"
+      data-poi-name="${poiName}"
+      style="
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        border: 2px solid white;
+        border-radius: 50%;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        z-index: 999;
+        user-select: none;
+      "
+      title="${poiName}"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+      </svg>
+      <div style="
+        position: absolute;
+        bottom: -6px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-top: 6px solid #1d4ed8;
+        pointer-events: none;
+      "></div>
+    </div>
+  `;
+};
+
+/**
+ * 시설 마커 HTML 콘텐츠 생성
  * @param facilityCategory - 시설 카테고리
  * @param crowdLevel - 혼잡도 레벨
  * @param facilityId - 시설 ID (DOM 요소 식별용)
@@ -14,7 +67,7 @@ export const createCustomMarkerContent = (
   crowdLevel: 'low' | 'medium' | 'high',
   facilityId: string
 ): string => {
-  const crowdBgColor = getCrowdColor(crowdLevel);
+  const categoryBgColor = getCategoryColor(facilityCategory);
   const iconSVG = getFacilityIconSVG(facilityCategory);
 
   return `
@@ -31,7 +84,7 @@ export const createCustomMarkerContent = (
         justify-content: center;
         width: 36px;
         height: 36px;
-        background-color: ${crowdBgColor};
+        background-color: ${categoryBgColor};
         border: 3px solid white;
         border-radius: 50%;
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
@@ -59,7 +112,7 @@ export const createCustomMarkerContent = (
         height: 0;
         border-left: 6px solid transparent;
         border-right: 6px solid transparent;
-        border-top: 8px solid ${crowdBgColor};
+        border-top: 8px solid ${categoryBgColor};
         pointer-events: none;
       "></div>
     </div>

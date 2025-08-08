@@ -6,7 +6,8 @@ export const FACILITY_CATEGORIES = {
     CULTURE: 'culture', 
     RESTAURANT: 'restaurant',
     LIBRARY: 'library',
-    PARK: 'park'
+    PARK: 'park',
+    BIKE: 'bike'
   } as const;
   
   // 타입 추출 (읽기 전용)
@@ -60,6 +61,13 @@ export const FACILITY_CATEGORIES = {
           totalSeats?: number
           studyRooms?: StudyRoom[]
           openingHours?: string
+      }
+
+      bikeFacility?: {
+          availableBikes?: number // 이용 가능한 자전거 수
+          totalRacks?: number // 총 거치대 수
+          availableRacks?: number // 이용 가능한 거치대 수
+          shared?: string // 거치율
       }
   }
   
@@ -150,4 +158,37 @@ export const FACILITY_CATEGORIES = {
           'RESULT.MESSAGE': string;
       };
       'SeoulRtd.citydata_ppltn': CongestionData[];
+  }
+
+  // POI 데이터 타입
+  export interface POIData {
+      code: string;
+      name: string;
+      lat: number;
+      lng: number;
+      distance?: number;
+  }
+
+  // 따릉이 대여소 데이터 타입
+  export interface BikeStationData {
+      code: string;
+      name: string;
+      lat: number;
+      lng: number;
+      distance?: number;
+      stationId: string;
+      rackTotCnt: string; // 거치대 총 개수
+      parkingBikeTotCnt: string; // 주차 자전거 총 건수
+      shared: string; // 거치율
+  }
+
+  // 반경 내 POI 응답 타입
+  export interface NearbyPOIsResponse {
+      success: boolean;
+      data: {
+          center: { lat: number; lng: number };
+          radius: number;
+          count: number;
+          pois: POIData[];
+      };
   }

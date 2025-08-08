@@ -1,7 +1,7 @@
 // components/map/MapContainer.tsx
 'use client';
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useMemo, useState } from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
 
@@ -14,6 +14,10 @@ import { useCongestion } from '@/hooks/useCongestion';
 import { useWeather } from '@/hooks/useWeather';
 import { useKakaoMap } from '@/hooks/useKakaoMap';
 import { useCurrentLocationMarker } from '@/hooks/useCurrentLocationMarker';
+import { usePOI } from '@/hooks/usePOI';
+import { useFacilities } from '@/hooks/useFacilities';
+import { convertPOIToFacility } from '@/services/poi';
+// import { getNearbyBikeStations, convertBikeStationToFacility } from '@/services/bikeStation';
 
 interface MapContainerProps {
   className?: string; // 추가적인 CSS 클래스
@@ -29,6 +33,33 @@ export default function MapContainer({}: MapContainerProps = {}) {
 
   // 위치 관련 hooks
   const { currentLocation, moveToCurrentLocation } = useLocation(mapInstance);
+
+  // POI 관련 hooks
+  const { pois, loading: poiLoading, fetchNearbyPOIs } = usePOI();
+  
+  // 따릉이 대여소 상태 (임시 비활성화)
+  // const [bikeStations, setBikeStations] = useState([]);
+  // const [bikeLoading, setBikeLoading] = useState(false);
+
+  // POI와 따릉이를 Facility로 변환
+  const facilitiesFromPOIs = useMemo(() => 
+    pois.map(poi => convertPOIToFacility(poi)), 
+    [pois]
+  );
+  
+  // const facilitiesFromBikes = useMemo(() => 
+  //   bikeStations.map(station => convertBikeStationToFacility(station)), 
+  //   [bikeStations]
+  // );
+  
+  const allFacilities = useMemo(() => 
+    [...facilitiesFromPOIs], // ...facilitiesFromBikes 임시 비활성화
+    [facilitiesFromPOIs]
+  );
+
+  const { visibleFacilities, preferences, toggleCategory } = useFacilities({
+    facilities: allFacilities
+  });
 
   // 혼잡도 관련 hooks
   const {
@@ -59,7 +90,21 @@ export default function MapContainer({}: MapContainerProps = {}) {
     
     // 날씨 데이터 업데이트 (항상 업데이트)
     await fetchWeatherData(lat, lng);
-  }, [fetchCongestionData, fetchWeatherData]);
+    
+    // POI 데이터 업데이트
+    await fetchNearbyPOIs(lat, lng, 1.5);
+    
+    // 따릉이 데이터 업데이트 (임시 비활성화)
+    // setBikeLoading(true);
+    // try {
+    //   const stations = await getNearbyBikeStations(lat, lng, 1.5);
+    //   setBikeStations(stations);
+    // } catch (error) {
+    //   console.error('따릉이 데이터 로드 실패:', error);
+    // } finally {
+    //   setBikeLoading(false);
+    // }
+  }, [fetchCongestionData, fetchWeatherData, fetchNearbyPOIs]);
 
   // 현재 위치 마커 표시
   useCurrentLocationMarker({
@@ -69,17 +114,29 @@ export default function MapContainer({}: MapContainerProps = {}) {
     onLocationChange: handleLocationChange
   });
 
-  // 현재 위치가 설정되면 자동으로 날씨와 혼잡도 데이터 로드
+  // 현재 위치가 설정되면 자동으로 날씨, 혼잡도, POI 데이터 로드
   useEffect(() => {
     if (currentLocation) {
+      const { lat, lng } = currentLocation.coords;
+      
       if (!weatherData) {
-        fetchWeatherData(currentLocation.coords.lat, currentLocation.coords.lng);
+        fetchWeatherData(lat, lng);
       }
       if (!congestionData) {
-        fetchCongestionData(currentLocation.coords.lat, currentLocation.coords.lng);
+        fetchCongestionData(lat, lng);
       }
+      if (pois.length === 0) {
+        fetchNearbyPOIs(lat, lng, 1.5);
+      }
+      // if (bikeStations.length === 0) {
+      //   setBikeLoading(true);
+      //   getNearbyBikeStations(lat, lng, 1.5)
+      //     .then(stations => setBikeStations(stations))
+      //     .catch(error => console.error('따릉이 데이터 로드 실패:', error))
+      //     .finally(() => setBikeLoading(false));
+      // }
     }
-  }, [currentLocation, weatherData, congestionData, fetchWeatherData, fetchCongestionData]);
+  }, [currentLocation, weatherData, congestionData, pois.length, fetchWeatherData, fetchCongestionData, fetchNearbyPOIs]);
 
   // 혼잡도 토글 핸들러
   const handleToggleCongestion = async () => {
@@ -151,6 +208,8 @@ export default function MapContainer({}: MapContainerProps = {}) {
         onMoveToCurrentLocation={moveToCurrentLocation}
         mapInstance={mapInstance}
         mapStatus={mapStatus}
+        visibleFacilities={visibleFacilities}
+        allFacilities={allFacilities}
       />
     </div>
   );
