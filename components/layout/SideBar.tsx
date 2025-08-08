@@ -7,17 +7,13 @@ import { Check, LogOut, Settings, User } from 'lucide-react';
 import { X } from 'lucide-react';
 import type { UserPreferences, FacilityCategory } from '@/lib/types';
 import { FACILITY_CONFIGS } from '@/lib/facilityIcons';
+import { useAuthStore } from '@/store/authStore';
 
 interface SidebarProps {
     isOpen: boolean;
     onClose: () => void;
     preferences: UserPreferences;
     onPreferenceToggle: (type: FacilityCategory) => void;
-    isLoggedIn?: boolean;
-    userProfile?: {
-        name: string;
-        profileImage?: string;
-    };
     onLogin?: () => void;
     onLogout?: () => void;
 }
@@ -27,11 +23,10 @@ export default function SideBar({
     onClose, 
     preferences, 
     onPreferenceToggle,
-    isLoggedIn = false,
-    userProfile,
     onLogin,
     onLogout
 }: SidebarProps) {
+  const { isAuthenticated, user, clearAuth } = useAuthStore();
 
   const selectedCount = Object.values(preferences).filter(Boolean).length;
 
@@ -84,7 +79,7 @@ export default function SideBar({
             </div>
 
             {/* 로그인 영역 */}
-            {!isLoggedIn ? (
+            {!isAuthenticated ? (
               <button 
                 onClick={onLogin}
                 className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
@@ -97,9 +92,9 @@ export default function SideBar({
             ) : (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <div className="flex items-center space-x-3">
-                  {userProfile?.profileImage ? (
+                  {user?.profile ? (
                     <Image 
-                      src={userProfile.profileImage} 
+                      src={user.profile} 
                       alt="프로필" 
                       width={40}
                       height={40}
@@ -112,7 +107,7 @@ export default function SideBar({
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 truncate">
-                      {userProfile?.name || '사용자'}
+                      {user?.name || '사용자'}
                     </p>
                     <p className="text-xs text-gray-500">로그인 상태</p>
                   </div>
@@ -175,14 +170,17 @@ export default function SideBar({
 
           {/* 푸터 */}
           <div className="p-6 border-t border-gray-200 bg-gray-50">
-            {isLoggedIn ? (
+            {isAuthenticated ? (
               <div className="flex items-center justify-between">
                 <button className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-800 transition-colors">
                   <User className="w-4 h-4" />
                   <span>프로필 설정</span>
                 </button>
                 <button 
-                  onClick={onLogout}
+                  onClick={() => {
+                    clearAuth();
+                    onLogout?.();
+                  }}
                   className="flex items-center space-x-2 text-sm text-gray-600 hover:text-red-600 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />

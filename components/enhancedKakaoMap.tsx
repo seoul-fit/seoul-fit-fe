@@ -52,8 +52,6 @@ export default function SeoulFitMapApp() {
         onClose={() => setIsSidebarOpen(false)}
         preferences={preferences}
         onPreferenceToggle={togglePreference}
-        isLoggedIn={false} // TODO: 실제 로그인 상태로 교체
-        userProfile={undefined} // TODO: 실제 사용자 정보로 교체
         onLogin={() => {
           const KAKAO_CLIENT_ID = '349f89103b32e7135ad6f15e0a73509b';
           const REDIRECT_URI = 'http://localhost:3000/auth/callback';
