@@ -7,6 +7,7 @@ import {Info} from "lucide-react";
 import Header from './layout/Header';
 import SideBar from './layout/SideBar';
 import MapContainer from './map/MapContainer';
+import LogoutModal from './auth/LogoutModal';
 import {useAuthStore} from "../store/authStore";
 
 // 기존 타입 정의들
@@ -17,17 +18,11 @@ interface MapStatus {
 }
 export default function SeoulFitMapApp() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showLogoutSuccess, setShowLogoutSuccess] = useState(false);
   const { preferences, togglePreference, refreshPreferences } = usePreferences();
   const [searchQuery, setSearchQuery] = useState('');
-  const { user, isAuthenticated, clearAuth } = useAuthStore();
-
-  // 사용자 ID 확인
-  React.useEffect(() => {
-    if (isAuthenticated && user) {
-      console.log('현재 로그인된 사용자 ID:', user.id);
-      console.log('사용자 정보:', user);
-    }
-  }, [isAuthenticated, user]);
+  const { clearAuth } = useAuthStore();
 
   // 상태 관리
   const [mapStatus] = useState<MapStatus>({
@@ -68,14 +63,7 @@ export default function SeoulFitMapApp() {
           const REDIRECT_URI = 'http://localhost:3000/auth/callback';
           window.location.href = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${KAKAO_CLIENT_ID}&redirect_uri=${REDIRECT_URI}`;
         }}
-        onLogout={async () => {
-          console.log("로그아웃 시도...");
-          if (!confirm("로그아웃 하시겠습니까?")) return;
-          const accessToken = localStorage.getItem('access_token');
-          console.log("ACCESS_TOKEN ::::: " + accessToken);
-          localStorage.removeItem('access_token');
-          clearAuth();
-        }}
+        onLogout={() => setShowLogoutModal(true)}
       />
 
       {/* 에러 알림 */}
@@ -92,6 +80,22 @@ export default function SeoulFitMapApp() {
       <div className="h-[calc(100vh-80px)] relative">
         <MapContainer />
       </div>
+
+      {/* 로그아웃 모달 */}
+      <LogoutModal
+        showLogoutModal={showLogoutModal}
+        showLogoutSuccess={showLogoutSuccess}
+        onCancel={() => setShowLogoutModal(false)}
+        onConfirm={() => {
+          localStorage.removeItem('access_token');
+          clearAuth();
+          setShowLogoutModal(false);
+          setShowLogoutSuccess(true);
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 3000);
+        }}
+      />
     </>
   );
 }

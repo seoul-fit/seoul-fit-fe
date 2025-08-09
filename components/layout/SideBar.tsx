@@ -185,10 +185,7 @@ export default function SideBar({
                   <span>프로필 설정</span>
                 </button>
                 <button 
-                  onClick={() => {
-                    clearAuth();
-                    onLogout?.();
-                  }}
+                  onClick={onLogout}
                   className="flex items-center space-x-2 text-sm text-gray-600 hover:text-red-600 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
