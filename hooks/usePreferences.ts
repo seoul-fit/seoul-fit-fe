@@ -9,10 +9,10 @@ const PREFERENCES_STORAGE_KEY = 'seoulfit_preferences';
 const defaultPreferences: UserPreferences = {
   sports: true,
   culture: true,
-  restaurant: false,
-  library: false,
-  park: false,
-  bike: false
+  restaurant: true,
+  library: true,
+  park: true,
+  bike: true
 };
 
 export function usePreferences() {
@@ -58,17 +58,8 @@ export function usePreferences() {
   const loadLocalPreferences = () => {
     if (isLoaded) return;
     
-    try {
-      const saved = localStorage.getItem(PREFERENCES_STORAGE_KEY);
-      if (saved) {
-        const parsedPreferences = JSON.parse(saved);
-        setPreferences({ ...defaultPreferences, ...parsedPreferences });
-      }
-      setIsLoaded(true);
-    } catch (error) {
-      console.error('선호도 설정을 불러오는데 실패했습니다:', error);
-      setIsLoaded(true);
-    }
+    setPreferences(defaultPreferences);
+    setIsLoaded(true);
   };
 
   // 인증 상태에 따른 선호도 로드
@@ -76,18 +67,21 @@ export function usePreferences() {
     if (isAuthenticated && user?.id) {
       loadUserPreferences().then();
     } else {
+      localStorage.removeItem(PREFERENCES_STORAGE_KEY);
       loadLocalPreferences();
     }
   }, [isAuthenticated, user?.id]);
 
-  // 선호도 변경 시 로컬 스토리지에 저장
+  // 로그인 한 경우, 관심사 로컬 스토리지에 저장
   useEffect(() => {
+    if (!isAuthenticated) return;
+    
     try {
       localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(preferences));
     } catch (error) {
       console.error('선호도 설정 저장에 실패했습니다:', error);
     }
-  }, [preferences]);
+  }, [preferences, isAuthenticated]);
 
   const togglePreference = (type: FacilityCategory) => {
     if (!isAuthenticated) {
