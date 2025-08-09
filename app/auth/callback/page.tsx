@@ -29,10 +29,13 @@ function AuthContent() {
     const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
     const interestOptions = [
+        { value: 'SPORTS', label: '체육시설', emoji: '🏃‍♂️' },
+        { value: 'CULTURE', label: '문화시설', emoji: '🏛️' },
+        { value: 'RESTAURANTS', label: '맛집', emoji: '🍽️' },
+        { value: 'LIBRARY', label: '도서관', emoji: '📚' },
+        { value: 'PARK', label: '공원', emoji: '🌳' },
+        { value: 'BIKE', label: '따릉이', emoji: '🚲' },
         { value: 'WEATHER', label: '날씨', emoji: '🌤️' },
-        { value: 'CULTURE', label: '문화생활', emoji: '🎭' },
-        { value: 'TRAFFIC', label: '교통', emoji: '🚗' },
-        { value: 'BIKE_SHARING', label: '따릉이', emoji: '🚲' },
         { value: 'CONGESTION', label: '인구혼잡도', emoji: '👥' }
     ];
 
@@ -302,7 +305,7 @@ function AuthContent() {
         return (
             <div className="min-h-screen bg-gray-50 py-12">
                 <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
-                    <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">회원가입</h2>
+                    <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">관심사 선택</h2>
                     {/* 관심사 선택 */}
                     <div className="mb-6">
                         <h4 className="text-lg font-medium text-gray-800 mb-3">관심사를 선택해주세요</h4>

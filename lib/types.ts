@@ -106,6 +106,22 @@ export const FACILITY_CATEGORIES = {
   // 사용자 선호도 (Record 타입 활용)
   export type UserPreferences = Record<FacilityCategory, boolean>;
   
+  // 백엔드 관심사 카테고리 매핑
+  export const INTEREST_CATEGORY_MAP: Record<string, FacilityCategory> = {
+    'SPORTS': 'sports',
+    'CULTURE': 'culture',
+    'RESTAURANTS': 'restaurant',
+    'LIBRARY': 'library',
+    'PARK': 'park',
+    'BIKE': 'bike',
+    '체육시설': 'sports',
+    '문화시설': 'culture',
+    '맛집': 'restaurant',
+    '도서관': 'library',
+    '공원': 'park',
+    '따릉이': 'bike'
+  };
+  
   export interface UserLocation {
       lat: number
       lng: number

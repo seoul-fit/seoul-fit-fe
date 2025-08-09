@@ -16,6 +16,7 @@ interface SidebarProps {
     onPreferenceToggle: (type: FacilityCategory) => void;
     onLogin?: () => void;
     onLogout?: () => void;
+    onPreferencesRefresh?: () => void;
 }
 
 export default function SideBar({ 
@@ -24,9 +25,17 @@ export default function SideBar({
     preferences, 
     onPreferenceToggle,
     onLogin,
-    onLogout
+    onLogout,
+    onPreferencesRefresh
 }: SidebarProps) {
   const { isAuthenticated, user, clearAuth } = useAuthStore();
+
+  // 로그인 상태 변경 시 선호도 새로고침
+  React.useEffect(() => {
+    if (isAuthenticated && onPreferencesRefresh) {
+      onPreferencesRefresh();
+    }
+  }, [isAuthenticated, onPreferencesRefresh]);
 
   const selectedCount = Object.values(preferences).filter(Boolean).length;
 

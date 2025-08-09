@@ -17,7 +17,7 @@ interface MapStatus {
 }
 export default function SeoulFitMapApp() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { preferences, togglePreference } = usePreferences();
+  const { preferences, togglePreference, refreshPreferences } = usePreferences();
   const [searchQuery, setSearchQuery] = useState('');
   const { user, isAuthenticated, clearAuth } = useAuthStore();
 
@@ -62,6 +62,7 @@ export default function SeoulFitMapApp() {
         onClose={() => setIsSidebarOpen(false)}
         preferences={preferences}
         onPreferenceToggle={togglePreference}
+        onPreferencesRefresh={refreshPreferences}
         onLogin={() => {
           const KAKAO_CLIENT_ID = '349f89103b32e7135ad6f15e0a73509b';
           const REDIRECT_URI = 'http://localhost:3000/auth/callback';
