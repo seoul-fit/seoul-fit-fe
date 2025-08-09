@@ -6,12 +6,11 @@ import Cookies from 'js-cookie'; // 브라우저 쿠키 조작 라이브러리
 interface User {
     id: number;
     email: string;
-    // Kakao OAuth 사용이라 password는 제외
-    name: string;
+    nickname: string;
     status: string;
     oauthProvider: string; // 카카오(kakao), 구글(google), 네이버(naver), 애플(apple)
     oauthUserId: string;
-    profile: string;
+    profileImageUrl: string;
     interests: Array<{
         id: number;
         interestCategory: string; // 체육시설, 문화시설, 맛집, 도서관, 공원

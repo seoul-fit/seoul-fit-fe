@@ -127,6 +127,7 @@ function AuthContent() {
                     console.log('로그인 성공:', loginData);
 
                     setAuth(loginData.user, loginData.accessToken);
+                    console.log("로그인 성공 시 액세스 토큰 : " + loginData.accessToken);
                     localStorage.setItem('access_token', loginData.accessToken);
                     setStatus('success');
                     setTimeout(() => router.push('/'), 1500);

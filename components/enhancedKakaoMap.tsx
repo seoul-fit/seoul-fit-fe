@@ -19,7 +19,15 @@ export default function SeoulFitMapApp() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { preferences, togglePreference } = usePreferences();
   const [searchQuery, setSearchQuery] = useState('');
-  const { clearAuth } = useAuthStore();
+  const { user, isAuthenticated, clearAuth } = useAuthStore();
+
+  // 사용자 ID 확인
+  React.useEffect(() => {
+    if (isAuthenticated && user) {
+      console.log('현재 로그인된 사용자 ID:', user.id);
+      console.log('사용자 정보:', user);
+    }
+  }, [isAuthenticated, user]);
 
   // 상태 관리
   const [mapStatus] = useState<MapStatus>({

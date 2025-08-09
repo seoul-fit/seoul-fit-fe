@@ -92,9 +92,9 @@ export default function SideBar({
             ) : (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <div className="flex items-center space-x-3">
-                  {user?.profile ? (
+                  {user?.profileImageUrl ? (
                     <Image 
-                      src={user.profile} 
+                      src={user.profileImageUrl}
                       alt="프로필" 
                       width={40}
                       height={40}
@@ -107,9 +107,8 @@ export default function SideBar({
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 truncate">
-                      {user?.name || '사용자'}
+                      {user?.nickname || '사용자'}
                     </p>
-                    <p className="text-xs text-gray-500">로그인 상태</p>
                   </div>
                 </div>
               </div>
