@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { UserPreferences, FacilityCategory } from '@/lib/types';
 import { INTEREST_CATEGORY_MAP } from '@/lib/types';
 import { useAuthStore } from '@/store/authStore';
-import { getUserInfo } from '@/services/user';
+import { getUserInfo, updateUserInterests } from '@/services/user';
 
 const PREFERENCES_STORAGE_KEY = 'seoulfit_preferences';
 
@@ -83,12 +83,34 @@ export function usePreferences() {
     }
   }, [preferences, isAuthenticated]);
 
-  const togglePreference = (type: FacilityCategory) => {
-    if (!isAuthenticated) {
-      setPreferences(prev => ({
-        ...prev,
-        [type]: !prev[type]
-      }));
+  const togglePreference = async (type: FacilityCategory) => {
+    const newPreferences = {
+      ...preferences,
+      [type]: !preferences[type]
+    };
+    
+    setPreferences(newPreferences);
+    
+    if (isAuthenticated && user?.id) {
+      try {
+        const facilityToInterestMap: Record<FacilityCategory, string> = {
+          sports: 'SPORTS',
+          culture: 'CULTURE',
+          restaurant: 'RESTAURANTS',
+          library: 'LIBRARY',
+          park: 'PARK',
+          bike: 'BIKE'
+        };
+        
+        const selectedInterests = Object.entries(newPreferences)
+          .filter(([_, isSelected]) => isSelected)
+          .map(([category]) => facilityToInterestMap[category as FacilityCategory]);
+        
+        await updateUserInterests(user.id, selectedInterests);
+      } catch (error) {
+        console.error('선호도 업데이트 실패:', error);
+        setPreferences(preferences);
+      }
     }
   };
 

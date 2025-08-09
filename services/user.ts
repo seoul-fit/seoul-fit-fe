@@ -40,3 +40,27 @@ export const getUserInfo = async (userId: number): Promise<UserResult> => {
 
   return response.json();
 };
+
+export const updateUserInterests = async (userId: number, interests: string[]): Promise<void> => {
+  const accessToken = Cookies.get('access_token');
+  
+  if (!accessToken) {
+    throw new Error('인증 토큰이 없습니다.');
+  }
+
+  const response = await fetch('http://localhost:8080/api/users/interests', {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      userId,
+      interests
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error('사용자 선호도 업데이트에 실패했습니다.');
+  }
+};
