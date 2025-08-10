@@ -97,7 +97,7 @@ export const useMapMarkers = ({
       try {
         overlay.setMap(null);
       } catch (error) {
-        console.warn('마커 제거 중 오류:', error);
+        console.error('마커 제거 중 오류:', error);
       }
     });
     customOverlaysRef.current = [];
@@ -123,7 +123,7 @@ export const useMapMarkers = ({
           // 시설 설정 정보 가져오기 (FACILITY_CONFIGS 활용)
           const facilityConfig = FACILITY_CONFIGS[facility.category];
           if (!facilityConfig) {
-            console.warn(`시설 카테고리 설정을 찾을 수 없습니다: ${facility.category}`);
+            console.error(`시설 카테고리 설정을 찾을 수 없습니다: ${facility.category}`);
             return null;
           }
 
@@ -149,11 +149,37 @@ export const useMapMarkers = ({
 
           customOverlay.setMap(mapInstance);
 
-          // 시설 데이터 저장
-          facilityDataRef.current.set(facility.id, facility);
+          // 마커 클릭 이벤트 설정 (비동기 처리)
+          setTimeout(() => {
+            try {
+              const markerId = `marker-${facility.id}`;
+              const markerElement = document.getElementById(markerId);
+              if (markerElement) {
+                // 기존 이벤트 리스너 제거 후 새로 추가 (중복 방지)
+                const newElement = markerElement.cloneNode(true) as HTMLElement;
+                markerElement.parentNode?.replaceChild(newElement, markerElement);
+                
+                newElement.addEventListener('click', (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onFacilitySelect(facility);
+                });
 
-          // 개선된 이벤트 바인딩 (재시도 로직 포함)
-          bindMarkerEvent(facility);
+                // 호버 효과를 위한 추가 이벤트
+                newElement.addEventListener('mouseenter', () => {
+                  newElement.style.transform = 'scale(1.1)';
+                  newElement.style.zIndex = '1001';
+                });
+
+                newElement.addEventListener('mouseleave', () => {
+                  newElement.style.transform = 'scale(1)';
+                  newElement.style.zIndex = '1000';
+                });
+              }
+            } catch (error) {
+              console.error(`마커 이벤트 설정 실패 (ID: ${facility.id}):`, error);
+            }
+          }, 100);
 
           return customOverlay;
         } catch (error) {
@@ -182,7 +208,7 @@ export const useMapMarkers = ({
         }
       }
     } catch (error) {
-      console.warn(`마커 하이라이트 실패 (ID: ${facilityId}):`, error);
+      console.error(`마커 하이라이트 실패 (ID: ${facilityId}):`, error);
     }
   }, []);
 
@@ -204,7 +230,7 @@ export const useMapMarkers = ({
             markerElement.style.display = visible ? 'block' : 'none';
           }
         } catch (error) {
-          console.warn(`마커 표시/숨김 실패 (ID: ${facility.id}):`, error);
+          console.error(`마커 표시/숨김 실패 (ID: ${facility.id}):`, error);
         }
       });
   }, [visibleFacilities]);

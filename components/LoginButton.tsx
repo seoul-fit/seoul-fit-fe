@@ -101,7 +101,7 @@ export default function LoginButton({ variant = 'default', className = '' }: Log
                             {user.profileImageUrl ? (
                                 <Image
                                     src={user.profileImageUrl}
-                                    alt="프로필"
+                                    alt={user.nickname}
                                     width={32}
                                     height={32}
                                     className="w-8 h-8 rounded-full"

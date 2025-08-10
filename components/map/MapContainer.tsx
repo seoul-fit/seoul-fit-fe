@@ -1,7 +1,7 @@
 // components/map/MapContainer.tsx
 'use client';
 
-import React, { useEffect, useCallback, useMemo, useState } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
 
@@ -58,10 +58,9 @@ export default function MapContainer({}: MapContainerProps = {}) {
     [facilitiesFromPOIs, facilitiesFromBikes]
   );
 
-  // 사용하지 않는 변수들은 주석 처리
-  // const { visibleFacilities, preferences, toggleCategory } = useFacilities({
-  //   facilities: allFacilities
-  // });
+  const { visibleFacilities } = useFacilities({
+    facilities: allFacilities
+  });
 
   // 혼잡도 관련 hooks
   const {

@@ -46,8 +46,6 @@ export const useCurrentLocationMarker = ({
       const newLat = position.getLat();
       const newLng = position.getLng();
       
-      console.log('새로운 위치:', newLat, newLng);
-      
       // 지도 중심을 마커 위치로 이동
       mapInstance.setCenter(position);
       

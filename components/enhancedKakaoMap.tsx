@@ -20,7 +20,7 @@ export default function SeoulFitMapApp() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showLogoutSuccess, setShowLogoutSuccess] = useState(false);
-  const { preferences, togglePreference, refreshPreferences } = usePreferences();
+  const { preferences, togglePreference, refreshPreferences, showWarning, setShowWarning } = usePreferences();
   const [searchQuery, setSearchQuery] = useState('');
   const { clearAuth } = useAuthStore();
 
@@ -58,6 +58,8 @@ export default function SeoulFitMapApp() {
         preferences={preferences}
         onPreferenceToggle={togglePreference}
         onPreferencesRefresh={refreshPreferences}
+        showWarning={showWarning}
+        onWarningClose={() => setShowWarning(false)}
         onLogin={() => {
           const KAKAO_CLIENT_ID = '349f89103b32e7135ad6f15e0a73509b';
           const REDIRECT_URI = 'http://localhost:3000/auth/callback';

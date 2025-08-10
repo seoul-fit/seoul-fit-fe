@@ -42,7 +42,7 @@ export async function getNearbyBikeStations(lat: number, lng: number, radius: nu
 
         // 데이터가 없는 경우
         if (!result.data || !result.data.stations) {
-            console.warn('따릉이 대여소 데이터가 없습니다.');
+            console.error('따릉이 대여소 데이터가 없습니다.');
             return [];
         }
 

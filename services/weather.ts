@@ -42,7 +42,7 @@ export async function getNearestWeatherData(lat: number, lng: number): Promise<W
 
         // 데이터가 없는 경우
         if (!result.data) {
-            console.warn('날씨 데이터가 없습니다.');
+            console.error('날씨 데이터가 없습니다.');
             return null;
         }
 

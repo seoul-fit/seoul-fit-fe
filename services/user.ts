@@ -1,57 +1,43 @@
-import Cookies from 'js-cookie';
-
 export interface InterestCategory {
   id: number;
   interestCategory: string;
 }
 
-export interface UserResult {
-  id: number;
-  authUserId: number;
-  nickname: string;
-  profileImageUrl: string;
-  locationLatitude: number | null;
-  locationLongitude: number | null;
-  locationAddress: string | null;
-  status: string;
-  interests: InterestCategory[];
-  createdAt: string;
-  updatedAt: string;
+export interface UserInterestResponse {
+  userId: number;
+  interests: {
+    category: string;
+    displayName: string;
+    description: string;
+    emoji: string;
+    isLocationBased: boolean;
+    isRealtimeNotificationRequired: boolean;
+  }[];
+  totalCount: number;
+  lastUpdated: string;
+  isCompleted: boolean;
 }
 
-export const getUserInfo = async (userId: number): Promise<UserResult> => {
-  const accessToken = Cookies.get('access_token');
-  
-  if (!accessToken) {
-    throw new Error('인증 토큰이 없습니다.');
-  }
-
-  const response = await fetch(`http://localhost:8080/api/users/${userId}`, {
-    method: 'GET',
+export const getUserInterests = async (userId: number): Promise<UserInterestResponse> => {
+  const response = await fetch('http://localhost:8080/api/users/interests', {
+    method: 'POST',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
+    body: JSON.stringify(userId),
   });
 
   if (!response.ok) {
-    throw new Error('사용자 정보를 가져올 수 없습니다.');
+    throw new Error('사용자 관심사를 가져올 수 없습니다.');
   }
 
   return response.json();
 };
 
 export const updateUserInterests = async (userId: number, interests: string[]): Promise<void> => {
-  const accessToken = Cookies.get('access_token');
-  
-  if (!accessToken) {
-    throw new Error('인증 토큰이 없습니다.');
-  }
-
   const response = await fetch('http://localhost:8080/api/users/interests', {
     method: 'PUT',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({

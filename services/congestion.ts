@@ -42,7 +42,7 @@ export async function getNearestCongestionData(lat: number, lng: number): Promis
 
         // 데이터가 없는 경우
         if (!result.data) {
-            console.warn('혼잡도 데이터가 없습니다.');
+            console.error('혼잡도 데이터가 없습니다.');
             return null;
         }
 

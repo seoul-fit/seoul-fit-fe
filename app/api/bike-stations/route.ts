@@ -183,7 +183,7 @@ export async function GET(request: NextRequest) {
         
         // 반경 내 대여소 필터링
         const nearbyStations = bikeStations
-            .filter((station: BikeStationRaw) => {
+            .filter((station: { stationLatitude: string; stationLongitude: string }) => {
                 const stationLat = parseFloat(station.stationLatitude);
                 const stationLng = parseFloat(station.stationLongitude);
                 
@@ -192,7 +192,7 @@ export async function GET(request: NextRequest) {
                 const distance = calculateDistance(lat, lng, stationLat, stationLng);
                 return distance <= radius;
             })
-            .map((station: BikeStationRaw) => ({
+            .map((station: { stationId: string; stationName: string; stationLatitude: string; stationLongitude: string; rackTotCnt: number; parkingBikeTotCnt: number; shared: number }) => ({
                 code: `BIKE_${station.stationId}`,
                 name: `${station.stationName} 따릉이 대여소`,
                 lat: parseFloat(station.stationLatitude),
@@ -204,7 +204,7 @@ export async function GET(request: NextRequest) {
                 parkingBikeTotCnt: station.parkingBikeTotCnt, // 주차 자전거 총 건수
                 shared: station.shared // 거치율
             }))
-            .sort((a, b) => a.distance - b.distance);
+            .sort((a: { distance: number }, b: { distance: number }) => a.distance - b.distance);
 
         return NextResponse.json({
             success: true,
