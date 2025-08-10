@@ -26,7 +26,7 @@ export const useMapMarkers = ({
       try {
         overlay.setMap(null);
       } catch (error) {
-        console.warn('마커 제거 중 오류:', error);
+        console.error('마커 제거 중 오류:', error);
       }
     });
     customOverlaysRef.current = [];
@@ -51,7 +51,7 @@ export const useMapMarkers = ({
           // 시설 설정 정보 가져오기 (FACILITY_CONFIGS 활용)
           const facilityConfig = FACILITY_CONFIGS[facility.category];
           if (!facilityConfig) {
-            console.warn(`시설 카테고리 설정을 찾을 수 없습니다: ${facility.category}`);
+            console.error(`시설 카테고리 설정을 찾을 수 없습니다: ${facility.category}`);
             return null;
           }
 
@@ -104,7 +104,7 @@ export const useMapMarkers = ({
                 });
               }
             } catch (error) {
-              console.warn(`마커 이벤트 설정 실패 (ID: ${facility.id}):`, error);
+              console.error(`마커 이벤트 설정 실패 (ID: ${facility.id}):`, error);
             }
           }, 100);
 
@@ -135,7 +135,7 @@ export const useMapMarkers = ({
         }
       }
     } catch (error) {
-      console.warn(`마커 하이라이트 실패 (ID: ${facilityId}):`, error);
+      console.error(`마커 하이라이트 실패 (ID: ${facilityId}):`, error);
     }
   }, []);
 
@@ -157,7 +157,7 @@ export const useMapMarkers = ({
             markerElement.style.display = visible ? 'block' : 'none';
           }
         } catch (error) {
-          console.warn(`마커 표시/숨김 실패 (ID: ${facility.id}):`, error);
+          console.error(`마커 표시/숨김 실패 (ID: ${facility.id}):`, error);
         }
       });
   }, [visibleFacilities]);

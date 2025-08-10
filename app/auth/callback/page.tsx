@@ -100,8 +100,6 @@ function AuthContent() {
 
                 // 기존 사용자 재로그인 시도인지 확인
                 if (isLoginAttempt && loginType === 'existing_user') {
-                    console.log('기존 사용자 재로그인 시도 감지');
-
                     // 로컬스토리지 정리
                     localStorage.removeItem('kakao_login_attempt');
                     localStorage.removeItem('kakao_login_type');
@@ -127,10 +125,8 @@ function AuthContent() {
                     }
 
                     const loginData = await loginResponse.json();
-                    console.log('로그인 성공:', loginData);
 
                     setAuth(loginData.user, loginData.accessToken);
-                    console.log("로그인 성공 시 액세스 토큰 : " + loginData.accessToken);
                     localStorage.setItem('access_token', loginData.accessToken);
                     setStatus('success');
                     setTimeout(() => router.push('/'), 1500);
@@ -183,11 +179,9 @@ function AuthContent() {
                 const checkResult = await checkResponse.json();
 
                 if (checkResult.exists) {
-                    console.log('기존 사용자 감지 - 카카오 재인증 필요');
                     // Step 4-1: 기존 사용자 → 카카오 재인증으로 리다이렉트
                     redirectToKakaoLogin();
                 } else {
-                    console.log('신규 사용자 감지 - 회원가입 진행');
                     // Step 4-2: 신규 사용자 → 회원가입
                     setUserInfo({
                         provider: 'KAKAO',
