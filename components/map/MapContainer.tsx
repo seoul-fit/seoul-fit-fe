@@ -1,7 +1,7 @@
 // components/map/MapContainer.tsx
 'use client';
 
-import React, { useEffect, useCallback, useMemo, useState } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
 
@@ -35,7 +35,7 @@ export default function MapContainer({}: MapContainerProps = {}) {
   const { currentLocation, moveToCurrentLocation } = useLocation(mapInstance);
 
   // POI 관련 hooks
-  const { pois, loading: poiLoading, fetchNearbyPOIs } = usePOI();
+  const { pois, fetchNearbyPOIs } = usePOI();
   
   // 따릉이 대여소 상태 (임시 비활성화)
   // const [bikeStations, setBikeStations] = useState([]);
@@ -57,7 +57,7 @@ export default function MapContainer({}: MapContainerProps = {}) {
     [facilitiesFromPOIs]
   );
 
-  const { visibleFacilities, preferences, toggleCategory } = useFacilities({
+  const { visibleFacilities } = useFacilities({
     facilities: allFacilities
   });
 
