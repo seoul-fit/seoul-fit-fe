@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, ChevronUp, ChevronDown, MapPin, Clock, Phone, Users, Cloud } from 'lucide-react';
+import { X, ChevronUp, ChevronDown, MapPin, Clock, Phone, Users, Cloud, Info, MessageCircleMore } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Facility, CongestionData, WeatherData } from '@/lib/types';
 import { FACILITY_CONFIGS } from '@/lib/facilityIcons';
@@ -192,7 +192,7 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
         </div>
 
         {/* 내용 */}
-        <div className="px-6 pb-6 overflow-y-auto">
+        <div className={`px-6 pb-6 overflow-y-auto ${isExpanded ? 'max-h-[calc(80vh-120px)]' : 'max-h-[calc(50vh-120px)]'}`}>
           {/* 기본 정보 */}
           <div className="space-y-3 mb-6">
             {facility.address && (
@@ -235,12 +235,9 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
                   <p className="text-sm text-gray-500">로딩 중...</p>
                 ) : congestionData ? (
                   <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">지역:</span>
-                      <span className="text-gray-900">{congestionData.AREA_NM}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">혼잡도:</span>
+                    <div className="flex">
+                      <span className="text-gray-500">혼잡도 : </span>
+                      &nbsp;
                       <span className={`font-medium ${
                         congestionData.AREA_CONGEST_LVL === '여유' ? 'text-green-600' :
                         congestionData.AREA_CONGEST_LVL === '보통' ? 'text-yellow-600' :
@@ -250,7 +247,7 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
                         {congestionData.AREA_CONGEST_LVL}
                       </span>
                     </div>
-                    <div className="text-xs text-gray-600 mt-1">
+                    <div className="text-xs text-gray-600 mt-2">
                       {congestionData.AREA_CONGEST_MSG}
                     </div>
                   </div>
@@ -269,40 +266,32 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
                   <p className="text-sm text-gray-500">로딩 중...</p>
                 ) : weatherData ? (
                   <div className="space-y-2 text-sm">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4 mt-2">
                       <div>
-                        <span className="text-gray-500">날씨:</span>
-                        <span className="ml-2 text-gray-900">{weatherData.WEATHER_STTS}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">기온:</span>
+                        <span className="text-gray-500">기온 : </span>
                         <span className="ml-2 text-gray-900">{weatherData.TEMP}°C</span>
                       </div>
                       <div>
-                        <span className="text-gray-500">체감:</span>
+                        <span className="text-gray-500">체감 온도 : </span>
                         <span className="ml-2 text-gray-900">{weatherData.SENSIBLE_TEMP}°C</span>
                       </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mt-2">
                       <div>
-                        <span className="text-gray-500">습도:</span>
+                        <span className="text-gray-500">습도 : </span>
                         <span className="ml-2 text-gray-900">{weatherData.HUMIDITY}%</span>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4 mt-2">
                       <div>
-                        <span className="text-gray-500">미세먼지:</span>
+                        <span className="text-gray-500">미세먼지 : </span>
                         <span className="ml-2 text-gray-900">{weatherData.PM10_INDEX}</span>
                       </div>
                       <div>
-                        <span className="text-gray-500">초미세:</span>
+                        <span className="text-gray-500">초미세먼지 : </span>
                         <span className="ml-2 text-gray-900">{weatherData.PM25_INDEX}</span>
                       </div>
                     </div>
-                    {weatherData.UV_INDEX_LVL && (
-                      <div className="mt-2">
-                        <span className="text-gray-500">자외선:</span>
-                        <span className="ml-2 text-gray-900">{weatherData.UV_INDEX_LVL}</span>
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <p className="text-sm text-gray-500">날씨 정보 없음</p>
@@ -311,27 +300,30 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
 
               {/* 기본 시설 정보 */}
               <div className="border-t pt-4">
-                <h4 className="font-medium text-gray-900 mb-2">시설 정보</h4>
+                <h4 className="font-medium text-gray-900 mb-2 flex items-center">
+                  <Info className="w-4 h-4 mr-2" />
+                  시설 정보
+                </h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-500">카테고리:</span>
+                    <span className="text-gray-500">카테고리 :</span>
                     <span className="ml-2 text-gray-900">{config.label}</span>
                   </div>
                   {facility.distance && (
                     <div>
-                      <span className="text-gray-500">거리:</span>
+                      <span className="text-gray-500">거리 :</span>
                       <span className="ml-2 text-gray-900">{facility.distance.toFixed(1)}km</span>
                     </div>
                   )}
                   <div>
-                    <span className="text-gray-500">예약:</span>
+                    <span className="text-gray-500">예약 :</span>
                     <span className="ml-2 text-gray-900">{facility.isReservable ? '가능' : '불가'}</span>
                   </div>
                   {facility.position && (
                     <div>
-                      <span className="text-gray-500">좌표:</span>
-                      <span className="ml-2 text-gray-900 font-mono text-xs">
-                        {facility.position.lat.toFixed(4)}, {facility.position.lng.toFixed(4)}
+                      <span className="text-gray-500">좌표 :</span>
+                      <span className="ml-2 text-gray-900">
+                        위도 {facility.position.lat.toFixed(4)}, 경도 {facility.position.lng.toFixed(4)}
                       </span>
                     </div>
                   )}
@@ -340,7 +332,10 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
               
               {facility.description && (
                 <div className="border-t pt-4">
-                  <h4 className="font-medium text-gray-900 mb-2">설명</h4>
+                  <h4 className="font-medium text-gray-900 mb-2 flex items-center">
+                    <MessageCircleMore className="w-4 h-4 mr-2" />
+                    설명
+                  </h4>
                   <p className="text-gray-700 text-sm leading-relaxed">{facility.description}</p>
                 </div>
               )}
