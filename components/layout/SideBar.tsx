@@ -8,6 +8,7 @@ import { X } from 'lucide-react';
 import type { UserPreferences, FacilityCategory } from '@/lib/types';
 import { FACILITY_CONFIGS } from '@/lib/facilityIcons';
 import { useAuthStore } from '@/store/authStore';
+import WarningModal from '@/components/ui/warning-modal';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -17,6 +18,8 @@ interface SidebarProps {
     onLogin?: () => void;
     onLogout?: () => void;
     onPreferencesRefresh?: () => void;
+    showWarning?: boolean;
+    onWarningClose?: () => void;
 }
 
 export default function SideBar({ 
@@ -26,16 +29,18 @@ export default function SideBar({
     onPreferenceToggle,
     onLogin,
     onLogout,
-    onPreferencesRefresh
+    onPreferencesRefresh,
+    showWarning,
+    onWarningClose
 }: SidebarProps) {
-  const { isAuthenticated, user, clearAuth } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
-  // 로그인 상태 변경 시 선호도 새로고침
+  // 사이드바 클릭 시 사용자 관심사 조회
   React.useEffect(() => {
-    if (isAuthenticated && onPreferencesRefresh) {
+    if (isOpen && isAuthenticated && onPreferencesRefresh) {
       onPreferencesRefresh();
     }
-  }, [isAuthenticated, onPreferencesRefresh]);
+  }, [isOpen, isAuthenticated, onPreferencesRefresh]);
 
   const selectedCount = Object.values(preferences).filter(Boolean).length;
 
@@ -200,6 +205,11 @@ export default function SideBar({
           </div>
         </div>
       </aside>
+      
+      <WarningModal 
+        isOpen={showWarning || false} 
+        onClose={onWarningClose || (() => {})} 
+      />
     </>
   );
 }

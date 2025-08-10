@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { UserPreferences, FacilityCategory } from '@/lib/types';
 import { INTEREST_CATEGORY_MAP } from '@/lib/types';
 import { useAuthStore } from '@/store/authStore';
-import { getUserInfo, updateUserInterests } from '@/services/user';
-
-const PREFERENCES_STORAGE_KEY = 'seoulfit_preferences';
+import { updateUserInterests, getUserInterests } from '@/services/user';
 
 const defaultPreferences: UserPreferences = {
   sports: true,
@@ -18,14 +16,15 @@ const defaultPreferences: UserPreferences = {
 export function usePreferences() {
   const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
   const { isAuthenticated, user } = useAuthStore();
 
   // 사용자 선호도 조회
-  const loadUserPreferences = async () => {
-    if (!isAuthenticated || !user?.id || isLoaded) return;
+  const loadUserPreferences = useCallback(async () => {
+    if (!isAuthenticated || !user?.id) return;
     
     try {
-      const userInfo = await getUserInfo(user.id);
+      const userInterests = await getUserInterests(user.id);
       // 모든 선호도를 false로 초기화
       const userPreferences: UserPreferences = {
         sports: false,
@@ -36,10 +35,9 @@ export function usePreferences() {
         bike: false
       };
 
-      // 사용자 선호도 저장
-      userInfo.interests.forEach(interest => {
-        const interestCategory = typeof interest === 'string' ? interest : interest.interestCategory;
-        const facilityCategory = INTEREST_CATEGORY_MAP[interestCategory];
+      // 사용자 관심사에 따라 선호도 설정
+      userInterests.interests.forEach(interest => {
+        const facilityCategory = INTEREST_CATEGORY_MAP[interest.category];
         if (facilityCategory) {
           userPreferences[facilityCategory] = true;
         }
@@ -48,46 +46,41 @@ export function usePreferences() {
       setPreferences(userPreferences);
       setIsLoaded(true);
     } catch (error) {
-      console.error('사용자 선호도를 불러오는데 실패했습니다:', error);
+      console.error('사용자 관심사를 불러오는데 실패했습니다:', error);
       loadLocalPreferences();
       setIsLoaded(true);
     }
-  };
+  }, [isAuthenticated, user?.id]);
 
   // 로컬 스토리지에서 선호도 로드
-  const loadLocalPreferences = () => {
+  const loadLocalPreferences = useCallback(() => {
     if (isLoaded) return;
     
     setPreferences(defaultPreferences);
     setIsLoaded(true);
-  };
+  }, [isLoaded]);
 
   // 인증 상태에 따른 선호도 로드
   useEffect(() => {
     if (isAuthenticated && user?.id) {
-      loadUserPreferences().then();
+      loadUserPreferences();
     } else {
-      localStorage.removeItem(PREFERENCES_STORAGE_KEY);
       loadLocalPreferences();
     }
-  }, [isAuthenticated, user?.id]);
-
-  // 로그인 한 경우, 관심사 로컬 스토리지에 저장
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    
-    try {
-      localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(preferences));
-    } catch (error) {
-      console.error('선호도 설정 저장에 실패했습니다:', error);
-    }
-  }, [preferences, isAuthenticated]);
+  }, [isAuthenticated, user?.id, loadUserPreferences, loadLocalPreferences]);
 
   const togglePreference = async (type: FacilityCategory) => {
     const newPreferences = {
       ...preferences,
       [type]: !preferences[type]
     };
+    
+    // 최소 1개 선택 검증
+    const selectedCount = Object.values(newPreferences).filter(Boolean).length;
+    if (selectedCount === 0) {
+      setShowWarning(true);
+      return;
+    }
     
     setPreferences(newPreferences);
     
@@ -118,18 +111,21 @@ export function usePreferences() {
     setPreferences(defaultPreferences);
   };
 
-  const refreshPreferences = () => {
+  const refreshPreferences = useCallback(async () => {
     if (isAuthenticated && user?.id) {
-      loadUserPreferences().then();
+      setIsLoaded(false);
+      await loadUserPreferences();
     } else {
       loadLocalPreferences();
     }
-  };
+  }, [isAuthenticated, user?.id, loadUserPreferences, loadLocalPreferences]);
 
   return {
     preferences,
     togglePreference,
     resetPreferences,
-    refreshPreferences
+    refreshPreferences,
+    showWarning,
+    setShowWarning
   };
 }
