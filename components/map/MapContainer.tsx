@@ -1,7 +1,7 @@
 // components/map/MapContainer.tsx
 'use client';
 
-import React, { useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo, useState } from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
 
@@ -15,7 +15,7 @@ import { useWeather } from '@/hooks/useWeather';
 import { useKakaoMap } from '@/hooks/useKakaoMap';
 import { useCurrentLocationMarker } from '@/hooks/useCurrentLocationMarker';
 import { usePOI } from '@/hooks/usePOI';
-// import { useFacilities } from '@/hooks/useFacilities'; // 현재 사용하지 않음
+// import { useFacilities } from '@/hooks/useFacilities'; // MapView에서 사용함
 import { convertPOIToFacility } from '@/services/poi';
 import { getNearbyBikeStations, convertBikeStationToFacility } from '@/services/bikeStation';
 import type { BikeStationData } from '@/lib/types';
@@ -58,9 +58,10 @@ export default function MapContainer({}: MapContainerProps = {}) {
     [facilitiesFromPOIs, facilitiesFromBikes]
   );
 
-  const { visibleFacilities } = useFacilities({
-    facilities: allFacilities
-  });
+  // MapView 내부에서 useFacilities를 사용하므로 여기서는 불필요
+  // const { visibleFacilities } = useFacilities({
+  //   facilities: allFacilities
+  // });
 
   // 혼잡도 관련 hooks
   const {

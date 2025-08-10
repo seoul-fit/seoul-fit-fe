@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // 서울시 공통 API 키
-const API_KEY = '4b46766a7673706939395769456b6b';
+const API_KEY = process.env.SEOUL_API_KEY || '4b46766a7673706939395769456b6b';
 const BASE_URL = 'http://openapi.seoul.go.kr:8088';
 
 // 서울시 따릉이 API 응답 타입

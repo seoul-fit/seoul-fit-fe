@@ -149,37 +149,11 @@ export const useMapMarkers = ({
 
           customOverlay.setMap(mapInstance);
 
-          // 마커 클릭 이벤트 설정 (비동기 처리)
-          setTimeout(() => {
-            try {
-              const markerId = `marker-${facility.id}`;
-              const markerElement = document.getElementById(markerId);
-              if (markerElement) {
-                // 기존 이벤트 리스너 제거 후 새로 추가 (중복 방지)
-                const newElement = markerElement.cloneNode(true) as HTMLElement;
-                markerElement.parentNode?.replaceChild(newElement, markerElement);
-                
-                newElement.addEventListener('click', (e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onFacilitySelect(facility);
-                });
+          // 시설 데이터 저장
+          facilityDataRef.current.set(facility.id, facility);
 
-                // 호버 효과를 위한 추가 이벤트
-                newElement.addEventListener('mouseenter', () => {
-                  newElement.style.transform = 'scale(1.1)';
-                  newElement.style.zIndex = '1001';
-                });
-
-                newElement.addEventListener('mouseleave', () => {
-                  newElement.style.transform = 'scale(1)';
-                  newElement.style.zIndex = '1000';
-                });
-              }
-            } catch (error) {
-              console.error(`마커 이벤트 설정 실패 (ID: ${facility.id}):`, error);
-            }
-          }, 100);
+          // 개선된 이벤트 바인딩 (재시도 로직 포함)
+          bindMarkerEvent(facility);
 
           return customOverlay;
         } catch (error) {
