@@ -42,7 +42,6 @@ interface MapViewProps {
 interface MapViewPropsExtended extends MapViewProps {
   mapInstance?: KakaoMap | null | undefined;
   mapStatus?: { success: boolean; loading: boolean; error: string | null } | undefined;
-  visibleFacilities?: Facility[];
   allFacilities?: Facility[];
 }
 
@@ -63,7 +62,6 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
   onMoveToCurrentLocation,
   mapInstance,
   mapStatus,
-  visibleFacilities = [],
   allFacilities = []
 }) => {
   // 내부에서 선호도 관리

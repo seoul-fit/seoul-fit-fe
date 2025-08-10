@@ -1,5 +1,5 @@
 // utils/marker.ts
-import type { FacilityCategory } from '@/lib/types';
+import type { FacilityCategory, Facility } from '@/lib/types';
 import { getFacilityIconSVG, getCategoryColor } from '@/lib/facilityIcons';
 
 /**
@@ -60,15 +60,48 @@ export const createPOIMarkerContent = (
  * @param facilityCategory - 시설 카테고리
  * @param crowdLevel - 혼잡도 레벨
  * @param facilityId - 시설 ID (DOM 요소 식별용)
+ * @param facility - 시설 정보 (따릉이 상태 표시용)
  * @returns HTML 문자열
  */
 export const createCustomMarkerContent = (
   facilityCategory: FacilityCategory,
   crowdLevel: 'low' | 'medium' | 'high',
-  facilityId: string
+  facilityId: string,
+  facility?: Facility
 ): string => {
   const categoryBgColor = getCategoryColor(facilityCategory);
   const iconSVG = getFacilityIconSVG(facilityCategory);
+
+  // 따릉이 마커의 경우 상태 뱃지 추가
+  let statusBadge = '';
+  if (facilityCategory === 'bike' && facility?.bikeFacility) {
+    const { availableBikes = 0 } = facility.bikeFacility;
+    
+    // 이용 가능한 자전거 수에 따른 색상 결정
+    let badgeColor = '#EF4444'; // 빨간색: 이용불가 (0대)
+    if (availableBikes > 5) {
+      badgeColor = '#10B981'; // 초록색: 여유있음 (6대 이상)
+    } else if (availableBikes > 2) {
+      badgeColor = '#F59E0B'; // 주황색: 보통 (3-5대)
+    } else if (availableBikes > 0) {
+      badgeColor = '#EF4444'; // 빨간색: 부족 (1-2대)
+    }
+    
+    statusBadge = `
+      <div style="
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        width: 12px;
+        height: 12px;
+        background-color: ${badgeColor};
+        border: 2px solid white;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 1001;
+      "></div>
+    `;
+  }
 
   return `
     <div 
@@ -115,6 +148,7 @@ export const createCustomMarkerContent = (
         border-top: 8px solid ${categoryBgColor};
         pointer-events: none;
       "></div>
+      ${statusBadge}
     </div>
   `;
 };

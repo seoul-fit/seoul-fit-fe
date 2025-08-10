@@ -1,7 +1,11 @@
 import {NextRequest, NextResponse} from "next/server";
 
-const API_KEY = '54686b446870656134356f6e634454';
+const API_KEY = '4b46766a7673706939395769456b6b';
 const BASE_URL = 'http://openapi.seoul.go.kr:8088';
+
+// 캐시 설정
+const CACHE_DURATION = 60 * 1000; // 1분
+const congestionCache = new Map(); // areaCode별로 캐시
 
 /**
  * 서울 열린 데이터 광장에서 제공한 서울시 주요 120 장소 목록
@@ -205,8 +209,26 @@ export async function GET(request: NextRequest) {
         // 가장 가까운 장소 코드 찾기
         const nearestAreaCode = findNearestAreaCode(lat, lng);
 
-        // 서울시 실시간 인구데이터 API 호출
+        // 캐시 확인
+        const now = Date.now();
+        const cacheKey = nearestAreaCode;
+        const cachedData = congestionCache.get(cacheKey);
+        
+        if (cachedData && (now - cachedData.timestamp) < CACHE_DURATION) {
+            console.log(`혼잡도 데이터 캐시 사용: ${nearestAreaCode}`);
+            return NextResponse.json({
+                success: true,
+                data: {
+                    ...cachedData.data,
+                    cached: true
+                }
+            });
+        }
+
+        // 캐시가 없거나 만료된 경우 API 호출
+        console.log(`혼잡도 데이터 API 호출: ${nearestAreaCode}`);
         const apiUrl = `${BASE_URL}/${API_KEY}/json/citydata_ppltn/1/5/${nearestAreaCode}`;
+        const fetchTime = new Date().toISOString();
 
         const response = await fetch(apiUrl, {
             method: 'GET',
@@ -226,7 +248,21 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        const data = await response.json();
+        const responseText = await response.text();
+        
+        // XML 응답인지 확인
+        if (responseText.startsWith('<')) {
+            console.error('API가 XML 형태로 응답했습니다:', responseText.substring(0, 100));
+            return NextResponse.json(
+                {
+                    error: '서울시 실시간 인구데이터 API에서 오류 응답을 받았습니다.',
+                    code: 'API_XML_ERROR'
+                },
+                { status: 502 }
+            );
+        }
+        
+        const data = JSON.parse(responseText);
 
         // API 응답 결과 코드 확인
         if (data.RESULT?.['RESULT.CODE'] !== 'INFO-000') {
@@ -254,17 +290,26 @@ export async function GET(request: NextRequest) {
         }
 
         const congestionData = congestionArray[0];
+        
+        const responseData = {
+            areaCode: nearestAreaCode,
+            areaName: congestionData.AREA_NM,
+            areaCongestLevel: congestionData.AREA_CONGEST_LVL,
+            areaCongestMessage: congestionData.AREA_CONGEST_MSG,
+            timestamp: fetchTime,
+            rawData: congestionData,
+            cached: false
+        };
+        
+        // 캐시 업데이트
+        congestionCache.set(cacheKey, {
+            data: responseData,
+            timestamp: now
+        });
 
         return NextResponse.json({
             success: true,
-            data: {
-                areaCode: nearestAreaCode,
-                areaName: congestionData.AREA_NM,
-                areaCongestLevel: congestionData.AREA_CONGEST_LVL,
-                areaCongestMessage: congestionData.AREA_CONGEST_MSG,
-                timestamp: new Date().toISOString(),
-                rawData: congestionData
-            }
+            data: responseData
         });
     } catch (error) {
         console.error('서울시 실시간 인구데이터 API 처리 중 오류 : ', error);

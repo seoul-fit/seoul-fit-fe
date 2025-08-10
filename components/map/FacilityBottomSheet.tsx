@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, ChevronUp, ChevronDown, MapPin, Clock, Phone, Users, Cloud, Thermometer } from 'lucide-react';
+import { X, ChevronUp, ChevronDown, MapPin, Clock, Phone, Users, Cloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Facility, CongestionData, WeatherData } from '@/lib/types';
 import { FACILITY_CONFIGS } from '@/lib/facilityIcons';

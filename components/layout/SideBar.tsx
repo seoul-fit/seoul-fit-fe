@@ -28,7 +28,7 @@ export default function SideBar({
     onLogout,
     onPreferencesRefresh
 }: SidebarProps) {
-  const { isAuthenticated, user, clearAuth } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
   // 로그인 상태 변경 시 선호도 새로고침
   React.useEffect(() => {

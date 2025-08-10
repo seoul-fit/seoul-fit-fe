@@ -1,8 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// 따릉이 전용 API 키
-const BIKE_API_KEY = '64595272627065613536416d487963';
+// 서울시 공통 API 키
+const API_KEY = '4b46766a7673706939395769456b6b';
 const BASE_URL = 'http://openapi.seoul.go.kr:8088';
+
+// 서울시 따릉이 API 응답 타입
+interface BikeStationRaw {
+    stationId: string;
+    stationName: string;
+    stationLatitude: string;
+    stationLongitude: string;
+    rackTotCnt: string;
+    parkingBikeTotCnt: string;
+    shared: string;
+}
+
+// 캐시 설정
+const CACHE_DURATION = 60 * 1000; // 1분
+let bikeCache: {
+    data: BikeStationRaw[] | null,
+    timestamp: number,
+    fetchTime: string | null
+} = {
+    data: null,
+    timestamp: 0,
+    fetchTime: null
+};
 
 /**
  * 두 좌표 간의 거리 계산 (km)
@@ -47,43 +70,120 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // 서울시 공공자전거 실시간 대여정보 API 호출
-        const apiUrl = `${BASE_URL}/${BIKE_API_KEY}/json/bikeList/1/1000/`;
+        // 캐시 확인
+        const now = Date.now();
+        if (bikeCache.data && (now - bikeCache.timestamp) < CACHE_DURATION) {
+            console.log('따릉이 데이터 캐시 사용');
+            const cachedData = bikeCache.data as BikeStationRaw[];
+            
+            // 반경 내 대여소 필터링 (캐시된 데이터에서)
+            const nearbyStations = cachedData
+                .filter((station: BikeStationRaw) => {
+                    const stationLat = parseFloat(station.stationLatitude);
+                    const stationLng = parseFloat(station.stationLongitude);
+                    
+                    if (isNaN(stationLat) || isNaN(stationLng)) return false;
+                    
+                    const distance = calculateDistance(lat, lng, stationLat, stationLng);
+                    return distance <= radius;
+                })
+                .map((station: BikeStationRaw) => ({
+                    code: `BIKE_${station.stationId}`,
+                    name: `${station.stationName} 따릉이 대여소`,
+                    lat: parseFloat(station.stationLatitude),
+                    lng: parseFloat(station.stationLongitude),
+                    distance: calculateDistance(lat, lng, parseFloat(station.stationLatitude), parseFloat(station.stationLongitude)),
+                    stationId: station.stationId,
+                    rackTotCnt: station.rackTotCnt,
+                    parkingBikeTotCnt: station.parkingBikeTotCnt,
+                    shared: station.shared
+                }))
+                .sort((a, b) => a.distance - b.distance);
 
-        const response = await fetch(apiUrl, {
+            return NextResponse.json({
+                success: true,
+                data: {
+                    center: { lat, lng },
+                    radius,
+                    count: nearbyStations.length,
+                    stations: nearbyStations,
+                    cached: true,
+                    fetchTime: bikeCache.fetchTime
+                }
+            });
+        }
+
+        // 캐시가 없거나 만료된 경우 API 호출 (2회 나누어 호출)
+        console.log('따릉이 데이터 API 호출 (2회 분할)');
+        const fetchTime = new Date().toISOString();
+        
+        // 첫 번째 호출: 1~1000
+        const apiUrl1 = `${BASE_URL}/${API_KEY}/json/bikeList/1/1000/`;
+        const response1 = await fetch(apiUrl1, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
             },
         });
 
-        if (!response.ok) {
-            console.error(`따릉이 API 호출 실패: ${response.status} ${response.statusText}`);
+        if (!response1.ok) {
+            console.error(`따릉이 API 첫 번째 호출 실패: ${response1.status} ${response1.statusText}`);
             return NextResponse.json(
-                { error: `따릉이 API 호출 실패: ${response.status}` },
+                { error: `따릉이 API 첫 번째 호출 실패: ${response1.status}` },
                 { status: 502 }
             );
         }
 
-        const data = await response.json();
+        const data1 = await response1.json();
         
-        // 디버깅용 로그
-        console.log('API Response:', JSON.stringify(data, null, 2));
+        // 두 번째 호출: 1001~2000
+        const apiUrl2 = `${BASE_URL}/${API_KEY}/json/bikeList/1001/2000/`;
+        const response2 = await fetch(apiUrl2, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
 
-        // API 응답 결과 코드 확인 (성공 시 CODE가 없을 수 있음)
-        if (data.RESULT && data.RESULT.CODE !== 'INFO-000') {
-            console.error(`API 응답 에러: ${data.RESULT?.MESSAGE}`);
+        if (!response2.ok) {
+            console.error(`따릉이 API 두 번째 호출 실패: ${response2.status} ${response2.statusText}`);
             return NextResponse.json(
-                { error: `따릉이 API 응답 에러: ${data.RESULT?.MESSAGE}` },
+                { error: `따릉이 API 두 번째 호출 실패: ${response2.status}` },
                 { status: 502 }
             );
         }
 
-        const bikeStations = data.rentBikeStatus?.row || data.row || [];
+        const data2 = await response2.json();
+        
+        // API 응답 결과 코드 확인
+        if ((data1.RESULT && data1.RESULT.CODE !== 'INFO-000') || 
+            (data2.RESULT && data2.RESULT.CODE !== 'INFO-000')) {
+            console.error(`API 응답 에러: ${data1.RESULT?.MESSAGE || data2.RESULT?.MESSAGE}`);
+            return NextResponse.json(
+                { error: `따릉이 API 응답 에러: ${data1.RESULT?.MESSAGE || data2.RESULT?.MESSAGE}` },
+                { status: 502 }
+            );
+        }
+
+        // 두 응답 데이터 합치기
+        const bikeStations1 = data1.rentBikeStatus?.row || data1.row || [];
+        const bikeStations2 = data2.rentBikeStatus?.row || data2.row || [];
+        const bikeStations = [...bikeStations1, ...bikeStations2];
+        
+        console.log(`따릉이 데이터 로드 완료: 첫 번째 ${bikeStations1.length}개, 두 번째 ${bikeStations2.length}개, 총 ${bikeStations.length}개`);
+        
+        // 캐시 업데이트
+        bikeCache = {
+            data: bikeStations,
+            timestamp: now,
+            fetchTime: fetchTime
+        };
+        
+        console.log(`캐시 업데이트 완료: ${bikeStations.length}개 대여소 저장`);
         
         // 반경 내 대여소 필터링
         const nearbyStations = bikeStations
-            .filter((station: any) => {
+            .filter((station: BikeStationRaw) => {
                 const stationLat = parseFloat(station.stationLatitude);
                 const stationLng = parseFloat(station.stationLongitude);
                 
@@ -92,7 +192,7 @@ export async function GET(request: NextRequest) {
                 const distance = calculateDistance(lat, lng, stationLat, stationLng);
                 return distance <= radius;
             })
-            .map((station: any) => ({
+            .map((station: BikeStationRaw) => ({
                 code: `BIKE_${station.stationId}`,
                 name: `${station.stationName} 따릉이 대여소`,
                 lat: parseFloat(station.stationLatitude),
@@ -104,7 +204,7 @@ export async function GET(request: NextRequest) {
                 parkingBikeTotCnt: station.parkingBikeTotCnt, // 주차 자전거 총 건수
                 shared: station.shared // 거치율
             }))
-            .sort((a: any, b: any) => a.distance - b.distance);
+            .sort((a, b) => a.distance - b.distance);
 
         return NextResponse.json({
             success: true,
@@ -112,7 +212,9 @@ export async function GET(request: NextRequest) {
                 center: { lat, lng },
                 radius,
                 count: nearbyStations.length,
-                stations: nearbyStations
+                stations: nearbyStations,
+                cached: false,
+                fetchTime: fetchTime
             }
         });
 

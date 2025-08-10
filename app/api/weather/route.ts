@@ -1,7 +1,11 @@
 import {NextRequest, NextResponse} from "next/server";
 
-const API_KEY = '4c6f446b737065613735694973496c';
+const API_KEY = '4b46766a7673706939395769456b6b';
 const BASE_URL = 'http://openapi.seoul.go.kr:8088';
+
+// 캐시 설정
+const CACHE_DURATION = 60 * 1000; // 1분
+const weatherCache = new Map(); // areaCode별로 캐시
 
 /**
  * 서울 열린 데이터 광장에서 제공한 서울시 주요 120 장소 목록
@@ -205,8 +209,26 @@ export async function GET(request: NextRequest) {
         // 가장 가까운 장소 코드 찾기
         const nearestAreaCode = findNearestAreaCode(lat, lng);
 
-        // 서울시 실시간 도시데이터 API 호출
+        // 캐시 확인
+        const now = Date.now();
+        const cacheKey = nearestAreaCode;
+        const cachedData = weatherCache.get(cacheKey);
+        
+        if (cachedData && (now - cachedData.timestamp) < CACHE_DURATION) {
+            console.log(`날씨 데이터 캐시 사용: ${nearestAreaCode}`);
+            return NextResponse.json({
+                success: true,
+                data: {
+                    ...cachedData.data,
+                    cached: true
+                }
+            });
+        }
+
+        // 캐시가 없거나 만료된 경우 API 호출
+        console.log(`날씨 데이터 API 호출: ${nearestAreaCode}`);
         const apiUrl = `${BASE_URL}/${API_KEY}/json/citydata/1/1/${nearestAreaCode}`;
+        const fetchTime = new Date().toISOString();
 
         const response = await fetch(apiUrl, {
             method: 'GET',
@@ -261,27 +283,36 @@ export async function GET(request: NextRequest) {
         }
 
         const weatherData = weatherArray[0];
+        
+        const responseData = {
+            areaCode: nearestAreaCode,
+            areaName: cityData.AREA_NM,
+            weatherStts: weatherData.WEATHER_STTS,
+            temp: weatherData.TEMP,
+            sensibleTemp: weatherData.SENSIBLE_TEMP,
+            maxTemp: weatherData.MAX_TEMP,
+            minTemp: weatherData.MIN_TEMP,
+            humidity: weatherData.HUMIDITY,
+            precipitation: weatherData.PRECIPITATION,
+            pcpMsg: weatherData.PCP_MSG,
+            uvIndexLvl: weatherData.UV_INDEX_LVL,
+            uvMsg: weatherData.UV_MSG,
+            pm25Index: weatherData.PM25_INDEX,
+            pm10Index: weatherData.PM10_INDEX,
+            timestamp: fetchTime,
+            rawData: weatherData,
+            cached: false
+        };
+        
+        // 캐시 업데이트
+        weatherCache.set(cacheKey, {
+            data: responseData,
+            timestamp: now
+        });
 
         return NextResponse.json({
             success: true,
-            data: {
-                areaCode: nearestAreaCode,
-                areaName: cityData.AREA_NM,
-                weatherStts: weatherData.WEATHER_STTS,
-                temp: weatherData.TEMP,
-                sensibleTemp: weatherData.SENSIBLE_TEMP,
-                maxTemp: weatherData.MAX_TEMP,
-                minTemp: weatherData.MIN_TEMP,
-                humidity: weatherData.HUMIDITY,
-                precipitation: weatherData.PRECIPITATION,
-                pcpMsg: weatherData.PCP_MSG,
-                uvIndexLvl: weatherData.UV_INDEX_LVL,
-                uvMsg: weatherData.UV_MSG,
-                pm25Index: weatherData.PM25_INDEX,
-                pm10Index: weatherData.PM10_INDEX,
-                timestamp: new Date().toISOString(),
-                rawData: weatherData
-            }
+            data: responseData
         });
     } catch (error) {
         console.error('서울시 실시간 도시데이터 API 처리 중 오류 : ', error);

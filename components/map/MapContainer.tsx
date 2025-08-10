@@ -15,9 +15,10 @@ import { useWeather } from '@/hooks/useWeather';
 import { useKakaoMap } from '@/hooks/useKakaoMap';
 import { useCurrentLocationMarker } from '@/hooks/useCurrentLocationMarker';
 import { usePOI } from '@/hooks/usePOI';
-import { useFacilities } from '@/hooks/useFacilities';
+// import { useFacilities } from '@/hooks/useFacilities'; // 현재 사용하지 않음
 import { convertPOIToFacility } from '@/services/poi';
-// import { getNearbyBikeStations, convertBikeStationToFacility } from '@/services/bikeStation';
+import { getNearbyBikeStations, convertBikeStationToFacility } from '@/services/bikeStation';
+import type { BikeStationData } from '@/lib/types';
 
 interface MapContainerProps {
   className?: string; // 추가적인 CSS 클래스
@@ -35,11 +36,11 @@ export default function MapContainer({}: MapContainerProps = {}) {
   const { currentLocation, moveToCurrentLocation } = useLocation(mapInstance);
 
   // POI 관련 hooks
-  const { pois, loading: poiLoading, fetchNearbyPOIs } = usePOI();
+  const { pois, fetchNearbyPOIs } = usePOI();
   
-  // 따릉이 대여소 상태 (임시 비활성화)
-  // const [bikeStations, setBikeStations] = useState([]);
-  // const [bikeLoading, setBikeLoading] = useState(false);
+  // 따릉이 대여소 상태
+  const [bikeStations, setBikeStations] = useState<BikeStationData[]>([]);
+  const [bikeError, setBikeError] = useState<string | null>(null); // bike 에러 상태 추가
 
   // POI와 따릉이를 Facility로 변환
   const facilitiesFromPOIs = useMemo(() => 
@@ -47,19 +48,20 @@ export default function MapContainer({}: MapContainerProps = {}) {
     [pois]
   );
   
-  // const facilitiesFromBikes = useMemo(() => 
-  //   bikeStations.map(station => convertBikeStationToFacility(station)), 
-  //   [bikeStations]
-  // );
+  const facilitiesFromBikes = useMemo(() => 
+    bikeStations.map(station => convertBikeStationToFacility(station)), 
+    [bikeStations]
+  );
   
   const allFacilities = useMemo(() => 
-    [...facilitiesFromPOIs], // ...facilitiesFromBikes 임시 비활성화
-    [facilitiesFromPOIs]
+    [...facilitiesFromPOIs, ...facilitiesFromBikes],
+    [facilitiesFromPOIs, facilitiesFromBikes]
   );
 
-  const { visibleFacilities, preferences, toggleCategory } = useFacilities({
-    facilities: allFacilities
-  });
+  // 사용하지 않는 변수들은 주석 처리
+  // const { visibleFacilities, preferences, toggleCategory } = useFacilities({
+  //   facilities: allFacilities
+  // });
 
   // 혼잡도 관련 hooks
   const {
@@ -94,16 +96,15 @@ export default function MapContainer({}: MapContainerProps = {}) {
     // POI 데이터 업데이트
     await fetchNearbyPOIs(lat, lng, 1.5);
     
-    // 따릉이 데이터 업데이트 (임시 비활성화)
-    // setBikeLoading(true);
-    // try {
-    //   const stations = await getNearbyBikeStations(lat, lng, 1.5);
-    //   setBikeStations(stations);
-    // } catch (error) {
-    //   console.error('따릉이 데이터 로드 실패:', error);
-    // } finally {
-    //   setBikeLoading(false);
-    // }
+    // 따릉이 데이터 업데이트
+    setBikeError(null);
+    try {
+      const stations = await getNearbyBikeStations(lat, lng, 1.5);
+      setBikeStations(stations ?? []);
+    } catch (error: unknown) {
+      setBikeError(error instanceof Error ? error.message : '따릉이 데이터 로드 실패');
+      console.error('따릉이 데이터 로드 실패:', error);
+    }
   }, [fetchCongestionData, fetchWeatherData, fetchNearbyPOIs]);
 
   // 현재 위치 마커 표시
@@ -116,27 +117,39 @@ export default function MapContainer({}: MapContainerProps = {}) {
 
   // 현재 위치가 설정되면 자동으로 날씨, 혼잡도, POI 데이터 로드
   useEffect(() => {
-    if (currentLocation) {
+    if (currentLocation?.coords) {
       const { lat, lng } = currentLocation.coords;
-      
+
       if (!weatherData) {
-        fetchWeatherData(lat, lng);
+        fetchWeatherData(lat, lng).catch((e: unknown) => console.error(e));
       }
       if (!congestionData) {
-        fetchCongestionData(lat, lng);
+        fetchCongestionData(lat, lng).catch((e: unknown) => console.error(e));
       }
       if (pois.length === 0) {
-        fetchNearbyPOIs(lat, lng, 1.5);
+        fetchNearbyPOIs(lat, lng, 1.5).catch((e: unknown) => console.error(e));
       }
-      // if (bikeStations.length === 0) {
-      //   setBikeLoading(true);
-      //   getNearbyBikeStations(lat, lng, 1.5)
-      //     .then(stations => setBikeStations(stations))
-      //     .catch(error => console.error('따릉이 데이터 로드 실패:', error))
-      //     .finally(() => setBikeLoading(false));
-      // }
+      if (bikeStations.length === 0) {
+        setBikeError(null);
+        getNearbyBikeStations(lat, lng, 1.5)
+          .then(stations => setBikeStations(stations ?? []))
+          .catch(error => {
+            setBikeError(error?.message ?? '따릉이 데이터 로드 실패');
+            console.error('따릉이 데이터 로드 실패:', error);
+          })
+          .finally(() => {/* 더 이상 로딩 상태 관리하지 않음 */});
+      }
     }
-  }, [currentLocation, weatherData, congestionData, pois.length, fetchWeatherData, fetchCongestionData, fetchNearbyPOIs]);
+  }, [
+    currentLocation?.coords,
+    weatherData,
+    congestionData,
+    pois.length,
+    bikeStations.length,
+    fetchWeatherData,
+    fetchCongestionData,
+    fetchNearbyPOIs
+  ]);
 
   // 혼잡도 토글 핸들러
   const handleToggleCongestion = async () => {
@@ -173,7 +186,7 @@ export default function MapContainer({}: MapContainerProps = {}) {
   return (
     <div className="relative w-full h-full">
       {/* 에러 알림들 - 상단 중앙 */}
-      {(congestionError && showCongestion) || (weatherError && showWeather) ? (
+      {(congestionError && showCongestion) || (weatherError && showWeather) || bikeError ? (
         <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-20 w-80 max-w-[90vw]">
           {congestionError && showCongestion && (
             <Alert variant="destructive" className="mb-2">
@@ -182,9 +195,15 @@ export default function MapContainer({}: MapContainerProps = {}) {
             </Alert>
           )}
           {weatherError && showWeather && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="mb-2">
               <Info className="h-4 w-4" />
               <AlertDescription>{weatherError}</AlertDescription>
+            </Alert>
+          )}
+          {bikeError && (
+            <Alert variant="destructive">
+              <Info className="h-4 w-4" />
+              <AlertDescription>{bikeError}</AlertDescription>
             </Alert>
           )}
         </div>
@@ -208,7 +227,6 @@ export default function MapContainer({}: MapContainerProps = {}) {
         onMoveToCurrentLocation={moveToCurrentLocation}
         mapInstance={mapInstance}
         mapStatus={mapStatus}
-        visibleFacilities={visibleFacilities}
         allFacilities={allFacilities}
       />
     </div>
