@@ -8,7 +8,7 @@ import Header from './layout/Header';
 import SideBar from './layout/SideBar';
 import MapContainer from './map/MapContainer';
 import LogoutModal from './auth/LogoutModal';
-import {useAuthStore} from "../store/authStore";
+import { useKakaoLogin } from "@/hooks/useKakaoLogin";
 
 // 기존 타입 정의들
 interface MapStatus {
@@ -21,8 +21,8 @@ export default function SeoulFitMapApp() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showLogoutSuccess, setShowLogoutSuccess] = useState(false);
   const { preferences, togglePreference, refreshPreferences, showWarning, setShowWarning } = usePreferences();
+  const { login, logout } = useKakaoLogin();
   const [searchQuery, setSearchQuery] = useState('');
-  const { clearAuth } = useAuthStore();
 
   // 상태 관리
   const [mapStatus] = useState<MapStatus>({
@@ -60,11 +60,7 @@ export default function SeoulFitMapApp() {
         onPreferencesRefresh={refreshPreferences}
         showWarning={showWarning}
         onWarningClose={() => setShowWarning(false)}
-        onLogin={() => {
-          const KAKAO_CLIENT_ID = '349f89103b32e7135ad6f15e0a73509b';
-          const REDIRECT_URI = 'http://localhost:3000/auth/callback';
-          window.location.href = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${KAKAO_CLIENT_ID}&redirect_uri=${REDIRECT_URI}`;
-        }}
+        onLogin={login}
         onLogout={() => setShowLogoutModal(true)}
       />
 
@@ -88,14 +84,19 @@ export default function SeoulFitMapApp() {
         showLogoutModal={showLogoutModal}
         showLogoutSuccess={showLogoutSuccess}
         onCancel={() => setShowLogoutModal(false)}
-        onConfirm={() => {
-          localStorage.removeItem('access_token');
-          clearAuth();
-          setShowLogoutModal(false);
-          setShowLogoutSuccess(true);
-          setTimeout(() => {
-            window.location.href = '/';
-          }, 3000);
+        onConfirm={async () => {
+          try {
+            await logout();
+            setShowLogoutModal(false);
+            setShowLogoutSuccess(true);
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 3000);
+          } catch (error) {
+            console.error('로그아웃 실패:', error);
+            setShowLogoutModal(false);
+            setShowLogoutSuccess(false);
+          }
         }}
       />
     </>
