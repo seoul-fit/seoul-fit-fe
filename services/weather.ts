@@ -23,7 +23,7 @@ export async function getNearestWeatherData(lat: number, lng: number): Promise<W
             headers: {
                 'Content-Type': 'application/json',
             },
-            cache: 'no-cache',
+            cache: 'default', // 브라우저 캐시 활용
         });
 
         if (!response.ok) {

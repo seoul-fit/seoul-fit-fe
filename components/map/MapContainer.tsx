@@ -85,26 +85,22 @@ export default function MapContainer({}: MapContainerProps = {}) {
     fetchWeatherData
   } = useWeather();
 
-  // 위치 변경 핸들러
+  // 위치 변경 핸들러 (모든 데이터 병렬 업데이트)
   const handleLocationChange = useCallback(async (lat: number, lng: number) => {
-    // 혼잡도 데이터 업데이트 (항상 업데이트)
-    await fetchCongestionData(lat, lng);
-    
-    // 날씨 데이터 업데이트 (항상 업데이트)
-    await fetchWeatherData(lat, lng);
-    
-    // POI 데이터 업데이트
-    await fetchNearbyPOIs(lat, lng, 1.5);
-    
-    // 따릉이 데이터 업데이트
     setBikeError(null);
-    try {
-      const stations = await getNearbyBikeStations(lat, lng, 1.5);
-      setBikeStations(stations ?? []);
-    } catch (error: unknown) {
-      setBikeError(error instanceof Error ? error.message : '따릉이 데이터 로드 실패');
-      console.error('따릉이 데이터 로드 실패:', error);
-    }
+    
+    // 모든 API 호출을 병렬로 처리하여 속도 향상
+    await Promise.allSettled([
+      fetchCongestionData(lat, lng),
+      fetchWeatherData(lat, lng),
+      fetchNearbyPOIs(lat, lng, 1.5),
+      getNearbyBikeStations(lat, lng, 1.5).then(stations => {
+        setBikeStations(stations ?? []);
+      }).catch(error => {
+        setBikeError(error instanceof Error ? error.message : '따릉이 데이터 로드 실패');
+        console.error('따릉이 데이터 로드 실패:', error);
+      })
+    ]);
   }, [fetchCongestionData, fetchWeatherData, fetchNearbyPOIs]);
 
   // 현재 위치 마커 표시
@@ -115,41 +111,17 @@ export default function MapContainer({}: MapContainerProps = {}) {
     onLocationChange: handleLocationChange
   });
 
-  // 현재 위치가 설정되면 자동으로 날씨, 혼잡도, POI 데이터 로드
+  // 현재 위치가 설정되면 자동으로 데이터 로드 (한번만)
   useEffect(() => {
-    if (currentLocation?.coords) {
-      const { lat, lng } = currentLocation.coords;
-
-      if (!weatherData) {
-        fetchWeatherData(lat, lng).catch((e: unknown) => console.error(e));
-      }
-      if (!congestionData) {
-        fetchCongestionData(lat, lng).catch((e: unknown) => console.error(e));
-      }
-      if (pois.length === 0) {
-        fetchNearbyPOIs(lat, lng, 1.5).catch((e: unknown) => console.error(e));
-      }
-      if (bikeStations.length === 0) {
-        setBikeError(null);
-        getNearbyBikeStations(lat, lng, 1.5)
-          .then(stations => setBikeStations(stations ?? []))
-          .catch(error => {
-            setBikeError(error?.message ?? '따릉이 데이터 로드 실패');
-            console.error('따릉이 데이터 로드 실패:', error);
-          })
-          .finally(() => {/* 더 이상 로딩 상태 관리하지 않음 */});
-      }
+    if (currentLocation?.coords && 
+        !weatherData && 
+        !congestionData && 
+        pois.length === 0 && 
+        bikeStations.length === 0) {
+      // handleLocationChange에서 모든 데이터를 로드하므로 여기서는 호출하지 않음
+      handleLocationChange(currentLocation.coords.lat, currentLocation.coords.lng);
     }
-  }, [
-    currentLocation?.coords,
-    weatherData,
-    congestionData,
-    pois.length,
-    bikeStations.length,
-    fetchWeatherData,
-    fetchCongestionData,
-    fetchNearbyPOIs
-  ]);
+  }, [currentLocation?.coords]);
 
   // 혼잡도 토글 핸들러
   const handleToggleCongestion = async () => {

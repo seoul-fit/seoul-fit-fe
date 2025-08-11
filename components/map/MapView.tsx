@@ -230,6 +230,8 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
           setIsBottomSheetOpen(false);
           setSelectedFacility(null);
         }}
+        weatherData={weatherData}
+        congestionData={congestionData}
       />
     </div>
   );

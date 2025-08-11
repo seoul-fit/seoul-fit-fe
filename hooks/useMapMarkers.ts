@@ -36,37 +36,42 @@ export const useMapMarkers = ({
   const mapListenersRef = useRef<any[]>([]);
 
   // 개선된 이벤트 바인딩 함수 (재시도 로직 포함)
-  const bindMarkerEvent = useCallback((facility: Facility, retries = 5): void => {
+  const bindMarkerEvent = useCallback((facility: Facility, retries = 3): void => {
     const markerId = `marker-${facility.id}`;
     const markerElement = document.getElementById(markerId);
     
     if (markerElement) {
-      // DOM 요소가 존재하면 이벤트 바인딩
-      const newElement = markerElement.cloneNode(true) as HTMLElement;
-      markerElement.parentNode?.replaceChild(newElement, markerElement);
+      // 이미 이벤트가 바인딩되어 있는지 확인
+      if (markerElement.onclick) {
+        return;
+      }
       
-      newElement.addEventListener('click', (e) => {
+      // 클릭 이벤트 바인딩
+      markerElement.onclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
         onFacilitySelect(facility);
-      });
+      };
 
       // 호버 효과
-      newElement.addEventListener('mouseenter', () => {
-        newElement.style.transform = 'scale(1.1)';
-        newElement.style.zIndex = '1001';
-      });
+      markerElement.onmouseenter = () => {
+        markerElement.style.transform = 'scale(1.1)';
+        markerElement.style.zIndex = '1001';
+      };
 
-      newElement.addEventListener('mouseleave', () => {
-        newElement.style.transform = 'scale(1)';
-        newElement.style.zIndex = '1000';
-      });
+      markerElement.onmouseleave = () => {
+        markerElement.style.transform = 'scale(1)';
+        markerElement.style.zIndex = '1000';
+      };
     } else if (retries > 0) {
-      // DOM 요소가 없으면 지수적 백오프로 재시도
-      const delay = 100 * Math.pow(1.5, 5 - retries);
+      // DOM 요소가 없으면 재시도 (재시도 횟수 줄임)
+      const delay = 50 * (4 - retries);
       setTimeout(() => bindMarkerEvent(facility, retries - 1), delay);
     } else {
-      console.warn(`마커 이벤트 바인딩 최종 실패 (ID: ${facility.id})`);
+      // 디버그 모드에서만 로그 출력
+      if (process.env.NODE_ENV === 'development') {
+        console.debug(`마커 DOM 요소를 찾을 수 없음 (ID: ${facility.id})`);
+      }
     }
   }, [onFacilitySelect]);
 
