@@ -134,7 +134,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
       </div>
 
       {/* 왼쪽 아래 - 날씨 아이콘 */}
-      <div className="absolute bottom-36 md:bottom-32 left-4 z-30">
+      <div className="absolute bottom-24 md:bottom-20 left-4 z-30">
         <div className="relative">
           <Button
             variant={showWeather ? "default" : "secondary"}
@@ -164,7 +164,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
       </div>
 
       {/* 오른쪽 아래 - 내 위치 아이콘 */}
-      <div className="absolute bottom-36 md:bottom-32 right-4 z-30">
+      <div className="absolute bottom-24 md:bottom-20 right-4 z-30">
         <Button
           variant="secondary"
           size="sm"
