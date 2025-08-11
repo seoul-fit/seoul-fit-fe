@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { UserPreferences, FacilityCategory } from '@/lib/types';
 import { INTEREST_CATEGORY_MAP } from '@/lib/types';
 import { useAuthStore } from '@/store/authStore';
-import { updateUserInterests, getUserInterests } from '@/services/user';
+import { updateUserInterests, getUserInterests } from '@/services/preference';
 
 const defaultPreferences: UserPreferences = {
   sports: true,
