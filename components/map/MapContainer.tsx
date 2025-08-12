@@ -19,6 +19,7 @@ import { usePOI } from '@/hooks/usePOI';
 import { convertPOIToFacility } from '@/services/poi';
 import { getNearbyBikeStations, convertBikeStationToFacility } from '@/services/bikeStation';
 import { useCoolingShelter } from '@/hooks/useCoolingShelter';
+import { useSubwayStations } from '@/hooks/useSubwayStations';
 import type { BikeStationData } from '@/lib/types';
 
 interface MapContainerProps {
@@ -46,6 +47,9 @@ export default function MapContainer({}: MapContainerProps = {}) {
   // 무더위 쉼터 상태
   const { facilities: coolingShelterFacilities, isLoading: coolingShelterLoading, error: coolingShelterError } = useCoolingShelter();
 
+  // 지하철 상태
+  const { subwayStations: subwayFacilities, error: subwayError } = useSubwayStations();
+
   // POI와 따릉이를 Facility로 변환
   const facilitiesFromPOIs = useMemo(() => 
     pois.map(poi => convertPOIToFacility(poi)), 
@@ -58,14 +62,9 @@ export default function MapContainer({}: MapContainerProps = {}) {
   );
   
   const allFacilities = useMemo(() => 
-    [...facilitiesFromPOIs, ...facilitiesFromBikes, ...coolingShelterFacilities],
-    [facilitiesFromPOIs, facilitiesFromBikes, coolingShelterFacilities]
+    [...facilitiesFromPOIs, ...facilitiesFromBikes, ...coolingShelterFacilities, ...subwayFacilities],
+    [facilitiesFromPOIs, facilitiesFromBikes, coolingShelterFacilities, subwayFacilities]
   );
-
-  // MapView 내부에서 useFacilities를 사용하므로 여기서는 불필요
-  // const { visibleFacilities } = useFacilities({
-  //   facilities: allFacilities
-  // });
 
   // 혼잡도 관련 hooks
   const {
@@ -162,7 +161,7 @@ export default function MapContainer({}: MapContainerProps = {}) {
   return (
     <div className="relative w-full h-full">
       {/* 에러 알림들 - 상단 중앙 */}
-      {(congestionError && showCongestion) || (weatherError && showWeather) || bikeError || coolingShelterError ? (
+      {(congestionError && showCongestion) || (weatherError && showWeather) || subwayError || bikeError || coolingShelterError ? (
         <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-20 w-80 max-w-[90vw]">
           {congestionError && showCongestion && (
             <Alert variant="destructive" className="mb-2">
@@ -176,6 +175,12 @@ export default function MapContainer({}: MapContainerProps = {}) {
               <AlertDescription>{weatherError}</AlertDescription>
             </Alert>
           )}
+          {subwayError && (
+              <Alert variant="destructive" className="mb-2">
+                <Info className="h-4 w-4" />
+                <AlertDescription>{subwayError}</AlertDescription>
+              </Alert>
+          )}
           {bikeError && (
             <Alert variant="destructive" className="mb-2">
               <Info className="h-4 w-4" />
@@ -183,7 +188,7 @@ export default function MapContainer({}: MapContainerProps = {}) {
             </Alert>
           )}
           {coolingShelterError && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="mb-2">
               <Info className="h-4 w-4" />
               <AlertDescription>{coolingShelterError}</AlertDescription>
             </Alert>

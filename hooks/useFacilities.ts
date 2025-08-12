@@ -7,9 +7,6 @@ import {
   type UserPreferences 
 } from '@/lib/types';
 
-// 하드코딩된 시설 데이터 제거 - POI 데이터만 사용
-const SAMPLE_FACILITIES: Facility[] = [];
-
 // 기본 사용자 선호도 (모든 시설 타입 활성화)
 const DEFAULT_PREFERENCES: UserPreferences = {
   [FACILITY_CATEGORIES.SPORTS]: true,
@@ -17,6 +14,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   [FACILITY_CATEGORIES.RESTAURANT]: true,
   [FACILITY_CATEGORIES.LIBRARY]: true,
   [FACILITY_CATEGORIES.PARK]: true,
+  [FACILITY_CATEGORIES.SUBWAY]: true,
   [FACILITY_CATEGORIES.BIKE]: true,
   [FACILITY_CATEGORIES.COOLING_SHELTER]: true,
 };

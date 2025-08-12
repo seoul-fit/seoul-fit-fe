@@ -7,6 +7,7 @@ export const FACILITY_CATEGORIES = {
     RESTAURANT: 'restaurant',
     LIBRARY: 'library',
     PARK: 'park',
+    SUBWAY: 'subway',
     BIKE: 'bike',
     COOLING_SHELTER: 'cooling_shelter'
   } as const;
@@ -78,6 +79,11 @@ export const FACILITY_CATEGORIES = {
           areaSize?: string // 시설면적
           remarks?: string // 비고
       }
+
+      subwayStation?: {
+          stationId?: string // 역 ID
+          route?: string // 노선명
+      }
   }
   
   export interface TimeSlot {
@@ -122,6 +128,7 @@ export const FACILITY_CATEGORIES = {
     'RESTAURANTS': 'restaurant',
     'LIBRARY': 'library',
     'PARK': 'park',
+    'SUBWAY': 'subway',
     'BIKE': 'bike',
     'COOLING_SHELTER': 'cooling_shelter',
     '체육시설': 'sports',
@@ -129,6 +136,7 @@ export const FACILITY_CATEGORIES = {
     '맛집': 'restaurant',
     '도서관': 'library',
     '공원': 'park',
+    '지하철': 'subway',
     '따릉이': 'bike',
     '무더위쉼터': 'cooling_shelter'
   };

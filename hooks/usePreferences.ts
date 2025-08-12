@@ -10,6 +10,7 @@ const defaultPreferences: UserPreferences = {
   restaurant: true,
   library: true,
   park: true,
+  subway: true,
   bike: true,
   cooling_shelter: true
 };
@@ -33,6 +34,7 @@ export function usePreferences() {
         restaurant: false,
         library: false,
         park: false,
+        subway: false,
         bike: false,
         cooling_shelter: false
       };
@@ -94,6 +96,7 @@ export function usePreferences() {
           restaurant: 'RESTAURANTS',
           library: 'LIBRARY',
           park: 'PARK',
+          subway: 'SUBWAY',
           bike: 'BIKE',
           cooling_shelter: 'COOLING_SHELTER'
         };

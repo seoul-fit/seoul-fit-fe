@@ -1,6 +1,6 @@
 // lib/facilityIcons.tsx
 import React from 'react';
-import { Dumbbell, Calendar, UtensilsCrossed, BookOpen, TreePine, Bike, Snowflake } from 'lucide-react';
+import { Dumbbell, Calendar, UtensilsCrossed, BookOpen, TreePine, Bike, Snowflake, Train } from 'lucide-react';
 import { FACILITY_CATEGORIES, type FacilityCategory } from '@/lib/types';
 
 export interface FacilityConfig {
@@ -47,6 +47,13 @@ export const FACILITY_CONFIGS: Record<FacilityCategory, FacilityConfig> = {
     description: '도시공원, 산책로, 쉼터 등',
     svgIcon: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13v8"/><path d="m12 3 4 4H8l4-4Z"/><path d="m12 3 4 4H8l4-4Z"/><path d="M8 7h8v4H8z"/></svg>`
   },
+  [FACILITY_CATEGORIES.SUBWAY]: {
+    icon: <Train className="w-5 h-5" />,
+    color: 'bg-indigo-500',
+    label: '지하철',
+    description: '서울시 지하철역',
+    svgIcon: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><circle cx="8" cy="16" r="1"/><circle cx="16" cy="16" r="1"/><path d="m8 19 8-8"/></svg>`
+  },
   [FACILITY_CATEGORIES.BIKE]: {
     icon: <Bike className="w-5 h-5" />,
     color: 'bg-lime-500',
@@ -86,6 +93,7 @@ export const getCategoryColor = (category: FacilityCategory): string => {
     case FACILITY_CATEGORIES.RESTAURANT: return '#EF4444'; // red-500
     case FACILITY_CATEGORIES.LIBRARY: return '#10B981'; // green-500
     case FACILITY_CATEGORIES.PARK: return '#059669'; // emerald-600
+    case FACILITY_CATEGORIES.SUBWAY: return '#6366F1'; // indigo-500
     case FACILITY_CATEGORIES.BIKE: return '#84CC16'; // lime-500
     case FACILITY_CATEGORIES.COOLING_SHELTER: return '#06B6D4'; // cyan-500
     default: return '#6B7280';

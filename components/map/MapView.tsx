@@ -207,6 +207,7 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
               {key === 'LIBRARY' && '도서관'}
               {key === 'PARK' && '공원'}
               {key === 'BIKE' && '따릉이'}
+              {key === 'SUBWAY' && '지하철'}
               ({count})
             </Button>
           );
