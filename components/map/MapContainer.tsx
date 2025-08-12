@@ -19,7 +19,8 @@ import { convertPOIToFacility } from '@/services/poi';
 import { getNearbyBikeStations, convertBikeStationToFacility } from '@/services/bikeStation';
 import { useCoolingShelter } from '@/hooks/useCoolingShelter';
 import { useSubwayStations } from '@/hooks/useSubwayStations';
-import type { BikeStationData, UserPreferences, FacilityCategory } from '@/lib/types';
+import { useParks } from '@/hooks/useParks';
+import type { BikeStationData, UserPreferences, FacilityCategory, Park } from '@/lib/types';
 
 interface MapContainerProps {
   className?: string;
@@ -51,6 +52,9 @@ export default function MapContainer({ preferences, onPreferenceToggle }: MapCon
   // 지하철 상태
   const { subwayStations: subwayFacilities, error: subwayError } = useSubwayStations();
 
+  // 공원 상태
+  const { parks, isLoading: parksLoading, error: parksError, fetchParks } = useParks();
+
   // POI와 따릉이를 Facility로 변환
   const facilitiesFromPOIs = useMemo(() => 
     pois.map(poi => convertPOIToFacility(poi)), 
@@ -62,9 +66,28 @@ export default function MapContainer({ preferences, onPreferenceToggle }: MapCon
     [bikeStations]
   );
   
+  // 공원을 Facility로 변환
+  const facilitiesFromParks = useMemo(() => 
+    parks.map(park => ({
+      id: park.id.toString(),
+      name: park.name,
+      category: 'park' as const,
+      position: {
+        lat: park.latitude || 0,
+        lng: park.longitude || 0
+      },
+      address: park.address || '',
+      phone: park.adminTel,
+      description: park.content,
+      congestionLevel: 'low' as const,
+      operatingHours: park.useReference
+    })), 
+    [parks]
+  );
+
   const allFacilities = useMemo(() => 
-    [...facilitiesFromPOIs, ...facilitiesFromBikes, ...coolingShelterFacilities, ...subwayFacilities],
-    [facilitiesFromPOIs, facilitiesFromBikes, coolingShelterFacilities, subwayFacilities]
+    [...facilitiesFromPOIs, ...facilitiesFromBikes, ...coolingShelterFacilities, ...subwayFacilities, ...facilitiesFromParks],
+    [facilitiesFromPOIs, facilitiesFromBikes, coolingShelterFacilities, subwayFacilities, facilitiesFromParks]
   );
 
   // 혼잡도 관련 hooks
@@ -103,7 +126,8 @@ export default function MapContainer({ preferences, onPreferenceToggle }: MapCon
       }).catch(error => {
         setBikeError(error instanceof Error ? error.message : '따릉이 데이터 로드 실패');
         console.error('따릉이 데이터 로드 실패:', error);
-      })
+      }),
+      fetchParks(lat, lng)
     ]);
   }, [fetchCongestionData, fetchWeatherData, fetchNearbyPOIs]);
 
@@ -162,7 +186,7 @@ export default function MapContainer({ preferences, onPreferenceToggle }: MapCon
   return (
     <div className="relative w-full h-full">
       {/* 에러 알림들 - 상단 중앙 */}
-      {(congestionError && showCongestion) || (weatherError && showWeather) || subwayError || bikeError || coolingShelterError ? (
+      {(congestionError && showCongestion) || (weatherError && showWeather) || subwayError || bikeError || coolingShelterError || parksError ? (
         <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-20 w-80 max-w-[90vw]">
           {congestionError && showCongestion && (
             <Alert variant="destructive" className="mb-2">
@@ -192,6 +216,12 @@ export default function MapContainer({ preferences, onPreferenceToggle }: MapCon
             <Alert variant="destructive" className="mb-2">
               <Info className="h-4 w-4" />
               <AlertDescription>{coolingShelterError}</AlertDescription>
+            </Alert>
+          )}
+          {parksError && (
+            <Alert variant="destructive" className="mb-2">
+              <Info className="h-4 w-4" />
+              <AlertDescription>{parksError}</AlertDescription>
             </Alert>
           )}
         </div>

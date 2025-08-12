@@ -238,6 +238,33 @@ export const FACILITY_CATEGORIES = {
       updatedAt?: string;
   }
 
+  // 공원 데이터 타입
+  export interface Park {
+      id: number;
+      parkIdx?: number;
+      name: string;
+      content?: string;
+      area?: string;
+      openDate?: string;
+      mainEquipment?: string;
+      mainPlants?: string;
+      guidance?: string;
+      visitRoad?: string;
+      useReference?: string;
+      imageUrl?: string;
+      zone?: string;
+      address?: string;
+      managementDept?: string;
+      adminTel?: string;
+      grs80Longitude?: number;
+      grs80Latitude?: number;
+      longitude?: number;
+      latitude?: number;
+      templateUrl?: string;
+      createdAt?: string;
+      updatedAt?: string;
+  }
+
   // 반경 내 POI 응답 타입
   export interface NearbyPOIsResponse {
       success: boolean;
