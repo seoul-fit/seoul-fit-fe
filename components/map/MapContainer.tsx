@@ -18,6 +18,7 @@ import { usePOI } from '@/hooks/usePOI';
 // import { useFacilities } from '@/hooks/useFacilities'; // MapView에서 사용함
 import { convertPOIToFacility } from '@/services/poi';
 import { getNearbyBikeStations, convertBikeStationToFacility } from '@/services/bikeStation';
+import { useCoolingShelter } from '@/hooks/useCoolingShelter';
 import type { BikeStationData } from '@/lib/types';
 
 interface MapContainerProps {
@@ -42,6 +43,9 @@ export default function MapContainer({}: MapContainerProps = {}) {
   const [bikeStations, setBikeStations] = useState<BikeStationData[]>([]);
   const [bikeError, setBikeError] = useState<string | null>(null); // bike 에러 상태 추가
 
+  // 무더위 쉼터 상태
+  const { facilities: coolingShelterFacilities, isLoading: coolingShelterLoading, error: coolingShelterError } = useCoolingShelter();
+
   // POI와 따릉이를 Facility로 변환
   const facilitiesFromPOIs = useMemo(() => 
     pois.map(poi => convertPOIToFacility(poi)), 
@@ -54,8 +58,8 @@ export default function MapContainer({}: MapContainerProps = {}) {
   );
   
   const allFacilities = useMemo(() => 
-    [...facilitiesFromPOIs, ...facilitiesFromBikes],
-    [facilitiesFromPOIs, facilitiesFromBikes]
+    [...facilitiesFromPOIs, ...facilitiesFromBikes, ...coolingShelterFacilities],
+    [facilitiesFromPOIs, facilitiesFromBikes, coolingShelterFacilities]
   );
 
   // MapView 내부에서 useFacilities를 사용하므로 여기서는 불필요
@@ -158,7 +162,7 @@ export default function MapContainer({}: MapContainerProps = {}) {
   return (
     <div className="relative w-full h-full">
       {/* 에러 알림들 - 상단 중앙 */}
-      {(congestionError && showCongestion) || (weatherError && showWeather) || bikeError ? (
+      {(congestionError && showCongestion) || (weatherError && showWeather) || bikeError || coolingShelterError ? (
         <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-20 w-80 max-w-[90vw]">
           {congestionError && showCongestion && (
             <Alert variant="destructive" className="mb-2">
@@ -173,9 +177,15 @@ export default function MapContainer({}: MapContainerProps = {}) {
             </Alert>
           )}
           {bikeError && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="mb-2">
               <Info className="h-4 w-4" />
               <AlertDescription>{bikeError}</AlertDescription>
+            </Alert>
+          )}
+          {coolingShelterError && (
+            <Alert variant="destructive">
+              <Info className="h-4 w-4" />
+              <AlertDescription>{coolingShelterError}</AlertDescription>
             </Alert>
           )}
         </div>

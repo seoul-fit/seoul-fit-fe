@@ -1,6 +1,6 @@
 // lib/facilityIcons.tsx
 import React from 'react';
-import { Dumbbell, Calendar, UtensilsCrossed, BookOpen, TreePine, Bike } from 'lucide-react';
+import { Dumbbell, Calendar, UtensilsCrossed, BookOpen, TreePine, Bike, Snowflake } from 'lucide-react';
 import { FACILITY_CATEGORIES, type FacilityCategory } from '@/lib/types';
 
 export interface FacilityConfig {
@@ -53,6 +53,13 @@ export const FACILITY_CONFIGS: Record<FacilityCategory, FacilityConfig> = {
     label: '따릉이',
     description: '공용자전거 대여소',
     svgIcon: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="m14 17 6-6"/><path d="M6 17h6s.5-1 0-3-1-3 0-3"/></svg>`
+  },
+  [FACILITY_CATEGORIES.COOLING_SHELTER]: {
+    icon: <Snowflake className="w-5 h-5" />,
+    color: 'bg-cyan-500',
+    label: '무더위 쉼터',
+    description: '서울시 무더위 쉼터',
+    svgIcon: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg>`
   }
 };
 
@@ -80,6 +87,7 @@ export const getCategoryColor = (category: FacilityCategory): string => {
     case FACILITY_CATEGORIES.LIBRARY: return '#10B981'; // green-500
     case FACILITY_CATEGORIES.PARK: return '#059669'; // emerald-600
     case FACILITY_CATEGORIES.BIKE: return '#84CC16'; // lime-500
+    case FACILITY_CATEGORIES.COOLING_SHELTER: return '#06B6D4'; // cyan-500
     default: return '#6B7280';
   }
 };

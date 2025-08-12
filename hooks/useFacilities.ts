@@ -18,6 +18,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   [FACILITY_CATEGORIES.LIBRARY]: true,
   [FACILITY_CATEGORIES.PARK]: true,
   [FACILITY_CATEGORIES.BIKE]: true,
+  [FACILITY_CATEGORIES.COOLING_SHELTER]: true,
 };
 
 export interface UseFacilitiesOptions {

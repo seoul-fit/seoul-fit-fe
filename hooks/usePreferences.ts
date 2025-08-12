@@ -10,7 +10,8 @@ const defaultPreferences: UserPreferences = {
   restaurant: true,
   library: true,
   park: true,
-  bike: true
+  bike: true,
+  cooling_shelter: true
 };
 
 export function usePreferences() {
@@ -32,7 +33,8 @@ export function usePreferences() {
         restaurant: false,
         library: false,
         park: false,
-        bike: false
+        bike: false,
+        cooling_shelter: false
       };
 
       // 사용자 관심사에 따라 선호도 설정
@@ -92,7 +94,8 @@ export function usePreferences() {
           restaurant: 'RESTAURANTS',
           library: 'LIBRARY',
           park: 'PARK',
-          bike: 'BIKE'
+          bike: 'BIKE',
+          cooling_shelter: 'COOLING_SHELTER'
         };
         
         const selectedInterests = Object.entries(newPreferences)

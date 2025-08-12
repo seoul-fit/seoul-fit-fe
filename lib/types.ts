@@ -7,7 +7,8 @@ export const FACILITY_CATEGORIES = {
     RESTAURANT: 'restaurant',
     LIBRARY: 'library',
     PARK: 'park',
-    BIKE: 'bike'
+    BIKE: 'bike',
+    COOLING_SHELTER: 'cooling_shelter'
   } as const;
   
   // 타입 추출 (읽기 전용)
@@ -69,6 +70,14 @@ export const FACILITY_CATEGORIES = {
           availableRacks?: number // 이용 가능한 거치대 수
           shared?: string // 거치율
       }
+
+      coolingShelter?: {
+          facilityType1?: string // 시설구분1
+          facilityType2?: string // 시설구분2
+          capacity?: number // 이용가능인원
+          areaSize?: string // 시설면적
+          remarks?: string // 비고
+      }
   }
   
   export interface TimeSlot {
@@ -114,12 +123,14 @@ export const FACILITY_CATEGORIES = {
     'LIBRARY': 'library',
     'PARK': 'park',
     'BIKE': 'bike',
+    'COOLING_SHELTER': 'cooling_shelter',
     '체육시설': 'sports',
     '문화시설': 'culture',
     '맛집': 'restaurant',
     '도서관': 'library',
     '공원': 'park',
-    '따릉이': 'bike'
+    '따릉이': 'bike',
+    '무더위쉼터': 'cooling_shelter'
   };
   
   export interface UserLocation {
@@ -196,6 +207,27 @@ export const FACILITY_CATEGORIES = {
       rackTotCnt: string; // 거치대 총 개수
       parkingBikeTotCnt: string; // 주차 자전거 총 건수
       shared: string; // 거치율
+  }
+
+  // 무더위 쉼터 데이터 타입
+  export interface CoolingCenter {
+      id: number;
+      facilityYear?: number;
+      areaCode?: string;
+      facilityType1?: string;
+      facilityType2?: string;
+      name: string;
+      roadAddress?: string;
+      lotAddress?: string;
+      areaSize?: string;
+      capacity?: number;
+      remarks?: string;
+      longitude?: number;
+      latitude?: number;
+      mapCoordX?: number;
+      mapCoordY?: number;
+      createdAt?: string;
+      updatedAt?: string;
   }
 
   // 반경 내 POI 응답 타입
