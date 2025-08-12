@@ -275,3 +275,228 @@ export const FACILITY_CATEGORIES = {
           pois: POIData[];
       };
   }
+// ===== Backend API Types =====
+
+// OAuth Provider 타입
+export type OAuthProvider = 'KAKAO' | 'GOOGLE';
+
+// User Interests 타입
+export type UserInterests = 'SPORTS' | 'CULTURE' | 'RESTAURANTS' | 'LIBRARY' | 'PARK' | 'SUBWAY' | 'BIKE' | 'COOLING_SHELTER';
+
+// Authentication Response 타입
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: {
+    id: number;
+    nickname: string;
+  };
+}
+
+// User Result 타입
+export interface UserResult {
+  id: number;
+  email: string;
+  nickname: string;
+  status: string;
+  oauthProvider: string;
+  oauthUserId: string;
+  profileImageUrl?: string;
+  interests: UserInterests[];
+}
+
+// Location Data Response 타입
+export interface LocationDataResponse {
+  center: {
+    latitude: number;
+    longitude: number;
+  };
+  radius: number;
+  totalCount: number;
+  restaurants: TouristRestaurant[];
+  libraries: any[]; // 추후 정의
+  parks: SeoulPark[];
+  sportsFacilities: SportsFacilityProgram[];
+  coolingCenters: CoolingCenter[];
+}
+
+// Seoul Park 타입 (백엔드 API용)
+export interface SeoulPark {
+  id: number;
+  parkIdx: number;
+  name: string;
+  content: string;
+  area: string;
+  openDate: string;
+  mainEquipment: string;
+  mainPlants: string;
+  guidance: string;
+  visitRoad: string;
+  useReference: string;
+  imageUrl: string;
+  zone: string;
+  address: string;
+  managementDept: string;
+  adminTel: string;
+  grs80Longitude: number;
+  grs80Latitude: number;
+  longitude: number;
+  latitude: number;
+  templateUrl: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Tourist Restaurant 타입
+export interface TouristRestaurant {
+  id: number;
+  langCodeId: string;
+  name: string;
+  address: string;
+  phoneNumber?: string;
+  website?: string;
+  representativeMenu?: string;
+  // 추가 필드들은 필요에 따라 확장
+}
+
+// Sports Facility Program 타입
+export interface SportsFacilityProgram {
+  id: number;
+  centerName: string;
+  subjectName: string;
+  programName: string;
+  instructorName?: string;
+  fee?: string;
+  serviceStatus: string;
+  // 추가 필드들은 필요에 따라 확장
+}
+
+// Data Statistics 타입들
+export interface ParkDataStatistics {
+  totalParks: number;
+  parksWithCoordinates: number;
+  zoneDistribution: Record<string, number>;
+  // 추가 통계 필드들
+}
+
+export interface RestaurantDataStatistics {
+  totalRestaurants: number;
+  languageDistribution: Record<string, number>;
+  restaurantsWithWebsite: number;
+  restaurantsWithPhone: number;
+  // 추가 통계 필드들
+}
+
+export interface ProgramDataStatistics {
+  totalPrograms: number;
+  activePrograms: number;
+  freePrograms: number;
+  subjectDistribution: Record<string, number>;
+  // 추가 통계 필드들
+}
+// ===== Additional Backend API Types =====
+
+// Library 타입
+export interface Library {
+  id: number;
+  name: string;
+  address: string;
+  latitude?: number;
+  longitude?: number;
+  phoneNumber?: string;
+  website?: string;
+  operatingHours?: string;
+  // 추가 필드들은 필요에 따라 확장
+}
+
+// Cultural Facilities 타입들
+export interface CulturalSpace {
+  id: number;
+  name: string;
+  address: string;
+  latitude?: number;
+  longitude?: number;
+  phoneNumber?: string;
+  website?: string;
+  description?: string;
+  // 추가 필드들은 필요에 따라 확장
+}
+
+export interface CulturalEvent {
+  id: number;
+  title: string;
+  description?: string;
+  startDate: string;
+  endDate: string;
+  location: string;
+  latitude?: number;
+  longitude?: number;
+  ticketUrl?: string;
+  // 추가 필드들은 필요에 따라 확장
+}
+
+export interface CulturalReservation {
+  id: number;
+  name: string;
+  description?: string;
+  address: string;
+  latitude?: number;
+  longitude?: number;
+  reservationUrl?: string;
+  phoneNumber?: string;
+  // 추가 필드들은 필요에 따라 확장
+}
+
+// Air Quality 타입
+export interface AirQuality {
+  id: number;
+  location: string;
+  latitude?: number;
+  longitude?: number;
+  pm10: number;
+  pm25: number;
+  o3: number;
+  no2: number;
+  co: number;
+  so2: number;
+  grade: string;
+  measureTime: string;
+  // 추가 필드들은 필요에 따라 확장
+}
+
+// Notification 타입
+export interface Notification {
+  id: number;
+  title: string;
+  message: string;
+  type: string;
+  isRead: boolean;
+  createdAt: string;
+  // 추가 필드들은 필요에 따라 확장
+}
+
+// Trigger Evaluation 타입
+export interface TriggerEvaluationResult {
+  success: boolean;
+  triggeredCount: number;
+  triggers: TriggerResult[];
+  notifications: NotificationResult[];
+  // 추가 필드들은 필요에 따라 확장
+}
+
+export interface TriggerResult {
+  id: number;
+  type: string;
+  name: string;
+  triggered: boolean;
+  message?: string;
+  // 추가 필드들은 필요에 따라 확장
+}
+
+export interface NotificationResult {
+  id: number;
+  title: string;
+  message: string;
+  type: string;
+  // 추가 필드들은 필요에 따라 확장
+}

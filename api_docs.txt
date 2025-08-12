@@ -1,0 +1,435 @@
+# Seoul Fit Backend API 연동 문서 (최신 업데이트)
+# 프론트엔드 개발 참고용 API 명세서
+
+Base URL: http://localhost:8080
+
+## 인증 (Authentication) - /api/auth
+
+### 1. OAuth 인가코드 검증
+POST /api/auth/oauth/authorizecheck
+- 목적: 프론트엔드에서 받은 인가코드로 OAuth 제공자에서 사용자 정보를 미리 확인
+- Request Body:
+  {
+    "provider": "KAKAO",
+    "authorizationCode": "string",
+    "redirectUri": "string"
+  }
+- Response:
+  {
+    "userId": "string",
+    "email": "string", 
+    "nickname": "string",
+    "profileImageUrl": "string",
+    "exists": boolean
+  }
+
+### 2. OAuth 사용자 확인
+POST /api/auth/oauth/check
+- 목적: OAuth 사용자 존재 여부 확인
+- Request Body:
+  {
+    "provider": "KAKAO",
+    "oauthUserId": "string"
+  }
+- Response:
+  {
+    "exists": boolean,
+    "userId": "string",
+    "email": "string"
+  }
+
+### 3. OAuth 로그인 (Authorization Code Flow)
+POST /api/auth/oauth/login
+- 목적: OAuth 권한부여 승인코드로 로그인
+- Request Body:
+  {
+    "provider": "KAKAO", 
+    "authorizationCode": "string",
+    "redirectUri": "string"
+  }
+  또는 (deprecated)
+  {
+    "provider": "KAKAO",
+    "oauthUserId": "string" 
+  }
+- Response:
+  {
+    "accessToken": "string",
+    "refreshToken": "string",
+    "user": {
+      "id": number,
+      "nickname": "string"
+    }
+  }
+
+### 4. OAuth 간편 로그인
+POST /api/auth/oauth/login/simple
+- Query Parameters: provider, code, redirectUri
+- Response: TokenResponse와 동일
+
+### 5. OAuth 회원가입
+POST /api/auth/oauth/signup
+- Request Body:
+  {
+    "provider": "KAKAO",
+    "oauthUserId": "string",
+    "nickname": "string", 
+    "email": "string",
+    "profileImageUrl": "string",
+    "interests": ["SPORTS", "CULTURE", "RESTAURANTS"]
+  }
+- Response: TokenResponse와 동일
+
+### 6. 토큰 갱신
+POST /api/auth/refresh
+- Query Parameters: refreshToken
+- Response: TokenResponse와 동일
+
+### 7. 이메일 중복 확인
+GET /api/auth/check-email?email={email}
+- Response: boolean
+
+### 8. OAuth 인증 URL 생성
+GET /api/auth/oauth/url/{provider}?redirectUri={uri}&scope={scope}&state={state}
+- Response:
+  {
+    "authUrl": "string",
+    "provider": "string",
+    "redirectUri": "string"
+  }
+
+### 9. OAuth 로그아웃
+POST /api/auth/oauth/logout
+- Headers: Authorization: Bearer {token}
+- Response:
+  {
+    "result": "string",
+    "message": "string"
+  }
+
+### 10. 위치 기반 로그인
+POST /api/auth/login/location
+- Request Body:
+  {
+    "userId": "string",
+    "latitude": number,
+    "longitude": number,
+    "radius": number
+  }
+- Response:
+  {
+    "success": boolean,
+    "userId": number,
+    "nickname": "string",
+    "email": "string", 
+    "accessToken": "string",
+    "refreshToken": "string",
+    "triggerEvaluation": {...}
+  }
+
+### 11. OAuth 연결 해제
+POST /api/auth/oauth/unlink
+- Headers: Authorization: Bearer {token}
+- Response: Map<String, Object>
+
+### 12. OAuth 인가 요청 (리다이렉트)
+GET /api/auth/oauth/authorize/{provider}?redirectUri={uri}&scope={scope}&state={state}
+- Response: 302 Redirect to OAuth provider
+
+## 사용자 관리 (Users) - /api/users
+
+### 1. 사용자 조회
+GET /api/users/{userId}
+- Response: UserResult
+
+### 2. 내 정보 조회
+GET /api/users/me?authUserId={userId}
+- Response: UserResult
+
+### 3. 사용자 정보 수정
+PUT /api/users/{userId}
+- Request Body:
+  {
+    "nickname": "string",
+    "profileImageUrl": "string",
+    "locationLatitude": number,
+    "locationLongitude": number, 
+    "locationAddress": "string",
+    "interests": ["SPORTS"]
+  }
+- Response: UserResult
+
+### 4. 사용자 삭제
+DELETE /api/users/{userId}
+- Response: 204 No Content
+
+## 사용자 관심사 (User Interests) - /api/users/interests
+
+### 1. 사용자 관심사 조회
+POST /api/users/interests
+- Request Body: userId (Long)
+- Response:
+  {
+    "userId": number,
+    "interests": ["SPORTS", "CULTURE"]
+  }
+
+### 2. 사용자 관심사 변경
+PUT /api/users/interests
+- Request Body:
+  {
+    "userId": number,
+    "interests": ["SPORTS", "CULTURE", "RESTAURANTS"]
+  }
+- Response: UserInterestResponse
+
+## 위치 기반 데이터 (Location Data) - /api/location
+※ 인증 필요 (Bearer Token)
+
+### 1. 위치 기반 통합 데이터 조회
+GET /api/location/nearby?latitude={lat}&longitude={lng}&radius={radius}
+- 목적: 사용자 위치 주변의 모든 시설 정보를 통합하여 반환 (지도 마커용)
+- Query Parameters:
+  - latitude: 위도 (required, -90.0~90.0)
+  - longitude: 경도 (required, -180.0~180.0)  
+  - radius: 검색 반경(km) (default: 2.0)
+- Response: LocationDataResponse (통합 데이터)
+
+### 2. 개인화된 위치 기반 데이터 조회
+GET /api/location/nearby/personalized?latitude={lat}&longitude={lng}&radius={radius}
+- 목적: 사용자 관심사에 따라 맞춤형 위치 기반 데이터 조회
+- Headers: Authorization: Bearer {token}
+- Query Parameters: 위와 동일
+- Response: LocationDataResponse (사용자 관심사 기반)
+
+### 3. 위치 기반 맛집 조회
+GET /api/location/restaurants?latitude={lat}&longitude={lng}&radius={radius}
+- Response: RestaurantsResponse
+
+### 4. 위치 기반 도서관 조회
+GET /api/location/libraries?latitude={lat}&longitude={lng}&radius={radius}
+- Response: LibrariesResponse
+
+### 5. 위치 기반 공원 조회
+GET /api/location/parks?latitude={lat}&longitude={lng}&radius={radius}
+- Response: ParksResponse
+
+### 6. 위치 기반 체육시설 조회
+GET /api/location/sports-facilities?latitude={lat}&longitude={lng}&radius={radius}
+- Response: SportsFacilitiesResponse
+
+### 7. 위치 기반 무더위쉼터 조회
+GET /api/location/cooling-centers?latitude={lat}&longitude={lng}&radius={radius}
+- Response: CoolingCentersResponse
+
+## 서울시 공원 (Seoul Parks) - /api/parks
+
+### 1. 공원 전체 조회
+GET /api/parks/all
+- Response: List<ParkSummaryResponse>
+
+### 2. 근처 공원 조회
+GET /api/parks/nearby?latitude={lat}&longitude={lng}
+- Response: List<ParkResponse>
+
+### 3. 공원 상세 정보 조회 (향후 구현)
+GET /api/parks/detail?parkId={id}
+- Response: ParkResponse
+
+## 관광 음식점 (Tourist Restaurants) - /api/v1/tourist-restaurants
+
+### 1. 최신 음식점 정보 조회
+GET /api/v1/tourist-restaurants/latest
+- Response: List<TouristRestaurant>
+
+### 2. 특정 날짜 음식점 정보 조회
+GET /api/v1/tourist-restaurants/date/{dataDate}
+- Path Parameter: dataDate (YYYYMMDD 형식)
+- Response: List<TouristRestaurant>
+
+### 3. 언어별 음식점 정보 조회
+GET /api/v1/tourist-restaurants/language/{langCodeId}?dataDate={date}
+- Path Parameter: langCodeId (예: "ko", "en")
+- Query Parameter: dataDate (optional)
+- Response: List<TouristRestaurant>
+
+### 4. 음식점명 검색
+GET /api/v1/tourist-restaurants/search/name?name={name}&dataDate={date}
+- Query Parameters: name (required), dataDate (optional)
+- Response: List<TouristRestaurant>
+
+### 5. 주소 검색
+GET /api/v1/tourist-restaurants/search/address?address={address}&dataDate={date}
+- Query Parameters: address (required), dataDate (optional)
+- Response: List<TouristRestaurant>
+
+### 6. 음식점 상세 정보 조회
+GET /api/v1/tourist-restaurants/{id}
+- Path Parameter: id
+- Response: TouristRestaurant 또는 404
+
+### 7. 사용 가능한 데이터 날짜 목록
+GET /api/v1/tourist-restaurants/available-dates
+- Response: List<String>
+
+### 8. 음식점 데이터 통계
+GET /api/v1/tourist-restaurants/statistics?dataDate={date}
+- Query Parameter: dataDate (optional)
+- Response: RestaurantDataStatistics
+
+### 9. 수동 배치 실행 (관리자용)
+POST /api/v1/tourist-restaurants/batch/manual?dataDate={date}
+- Query Parameter: dataDate (optional)
+- Response: TouristRestaurantBatchResult
+
+## 무더위 쉼터 (Cooling Shelter) - /api/v1/cooling-shelters
+
+### 1. 무더위쉼터 전체 조회
+GET /api/v1/cooling-shelters/all
+- Response: List<CoolingCenterResponse>
+
+### 2. 근처 무더위쉼터 조회
+GET /api/v1/cooling-shelters/nearby?latitude={lat}&longitude={lng}
+- Query Parameters:
+  - latitude: 위도 (required)
+  - longitude: 경도 (required)
+- Response: List<CoolingCenterResponse>
+
+## 도서관 (Libraries) - /api/v1/libraries
+
+### 1. 도서관 전체 조회
+GET /api/v1/libraries/all
+- Response: List<LibraryResponse>
+
+### 2. 근처 도서관 조회
+GET /api/v1/libraries/nearby?latitude={lat}&longitude={lng}
+- Response: List<LibraryResponse>
+
+## 문화 시설 (Cultural Facilities) - /api/v1/cultural-*
+
+### 문화 공간
+GET /api/v1/cultural-spaces/all
+GET /api/v1/cultural-spaces/nearby?latitude={lat}&longitude={lng}
+
+### 문화 행사
+GET /api/v1/cultural-events/all
+GET /api/v1/cultural-events/nearby?latitude={lat}&longitude={lng}
+
+### 문화 예약
+GET /api/v1/cultural-reservations/all
+GET /api/v1/cultural-reservations/nearby?latitude={lat}&longitude={lng}
+
+## 대기질 (Air Quality) - /api/v1/air-quality
+
+### 1. 대기질 정보 조회
+GET /api/v1/air-quality/all
+GET /api/v1/air-quality/nearby?latitude={lat}&longitude={lng}
+
+## 알림 (Notifications) - /api/notifications
+
+### 1. 알림 목록 조회
+GET /api/notifications
+- Headers: Authorization: Bearer {token}
+
+### 2. 알림 읽음 처리
+PUT /api/notifications/{id}/read
+- Headers: Authorization: Bearer {token}
+
+## 트리거 (Triggers) - /api/triggers
+
+### 1. 위치 기반 트리거 평가
+POST /api/triggers/evaluate/location
+- Headers: Authorization: Bearer {token}
+- Request Body:
+  {
+    "userId": "string",
+    "latitude": number,
+    "longitude": number,
+    "radius": number
+  }
+
+## 공통 응답 형식
+
+### LocationDataResponse (통합 데이터 응답)
+{
+  "center": {
+    "latitude": number,
+    "longitude": number
+  },
+  "radius": number,
+  "totalCount": number,
+  "restaurants": [...],
+  "libraries": [...], 
+  "parks": [...],
+  "sportsFacilities": [...],
+  "coolingCenters": [...]
+}
+
+### UserResult 객체
+{
+  "id": number,
+  "email": "string",
+  "nickname": "string", 
+  "status": "string",
+  "oauthProvider": "string",
+  "oauthUserId": "string",
+  "profileImageUrl": "string",
+  "interests": [...]
+}
+
+### 에러 응답 형식
+{
+  "error": "에러 메시지",
+  "code": "에러 코드",
+  "timestamp": "2025-08-12T00:00:00"
+}
+
+## 인증 관련 헤더
+- Authorization: Bearer {accessToken}
+
+## 지원하는 관심사 카테고리
+- SPORTS: 체육시설
+- CULTURE: 문화시설  
+- RESTAURANTS: 맛집
+- LIBRARY: 도서관
+- PARK: 공원
+- SUBWAY: 지하철
+- BIKE: 따릉이
+- COOLING_SHELTER: 무더위쉼터
+
+## OAuth 제공자
+- KAKAO: 카카오
+- GOOGLE: 구글 (지원 예정)
+
+## 개발 시 주의사항
+1. 모든 API 호출 전에 사용자 인증 상태 확인
+2. 위치 기반 API는 사용자 위치 권한 필요  
+3. 배치 관련 API는 관리자 권한 필요
+4. 날짜 형식은 YYYYMMDD (예: 20250812)
+5. 좌표는 WGS84 형식 사용
+6. 토큰 만료 시 자동 갱신 로직 구현 필요
+
+## API URL 패턴 정리
+- 인증: /api/auth/*
+- 사용자: /api/users/*
+- 위치 데이터: /api/location/*
+- 공원: /api/parks/*
+- 관광 음식점: /api/v1/tourist-restaurants/*
+- 무더위쉼터: /api/v1/cooling-shelters/*
+- 도서관: /api/v1/libraries/*
+- 문화시설: /api/v1/cultural-*/*
+- 대기질: /api/v1/air-quality/*
+- 알림: /api/notifications/*
+- 트리거: /api/triggers/*
+
+## 현재 프론트엔드 연동 상태
+✅ 연동 완료: OAuth 로그인, 사용자 관리 기본 기능
+🔄 부분 연동: 위치 기반 데이터 조회 
+❌ 미연동: v1 API들 (관광 음식점, 무더위쉼터, 도서관, 문화시설 등)
+
+## 권장 연동 순서
+1. OAuth 로그인 완전 연동 (현재 80% 완료)
+2. 위치 기반 통합 데이터 API 연동
+3. 사용자 관심사 관리 API 연동
+4. v1 API들 연동 (관광 음식점, 무더위쉼터, 도서관 등)
+5. 검색 및 필터링 기능 연동
