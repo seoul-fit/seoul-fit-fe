@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
     try {
-        const response = await fetch('http://localhost:8080/api/v1/cooling-shelter/all', {
+        const response = await fetch('http://localhost:8080/api/v1/cooling-shelters/all', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
