@@ -15,18 +15,19 @@ import { useWeather } from '@/hooks/useWeather';
 import { useKakaoMap } from '@/hooks/useKakaoMap';
 import { useCurrentLocationMarker } from '@/hooks/useCurrentLocationMarker';
 import { usePOI } from '@/hooks/usePOI';
-// import { useFacilities } from '@/hooks/useFacilities'; // MapView에서 사용함
 import { convertPOIToFacility } from '@/services/poi';
 import { getNearbyBikeStations, convertBikeStationToFacility } from '@/services/bikeStation';
 import { useCoolingShelter } from '@/hooks/useCoolingShelter';
 import { useSubwayStations } from '@/hooks/useSubwayStations';
-import type { BikeStationData } from '@/lib/types';
+import type { BikeStationData, UserPreferences, FacilityCategory } from '@/lib/types';
 
 interface MapContainerProps {
-  className?: string; // 추가적인 CSS 클래스
+  className?: string;
+  preferences?: UserPreferences;
+  onPreferenceToggle?: (category: FacilityCategory) => void;
 }
 
-export default function MapContainer({}: MapContainerProps = {}) {
+export default function MapContainer({ preferences, onPreferenceToggle }: MapContainerProps = {}) {
   // 지도 인스턴스 생성
   const { mapInstance, mapStatus } = useKakaoMap({
     containerId: 'kakaoMap',
@@ -215,6 +216,8 @@ export default function MapContainer({}: MapContainerProps = {}) {
         mapInstance={mapInstance}
         mapStatus={mapStatus}
         allFacilities={allFacilities}
+        preferences={preferences}
+        onPreferenceToggle={onPreferenceToggle}
       />
     </div>
   );

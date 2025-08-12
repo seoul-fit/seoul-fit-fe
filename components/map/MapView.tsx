@@ -18,7 +18,9 @@ import { FACILITY_CATEGORIES } from '@/lib/types';
 import type { 
   CongestionData, 
   WeatherData, 
-  Facility
+  Facility,
+  UserPreferences,
+  FacilityCategory
 } from '@/lib/types';
 import type { KakaoMap } from '@/lib/kakao-map';
 
@@ -43,6 +45,8 @@ interface MapViewPropsExtended extends MapViewProps {
   mapInstance?: KakaoMap | null | undefined;
   mapStatus?: { success: boolean; loading: boolean; error: string | null } | undefined;
   allFacilities?: Facility[];
+  preferences?: UserPreferences;
+  onPreferenceToggle?: (category: FacilityCategory) => void;
 }
 
 export const MapView: React.FC<MapViewPropsExtended> = ({
@@ -62,12 +66,18 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
   onMoveToCurrentLocation,
   mapInstance,
   mapStatus,
-  allFacilities = []
+  allFacilities = [],
+  preferences,
+  onPreferenceToggle
 }) => {
-  // 내부에서 선호도 관리
-  const { visibleFacilities: filteredFacilities, preferences, toggleCategory } = useFacilities({
-    facilities: allFacilities
+  // 백엔드로부터 받은 사용자 선호도 or 기본값 사용
+  const { visibleFacilities: filteredFacilities, preferences: internalPreferences, toggleCategory } = useFacilities({
+    facilities: allFacilities,
+    initialPreferences: preferences
   });
+  
+  const currentPreferences = preferences || internalPreferences;
+  const handleToggleCategory = onPreferenceToggle || toggleCategory;
 
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
@@ -185,16 +195,16 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
       <div className="absolute top-4 left-4 z-30 flex gap-2">
         {Object.entries(FACILITY_CATEGORIES).map(([key, category]) => {
           const count = allFacilities.filter(f => f.category === category).length;
-          const isActive = preferences?.[category];
+          const isActive = currentPreferences?.[category];
           
-          if (count === 0) return null;
+          if (count === 0 || key === 'SUBWAY') return null;
           
           return (
             <Button
               key={category}
               variant={isActive ? "default" : "outline"}
               size="sm"
-              onClick={() => toggleCategory(category)}
+              onClick={() => handleToggleCategory(category)}
               className={`text-xs ${
                 isActive 
                   ? 'bg-blue-500 text-white' 
@@ -207,7 +217,6 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
               {key === 'LIBRARY' && '도서관'}
               {key === 'PARK' && '공원'}
               {key === 'BIKE' && '따릉이'}
-              {key === 'SUBWAY' && '지하철'}
               ({count})
             </Button>
           );

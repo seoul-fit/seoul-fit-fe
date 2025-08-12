@@ -76,7 +76,10 @@ export default function SeoulFitMapApp() {
 
       {/* 지도 영역 - 전체 화면에서 헤더 제외한 나머지 */}
       <div className="h-[calc(100vh-80px)] relative">
-        <MapContainer />
+        <MapContainer 
+          preferences={preferences}
+          onPreferenceToggle={togglePreference}
+        />
       </div>
 
       {/* 로그아웃 모달 */}

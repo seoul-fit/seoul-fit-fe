@@ -40,6 +40,13 @@ export const useFacilities = (options: UseFacilitiesOptions = {}) => {
     }
   }, [externalFacilities]);
 
+  // initialPreferences가 변경되면 preferences 업데이트
+  React.useEffect(() => {
+    if (initialPreferences && initialPreferences !== DEFAULT_PREFERENCES) {
+      setPreferences(initialPreferences);
+    }
+  }, [initialPreferences]);
+
   // 활성화된 카테고리 목록 (메모화)
   const enabledCategories = useMemo(() => 
     Object.entries(preferences)
