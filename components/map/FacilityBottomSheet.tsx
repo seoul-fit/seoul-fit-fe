@@ -2,10 +2,12 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { X, ChevronUp, ChevronDown, MapPin, Clock, Phone, Users, Cloud, Info, MessageCircleMore } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Facility, CongestionData, WeatherData } from '@/lib/types';
 import { FACILITY_CONFIGS } from '@/lib/facilityIcons';
+import { SubwayStationIcon } from './SubwayStationIcon';
 
 interface FacilityBottomSheetProps {
   facility: Facility | null;
@@ -239,14 +241,27 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
         {/* 헤더 */}
         <div className="flex items-center justify-between px-6 pb-4">
           <div className="flex items-center space-x-3 flex-1 min-w-0">
-            <div className={`w-12 h-12 rounded-full ${config.color} flex items-center justify-center text-white flex-shrink-0`}>
-              {config.icon}
-            </div>
+            {facility.category === 'subway' ? (
+              <SubwayStationIcon 
+                route={facility.subwayStation?.route} 
+                size="lg" 
+                className="flex-shrink-0"
+              />
+            ) : (
+              <div className={`w-12 h-12 rounded-full ${config.color} flex items-center justify-center text-white flex-shrink-0`}>
+                {config.icon}
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <h3 id="facility-title" className="text-lg font-semibold text-gray-900 truncate">
                 {facility.name}
               </h3>
-              <p className="text-sm text-gray-500 truncate">{config.label}</p>
+              <p className="text-sm text-gray-500 truncate">
+                {facility.category === 'subway' && facility.subwayStation?.route 
+                  ? facility.subwayStation.route 
+                  : config.label
+                }
+              </p>
             </div>
           </div>
           
@@ -408,7 +423,67 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
                 </div>
               </div>
               
-              {facility.description && (
+              {/* 문화행사 전용 정보 */}
+              {facility.category === 'cultural_event' && facility.culturalEvent && (
+                <div className="border-t pt-4">
+                  <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+                    <MessageCircleMore className="w-4 h-4 mr-2" />
+                    행사 정보
+                  </h4>
+                  <div className="space-y-3 text-sm">
+                    {facility.culturalEvent.codeName && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">장르:</span>
+                        <span className="text-gray-900 font-medium">{facility.culturalEvent.codeName}</span>
+                      </div>
+                    )}
+                    {facility.culturalEvent.useFee && (
+                      <div className="flex flex-col space-y-1">
+                        <span className="text-gray-500">요금:</span>
+                        <span className="text-gray-900 text-xs leading-relaxed">{facility.culturalEvent.useFee}</span>
+                      </div>
+                    )}
+                    {facility.culturalEvent.useTarget && (
+                      <div className="flex flex-col space-y-1">
+                        <span className="text-gray-500">이용대상:</span>
+                        <span className="text-gray-900 text-xs">{facility.culturalEvent.useTarget}</span>
+                      </div>
+                    )}
+                    {facility.culturalEvent.ticket && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">예매:</span>
+                        <span className="text-gray-900 font-medium">{facility.culturalEvent.ticket}</span>
+                      </div>
+                    )}
+                    {facility.culturalEvent.isFree && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">구분:</span>
+                        <span className={`font-medium ${
+                          facility.culturalEvent.isFree === '무료' ? 'text-green-600' : 'text-blue-600'
+                        }`}>
+                          {facility.culturalEvent.isFree}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {facility.culturalEvent.mainImg && (
+                    <div className="mt-4">
+                      <Image 
+                        src={facility.culturalEvent.mainImg} 
+                        alt={facility.name}
+                        width={400}
+                        height={128}
+                        className="w-full h-32 object-cover rounded-lg"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {facility.description && facility.category !== 'cultural_event' && (
                 <div className="border-t pt-4">
                   <h4 className="font-medium text-gray-900 mb-3 flex items-center">
                     <MessageCircleMore className="w-4 h-4 mr-2" />

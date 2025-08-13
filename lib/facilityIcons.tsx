@@ -1,7 +1,8 @@
 // lib/facilityIcons.tsx
 import React from 'react';
-import { Dumbbell, Calendar, UtensilsCrossed, BookOpen, TreePine, Bike, Snowflake, Train } from 'lucide-react';
-import { FACILITY_CATEGORIES, type FacilityCategory } from '@/lib/types';
+import { Dumbbell, Calendar, UtensilsCrossed, BookOpen, TreePine, Bike, Snowflake, Train, Music, CalendarCheck } from 'lucide-react';
+import { FACILITY_CATEGORIES, type FacilityCategory, type Facility } from '@/lib/types';
+import { getSubwayLineColor, getSubwayIconSVG } from '@/lib/subwayColors';
 
 export interface FacilityConfig {
   icon: React.ReactNode;
@@ -67,6 +68,20 @@ export const FACILITY_CONFIGS: Record<FacilityCategory, FacilityConfig> = {
     label: '무더위 쉼터',
     description: '서울시 무더위 쉼터',
     svgIcon: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg>`
+  },
+  [FACILITY_CATEGORIES.CULTURAL_EVENT]: {
+    icon: <Music className="w-5 h-5" />,
+    color: 'bg-pink-500',
+    label: '문화행사',
+    description: '콘서트, 공연, 전시회 등',
+    svgIcon: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`
+  },
+  [FACILITY_CATEGORIES.CULTURAL_RESERVATION]: {
+    icon: <CalendarCheck className="w-5 h-5" />,
+    color: 'bg-violet-500',
+    label: '문화예약',
+    description: '예약 가능한 문화 프로그램',
+    svgIcon: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>`
   }
 };
 
@@ -96,6 +111,26 @@ export const getCategoryColor = (category: FacilityCategory): string => {
     case FACILITY_CATEGORIES.SUBWAY: return '#6366F1'; // indigo-500
     case FACILITY_CATEGORIES.BIKE: return '#84CC16'; // lime-500
     case FACILITY_CATEGORIES.COOLING_SHELTER: return '#06B6D4'; // cyan-500
+    case FACILITY_CATEGORIES.CULTURAL_EVENT: return '#EC4899'; // pink-500
+    case FACILITY_CATEGORIES.CULTURAL_RESERVATION: return '#8B5CF6'; // violet-500
     default: return '#6B7280';
   }
+};
+
+// 시설 아이콘 정보 반환 함수
+export const getFacilityIcon = (category: FacilityCategory, facility?: Facility) => {
+  const config = FACILITY_CONFIGS[category];
+  
+  // 지하철역인 경우 호선별 색상 적용
+  if (category === FACILITY_CATEGORIES.SUBWAY && facility?.subwayStation?.route) {
+    return {
+      svg: getSubwayIconSVG(facility.subwayStation.route),
+      color: getSubwayLineColor(facility.subwayStation.route)
+    };
+  }
+  
+  return {
+    svg: config?.svgIcon || '',
+    color: getCategoryColor(category)
+  };
 };

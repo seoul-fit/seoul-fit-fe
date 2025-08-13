@@ -37,23 +37,16 @@ export async function getAllCoolingShelters(accessToken?: string): Promise<Cooli
 }
 
 /**
- * 근처 무더위쉼터 조회 (백엔드 API)
+ * 근처 무더위쉼터 조회 (Next.js API Route)
  */
 export async function getNearbyCoolingShelters(
   latitude: number,
-  longitude: number,
-  accessToken?: string
+  longitude: number
 ): Promise<CoolingCenter[]> {
   try {
-    const params = new URLSearchParams({
-      latitude: latitude.toString(),
-      longitude: longitude.toString(),
-    });
-
-    const response = await fetch(`${BASE_URL}/api/v1/cooling-shelters/nearby?${params}`, {
+    const response = await fetch(`/api/cooling-shelter?lat=${latitude}&lng=${longitude}`, {
       method: 'GET',
       headers: {
-        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
         'Content-Type': 'application/json',
       },
     });

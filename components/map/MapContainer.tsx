@@ -7,6 +7,9 @@ import { Info } from "lucide-react";
 
 // 컴포넌트들
 import { MapView } from './MapView';
+// import { useClusteredMarkers } from '@/hooks/useClusteredMarkers'; // 사용하지 않음
+import { ClusterBottomSheet } from './ClusterBottomSheet';
+import { FacilityBottomSheet } from './FacilityBottomSheet';
 
 // Hooks
 import { useLocation } from '@/hooks/useLocation';
@@ -20,7 +23,12 @@ import { getNearbyBikeStations, convertBikeStationToFacility } from '@/services/
 import { useCoolingShelter } from '@/hooks/useCoolingShelter';
 import { useSubwayStations } from '@/hooks/useSubwayStations';
 import { useParks } from '@/hooks/useParks';
-import type { BikeStationData, UserPreferences, FacilityCategory, Park } from '@/lib/types';
+import { useLibraries } from '@/hooks/useLibraries';
+import { useCulturalSpaces } from '@/hooks/useCulturalSpaces';
+import { useCulturalEvents } from '@/hooks/useCulturalEvents';
+import { useCulturalReservations } from '@/hooks/useCulturalReservations';
+import { useZoomLevel } from '@/hooks/useZoomLevel';
+import type { BikeStationData, UserPreferences, FacilityCategory, ClusteredFacility, Facility } from '@/lib/types';
 
 interface MapContainerProps {
   className?: string;
@@ -29,7 +37,7 @@ interface MapContainerProps {
 }
 
 // 디바운싱 유틸리티
-const debounce = <T extends (...args: any[]) => any>(
+const debounce = <T extends (...args: never[]) => unknown>(
   func: T,
   wait: number
 ): ((...args: Parameters<T>) => void) => {
@@ -42,6 +50,16 @@ const debounce = <T extends (...args: any[]) => any>(
 };
 
 export default function MapContainer({ preferences, onPreferenceToggle }: MapContainerProps = {}) {
+  // 선택된 시설 및 클러스터 상태
+  const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
+  const [selectedCluster, setSelectedCluster] = useState<ClusteredFacility | null>(null);
+  
+  // selectedFacility가 변경될 때 selectedCluster 초기화
+  useEffect(() => {
+    if (selectedFacility) {
+      setSelectedCluster(null);
+    }
+  }, [selectedFacility]);
   // 지도 인스턴스 생성
   const { mapInstance, mapStatus } = useKakaoMap({
     containerId: 'kakaoMap',
@@ -50,7 +68,13 @@ export default function MapContainer({ preferences, onPreferenceToggle }: MapCon
   });
 
   // 위치 관련 hooks
-  const { currentLocation, moveToCurrentLocation } = useLocation(mapInstance);
+  const { currentLocation, moveToCurrentLocation, setCurrentLocation } = useLocation(mapInstance);
+  
+  // 줌 레벨 관련 hooks
+  const { zoomInfo, isZooming, searchRadius } = useZoomLevel({ 
+    mapInstance, 
+    mapStatus 
+  });
 
   // POI 관련 hooks
   const { pois, fetchNearbyPOIs } = usePOI();
@@ -60,22 +84,34 @@ export default function MapContainer({ preferences, onPreferenceToggle }: MapCon
   const [bikeError, setBikeError] = useState<string | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
-  // 무더위 쉼터 상태
-  const { facilities: coolingShelterFacilities, isLoading: coolingShelterLoading, error: coolingShelterError } = useCoolingShelter();
+  // 무더위 쉼터 상태 (위치 기반)
+  const { facilities: coolingShelterFacilities, error: coolingShelterError, fetchCoolingShelters } = useCoolingShelter();
 
-  // 지하철 상태
+  // 지하철 상태 (전체 데이터 한 번만 로드)
   const { subwayStations: subwayFacilities, error: subwayError } = useSubwayStations();
 
   // 공원 상태
-  const { parks, isLoading: parksLoading, error: parksError, fetchParks } = useParks();
+  const { parks, error: parksError, fetchParks } = useParks();
+  
+  // 도서관 상태
+  const { libraries, error: librariesError, fetchLibraries } = useLibraries();
+  
+  // 문화공간 상태
+  const { culturalSpaces, error: culturalSpacesError, fetchCulturalSpaces } = useCulturalSpaces();
+  
+  // 문화행사 상태
+  const { culturalEvents, error: culturalEventsError, fetchCulturalEvents } = useCulturalEvents();
+  
+  // 문화예약 상태
+  const { culturalReservations, error: culturalReservationsError, fetchCulturalReservations } = useCulturalReservations();
 
   // 마지막 데이터 로드 위치 추적
   const lastLoadedLocationRef = useRef<{ lat: number; lng: number } | null>(null);
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // POI와 따릉이를 Facility로 변환 (메모화)
+  // POI를 Facility로 변환 (지하철역 제외, 메모화)
   const facilitiesFromPOIs = useMemo(() => 
-    pois.map(poi => convertPOIToFacility(poi)), 
+    pois.map(poi => convertPOIToFacility(poi)).filter(facility => facility !== null) as Facility[], 
     [pois]
   );
   
@@ -102,11 +138,116 @@ export default function MapContainer({ preferences, onPreferenceToggle }: MapCon
     })), 
     [parks]
   );
+  
+  // 도서관을 Facility로 변환 (메모화)
+  const facilitiesFromLibraries = useMemo(() => 
+    libraries.map(library => ({
+      id: library.id?.toString() || Math.random().toString(),
+      name: library.name || '도서관',
+      category: 'library' as const,
+      position: {
+        lat: library.latitude || 0,
+        lng: library.longitude || 0
+      },
+      address: library.address || '',
+      phone: library.phone,
+      description: library.description,
+      congestionLevel: 'low' as const,
+      operatingHours: library.operatingHours
+    })), 
+    [libraries]
+  );
+  
+  // 문화공간을 Facility로 변환 (메모화)
+  const facilitiesFromCulturalSpaces = useMemo(() => 
+    culturalSpaces.map(space => ({
+      id: space.id?.toString() || Math.random().toString(),
+      name: space.name || '문화공간',
+      category: 'culture' as const,
+      position: {
+        lat: space.latitude || 0,
+        lng: space.longitude || 0
+      },
+      address: space.address || '',
+      phone: space.phone,
+      description: space.description,
+      congestionLevel: 'low' as const,
+      operatingHours: space.operatingHours
+    })), 
+    [culturalSpaces]
+  );
+  
+  // 문화행사를 Facility로 변환 (메모화)
+  const facilitiesFromCulturalEvents = useMemo(() => 
+    culturalEvents.map(event => ({
+      id: event.id?.toString() || Math.random().toString(),
+      name: event.title || '문화행사',
+      category: 'cultural_event' as const,
+      position: {
+        lat: event.latitude || 0,
+        lng: event.longitude || 0
+      },
+      address: `${event.place || ''} (${event.district || ''})`.trim(),
+      phone: event.orgName ? `주최: ${event.orgName}` : undefined,
+      description: `${event.codeName || ''} | ${event.useTarget || ''}`.trim().replace(/^\|\s*|\s*\|$/g, ''),
+      congestionLevel: 'low' as const,
+      operatingHours: event.eventDate || `${event.startDate} ~ ${event.endDate}`,
+      website: event.orgLink || event.homepageAddr,
+      // 문화행사 전용 정보
+      culturalEvent: {
+        codeName: event.codeName,
+        district: event.district,
+        eventDate: event.eventDate,
+        startDate: event.startDate,
+        endDate: event.endDate,
+        place: event.place,
+        orgName: event.orgName,
+        useTarget: event.useTarget,
+        useFee: event.useFee,
+        isFree: event.isFree,
+        themeCode: event.themeCode,
+        ticket: event.ticket,
+        mainImg: event.mainImg,
+        program: event.program,
+        etcDesc: event.etcDesc
+      }
+    })), 
+    [culturalEvents]
+  );
+  
+  // 문화예약을 Facility로 변환 (메모화)
+  const facilitiesFromCulturalReservations = useMemo(() => 
+    culturalReservations.map(reservation => ({
+      id: reservation.id?.toString() || Math.random().toString(),
+      name: reservation.name || '문화예약',
+      category: 'cultural_reservation' as const,
+      position: {
+        lat: reservation.latitude || 0,
+        lng: reservation.longitude || 0
+      },
+      address: reservation.address || '',
+      phone: reservation.phoneNumber,
+      description: reservation.description,
+      congestionLevel: 'low' as const,
+      website: reservation.reservationUrl,
+      isReservable: true
+    })), 
+    [culturalReservations]
+  );
 
-  // 모든 시설 통합 (메모화)
+  // 모든 시설 통합 (지하철 제외 - 카카오맵 기본 지하철역 사용)
   const allFacilities = useMemo(() => 
-    [...facilitiesFromPOIs, ...facilitiesFromBikes, ...coolingShelterFacilities, ...subwayFacilities, ...facilitiesFromParks],
-    [facilitiesFromPOIs, facilitiesFromBikes, coolingShelterFacilities, subwayFacilities, facilitiesFromParks]
+    [...facilitiesFromPOIs, ...facilitiesFromBikes, ...coolingShelterFacilities, ...facilitiesFromParks, ...facilitiesFromLibraries, ...facilitiesFromCulturalSpaces, ...facilitiesFromCulturalEvents, ...facilitiesFromCulturalReservations],
+    [facilitiesFromPOIs, facilitiesFromBikes, coolingShelterFacilities, facilitiesFromParks, facilitiesFromLibraries, facilitiesFromCulturalSpaces, facilitiesFromCulturalEvents, facilitiesFromCulturalReservations]
+  );
+  
+  // 클러스터링된 마커 데이터 (사용하지 않으므로 제거)
+  // const { markers, clusteredFacilities } = useClusteredMarkers(allFacilities);
+  
+  // 지하철역은 별도 관리 (마커 표시 안함, 클릭 이벤트만)
+  const allFacilitiesWithSubway = useMemo(() => 
+    [...allFacilities, ...subwayFacilities],
+    [allFacilities, subwayFacilities]
   );
 
   // 혼잡도 관련 hooks
@@ -133,12 +274,18 @@ export default function MapContainer({ preferences, onPreferenceToggle }: MapCon
 
   // 위치 변경 핸들러 (개선된 버전)
   const handleLocationChange = useCallback(async (lat: number, lng: number) => {
-    // 이미 같은 위치에서 로딩 중이면 중복 요청 방지
+    // 이미 같은 위치에서 로딩 중이면 중복 요청 방지 (더 엄격한 조건)
     const lastLocation = lastLoadedLocationRef.current;
     if (lastLocation && 
-        Math.abs(lastLocation.lat - lat) < 0.001 && 
-        Math.abs(lastLocation.lng - lng) < 0.001 &&
-        isLoadingData) {
+        Math.abs(lastLocation.lat - lat) < 0.0001 && 
+        Math.abs(lastLocation.lng - lng) < 0.0001) {
+      console.log('같은 위치 중복 요청 방지');
+      return;
+    }
+
+    // 현재 로딩 중이면 요청 무시
+    if (isLoadingData) {
+      console.log('이미 로딩 중이므로 요청 무시');
       return;
     }
 
@@ -147,18 +294,23 @@ export default function MapContainer({ preferences, onPreferenceToggle }: MapCon
       clearTimeout(loadingTimeoutRef.current);
     }
 
+    console.log(`위치 데이터 로드 시작: ${lat}, ${lng}`);
     setIsLoadingData(true);
     setBikeError(null);
     lastLoadedLocationRef.current = { lat, lng };
 
     try {
-      // 모든 API 호출을 병렬로 처리 (타임아웃 설정)
+      // 위치 기반 API 호출을 병렬로 처리 (따릉이, 무더위 쉼터 포함)
+      console.log('시설 데이터 로드 시작:', { lat, lng, searchRadius });
+      
       const promises = [
         fetchCongestionData(lat, lng),
         fetchWeatherData(lat, lng),
-        fetchNearbyPOIs(lat, lng, 1.5),
+        fetchNearbyPOIs(lat, lng, 1.5), // POI는 1.5km 고정 반경
+        // 따릉이 위치 기반 호출 (1km 고정)
         Promise.race([
-          getNearbyBikeStations(lat, lng, 1.5).then(stations => {
+          getNearbyBikeStations(lat, lng, 1).then(stations => {
+            console.log('따릉이 데이터:', stations?.length || 0, '개');
             setBikeStations(stations ?? []);
           }),
           new Promise((_, reject) => 
@@ -168,24 +320,47 @@ export default function MapContainer({ preferences, onPreferenceToggle }: MapCon
           setBikeError(error instanceof Error ? error.message : '따릉이 데이터 로드 실패');
           console.error('따릉이 데이터 로드 실패:', error);
         }),
-        fetchParks(lat, lng)
+        fetchParks(lat, lng).then(() => console.log('공원 데이터:', parks.length, '개')),
+        // 무더위 쉼터 위치 기반 호출
+        fetchCoolingShelters(lat, lng).then(() => console.log('무더위 쉼터 데이터:', coolingShelterFacilities.length, '개')),
+        // 도서관 위치 기반 호출
+        fetchLibraries(lat, lng).then(() => console.log('도서관 데이터:', libraries.length, '개')),
+        // 문화공간 위치 기반 호출
+        fetchCulturalSpaces(lat, lng).then(() => console.log('문화공간 데이터:', culturalSpaces.length, '개')),
+        // 문화행사 위치 기반 호출
+        fetchCulturalEvents(lat, lng).then(() => console.log('문화행사 데이터:', culturalEvents.length, '개')),
+        // 문화예약 위치 기반 호출
+        fetchCulturalReservations(lat, lng).then(() => console.log('문화예약 데이터:', culturalReservations.length, '개'))
       ];
 
       await Promise.allSettled(promises);
+      console.log('위치 데이터 로드 완료');
     } catch (error) {
       console.error('위치 데이터 로드 실패:', error);
     } finally {
       // 로딩 상태를 약간 지연 후 해제 (UI 깜빡임 방지)
       loadingTimeoutRef.current = setTimeout(() => {
         setIsLoadingData(false);
-      }, 300);
+      }, 500);
     }
-  }, [fetchCongestionData, fetchWeatherData, fetchNearbyPOIs, fetchParks, isLoadingData]);
+  }, [searchRadius, isLoadingData, fetchCongestionData, fetchWeatherData, fetchNearbyPOIs, fetchParks, fetchCoolingShelters, fetchLibraries, fetchCulturalSpaces, fetchCulturalEvents, fetchCulturalReservations, parks.length, coolingShelterFacilities.length, libraries.length, culturalSpaces.length, culturalEvents.length, culturalReservations.length]);
 
-  // 디바운싱된 위치 변경 핸들러
+  // 디바운싱된 위치 변경 핸들러 (마커 드래그 시 currentLocation 업데이트 포함)
   const debouncedLocationChange = useCallback(
-    debounce(handleLocationChange, 500),
-    [handleLocationChange]
+    (lat: number, lng: number) => {
+      const debouncedFn = debounce((lat: number, lng: number) => {
+        // currentLocation 업데이트
+        setCurrentLocation({
+          address: '이동된 위치',
+          coords: { lat, lng },
+          type: 'current'
+        });
+        // 데이터 로드
+        handleLocationChange(lat, lng);
+      }, 1000);
+      debouncedFn(lat, lng);
+    },
+    [handleLocationChange, setCurrentLocation]
   );
 
   // 현재 위치 마커 표시
@@ -196,17 +371,27 @@ export default function MapContainer({ preferences, onPreferenceToggle }: MapCon
     onLocationChange: debouncedLocationChange
   });
 
+  // 초기 데이터 로드 상태 추적
+  const [hasInitialLoad, setHasInitialLoad] = useState(false);
+
   // 현재 위치가 설정되면 자동으로 데이터 로드 (한번만)
   useEffect(() => {
-    if (currentLocation?.coords && 
-        !weatherData && 
-        !congestionData && 
-        pois.length === 0 && 
-        bikeStations.length === 0 &&
-        !isLoadingData) {
+    if (currentLocation?.coords && !hasInitialLoad && !isLoadingData) {
+      setHasInitialLoad(true);
       handleLocationChange(currentLocation.coords.lat, currentLocation.coords.lng);
     }
-  }, [currentLocation?.coords, weatherData, congestionData, pois.length, bikeStations.length, handleLocationChange, isLoadingData]);
+  }, [currentLocation?.coords, hasInitialLoad, isLoadingData, handleLocationChange]);
+
+  // 줌 레벨 범위가 변경되면 데이터 새로고침 (현재 위치 기준)
+  useEffect(() => {
+    if (currentLocation?.coords && !isZooming && !isLoadingData && hasInitialLoad) {
+      const timeout = setTimeout(() => {
+        handleLocationChange(currentLocation.coords.lat, currentLocation.coords.lng);
+      }, 1000); // 줌 완료 후 지연 시간 증가
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [zoomInfo.range, currentLocation?.coords, isZooming, isLoadingData, hasInitialLoad, handleLocationChange]);
 
   // 혼잡도 토글 핸들러
   const handleToggleCongestion = useCallback(async () => {
@@ -249,15 +434,25 @@ export default function MapContainer({ preferences, onPreferenceToggle }: MapCon
     };
   }, []);
 
-  // 에러 상태 통합
-  const hasErrors = Boolean(
+  // 에러 상태 통합 (메모이제이션)
+  const hasErrors = useMemo(() => Boolean(
     (congestionError && showCongestion) || 
     (weatherError && showWeather) || 
     subwayError || 
     bikeError || 
     coolingShelterError || 
-    parksError
-  );
+    parksError ||
+    librariesError ||
+    culturalSpacesError ||
+    culturalEventsError ||
+    culturalReservationsError
+  ), [
+    congestionError, showCongestion,
+    weatherError, showWeather,
+    subwayError, bikeError, coolingShelterError,
+    parksError, librariesError, culturalSpacesError,
+    culturalEventsError, culturalReservationsError
+  ]);
 
   return (
     <div className="relative w-full h-full">
@@ -300,6 +495,30 @@ export default function MapContainer({ preferences, onPreferenceToggle }: MapCon
               <AlertDescription>{parksError}</AlertDescription>
             </Alert>
           )}
+          {librariesError && (
+            <Alert variant="destructive" className="animate-in slide-in-from-top-2 duration-300">
+              <Info className="h-4 w-4" />
+              <AlertDescription>{librariesError}</AlertDescription>
+            </Alert>
+          )}
+          {culturalSpacesError && (
+            <Alert variant="destructive" className="animate-in slide-in-from-top-2 duration-300">
+              <Info className="h-4 w-4" />
+              <AlertDescription>{culturalSpacesError}</AlertDescription>
+            </Alert>
+          )}
+          {culturalEventsError && (
+            <Alert variant="destructive" className="animate-in slide-in-from-top-2 duration-300">
+              <Info className="h-4 w-4" />
+              <AlertDescription>{culturalEventsError}</AlertDescription>
+            </Alert>
+          )}
+          {culturalReservationsError && (
+            <Alert variant="destructive" className="animate-in slide-in-from-top-2 duration-300">
+              <Info className="h-4 w-4" />
+              <AlertDescription>{culturalReservationsError}</AlertDescription>
+            </Alert>
+          )}
         </div>
       )}
 
@@ -333,9 +552,31 @@ export default function MapContainer({ preferences, onPreferenceToggle }: MapCon
         onMoveToCurrentLocation={moveToCurrentLocation}
         mapInstance={mapInstance}
         mapStatus={mapStatus}
-        allFacilities={allFacilities}
+        allFacilities={allFacilitiesWithSubway}
+        visibleFacilities={allFacilities}
         preferences={preferences}
         onPreferenceToggle={onPreferenceToggle}
+        onFacilitySelect={setSelectedFacility}
+        onClusterSelect={setSelectedCluster}
+      />
+      
+      {/* 클러스터 바텀시트 */}
+      <ClusterBottomSheet
+        cluster={selectedCluster!}
+        isOpen={!!selectedCluster && !selectedFacility}
+        onClose={() => setSelectedCluster(null)}
+      />
+      
+      {/* 개별 시설 바텀시트 */}
+      <FacilityBottomSheet
+        facility={selectedFacility}
+        isOpen={!!selectedFacility}
+        onClose={() => {
+          setSelectedFacility(null);
+          // 클러스터가 선택되어 있으면 다시 클러스터 바텀시트 표시
+        }}
+        weatherData={weatherData}
+        congestionData={congestionData}
       />
     </div>
   );

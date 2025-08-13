@@ -1,6 +1,6 @@
 // utils/marker.ts
 import type { FacilityCategory, Facility } from '@/lib/types';
-import { getFacilityIconSVG, getCategoryColor } from '@/lib/facilityIcons';
+import { getFacilityIcon } from '@/lib/facilityIcons';
 
 /**
  * POI 마커 HTML 콘텐츠 생성
@@ -69,8 +69,10 @@ export const createCustomMarkerContent = (
   facilityId: string,
   facility?: Facility
 ): string => {
-  const categoryBgColor = getCategoryColor(facilityCategory);
-  const iconSVG = getFacilityIconSVG(facilityCategory);
+  // 지하철역인 경우 호선별 색상 적용, 그 외에는 기본 색상 사용
+  const facilityIcon = getFacilityIcon(facilityCategory, facility);
+  const categoryBgColor = facilityIcon.color;
+  const iconSVG = facilityIcon.svg;
 
   // 따릉이 마커의 경우 상태 뱃지 추가
   let statusBadge = '';

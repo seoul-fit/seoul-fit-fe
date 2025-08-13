@@ -51,13 +51,17 @@ export const useWeather = () => {
   }, []);
 
   const toggleWeatherDisplay = useCallback(async (currentLocation?: { lat: number; lng: number }) => {
-    const newShowState = !state.showWeather;
-    setState(prev => ({ ...prev, showWeather: newShowState }));
-
-    if (newShowState && currentLocation && !state.weatherData) {
-      await fetchWeatherData(currentLocation.lat, currentLocation.lng);
-    }
-  }, [state.showWeather, state.weatherData, fetchWeatherData]);
+    setState(prev => {
+      const newShowState = !prev.showWeather;
+      
+      // 비동기로 데이터 로드
+      if (newShowState && currentLocation && !prev.weatherData) {
+        fetchWeatherData(currentLocation.lat, currentLocation.lng);
+      }
+      
+      return { ...prev, showWeather: newShowState };
+    });
+  }, [fetchWeatherData]);
 
   const refreshWeatherData = useCallback(async (currentLocation?: { lat: number; lng: number }) => {
     if (currentLocation) {

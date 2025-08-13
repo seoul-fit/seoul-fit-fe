@@ -2,6 +2,19 @@
 import { useEffect, useRef, useCallback } from 'react';
 import type { KakaoMap, KakaoMarker, WindowWithKakao } from '@/lib/kakao-map';
 
+// 디바운싱 유틸리티
+const debounce = <T extends (...args: never[]) => unknown>(
+  func: T,
+  wait: number
+): ((...args: Parameters<T>) => void) => {
+  let timeout: NodeJS.Timeout | null = null;
+  
+  return (...args: Parameters<T>) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+};
+
 interface UseCurrentLocationMarkerProps {
   mapInstance: KakaoMap | null;
   mapStatus: { success: boolean };
@@ -40,7 +53,14 @@ export const useCurrentLocationMarker = ({
 
     marker.setMap(mapInstance);
     
-    // 드래그 종료 시 위치 업데이트
+    // 드래그 종료 시 위치 업데이트 (디바운싱 적용)
+    const debouncedLocationChange = debounce((lat: number, lng: number) => {
+      if (onLocationChange) {
+        console.log(`마커 드래그로 위치 변경: ${lat}, ${lng}`);
+        onLocationChange(lat, lng);
+      }
+    }, 1000); // 1초 디바운싱
+    
     kakaoMaps.event.addListener(marker, 'dragend', () => {
       const position = marker.getPosition();
       const newLat = position.getLat();
@@ -49,10 +69,8 @@ export const useCurrentLocationMarker = ({
       // 지도 중심을 마커 위치로 이동
       mapInstance.setCenter(position);
       
-      // 위치 변경 콜백 호출
-      if (onLocationChange) {
-        onLocationChange(newLat, newLng);
-      }
+      // 디바운싱된 위치 변경 콜백 호출
+      debouncedLocationChange(newLat, newLng);
     });
     
     markerRef.current = marker;

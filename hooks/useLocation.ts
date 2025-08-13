@@ -65,9 +65,9 @@ export const useLocation = (mapInstance: KakaoMap | null) => {
     );
   }, [mapInstance]);
 
-  // 지도 로드 시 바로 현재 위치로 이동
+  // 지도 로드 시 바로 현재 위치로 이동 (한 번만 실행)
   useEffect(() => {
-    if (mapInstance) {
+    if (mapInstance && !currentLocation) {
       // 약간의 지연을 두고 현재 위치 요청 (지도 초기화 완료 후)
       const timer = setTimeout(() => {
         moveToCurrentLocation();
@@ -75,7 +75,7 @@ export const useLocation = (mapInstance: KakaoMap | null) => {
       
       return () => clearTimeout(timer);
     }
-  }, [mapInstance, moveToCurrentLocation]);
+  }, [mapInstance, currentLocation]);
 
   return {
     currentLocation,

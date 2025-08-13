@@ -134,7 +134,21 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        const data1 = await response1.json();
+        const responseText1 = await response1.text();
+        
+        // XML 응답인지 확인
+        if (responseText1.startsWith('<')) {
+            console.error('따릉이 API 첫 번째 호출이 XML 형태로 응답했습니다:', responseText1.substring(0, 100));
+            return NextResponse.json([], { status: 200 });
+        }
+        
+        let data1;
+        try {
+            data1 = JSON.parse(responseText1);
+        } catch (parseError) {
+            console.error('따릉이 API 첫 번째 응답 JSON 파싱 실패:', parseError);
+            return NextResponse.json([], { status: 200 });
+        }
         
         // 두 번째 호출: 1001~2000
         const apiUrl2 = `${BASE_URL}/${API_KEY}/json/bikeList/1001/2000/`;
@@ -153,7 +167,21 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        const data2 = await response2.json();
+        const responseText2 = await response2.text();
+        
+        // XML 응답인지 확인
+        if (responseText2.startsWith('<')) {
+            console.error('따릉이 API 두 번째 호출이 XML 형태로 응답했습니다:', responseText2.substring(0, 100));
+            return NextResponse.json([], { status: 200 });
+        }
+        
+        let data2;
+        try {
+            data2 = JSON.parse(responseText2);
+        } catch (parseError) {
+            console.error('따릉이 API 두 번째 응답 JSON 파싱 실패:', parseError);
+            return NextResponse.json([], { status: 200 });
+        }
         
         // API 응답 결과 코드 확인
         if ((data1.RESULT && data1.RESULT.CODE !== 'INFO-000') || 

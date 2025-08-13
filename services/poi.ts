@@ -110,9 +110,20 @@ export async function getNearbyPOIs(lat: number, lng: number, radius: number = 1
 }
 
 /**
- * POI 데이터를 Facility 형태로 변환
+ * POI 데이터를 Facility 형태로 변환 (지하철역 제외)
  */
-export function convertPOIToFacility(poi: POIData): Facility {
+export function convertPOIToFacility(poi: POIData): Facility | null {
+    // 지하철역은 제외 (별도로 처리)
+    if (poi.name.includes('역') && (
+        poi.name.includes('지하철') || 
+        poi.name.includes('전철') ||
+        poi.name.includes('호선') ||
+        poi.name.includes('선') ||
+        poi.name.endsWith('역')
+    )) {
+        return null;
+    }
+    
     const category = mapPOIToCategory(poi.name);
     
     // 카테고리별 상세 정보 생성

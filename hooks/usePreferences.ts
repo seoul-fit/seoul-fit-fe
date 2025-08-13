@@ -12,7 +12,9 @@ const defaultPreferences: UserPreferences = {
   park: true,
   subway: true,
   bike: true,
-  cooling_shelter: true
+  cooling_shelter: true,
+  cultural_event: true,
+  cultural_reservation: true
 };
 
 export function usePreferences() {
@@ -36,7 +38,9 @@ export function usePreferences() {
         park: false,
         subway: false,
         bike: false,
-        cooling_shelter: false
+        cooling_shelter: false,
+        cultural_event: false,
+        cultural_reservation: false
       };
 
       // 사용자 관심사에 따라 선호도 설정
@@ -98,7 +102,9 @@ export function usePreferences() {
           park: 'PARK',
           subway: 'SUBWAY',
           bike: 'BIKE',
-          cooling_shelter: 'COOLING_SHELTER'
+          cooling_shelter: 'COOLING_SHELTER',
+          cultural_event: 'CULTURAL_EVENT',
+          cultural_reservation: 'CULTURAL_RESERVATION'
         };
         
         const selectedInterests = Object.entries(newPreferences)

@@ -100,7 +100,7 @@ export function useAuth(): UseAuthReturn {
         redirectUri,
       });
       
-      setAuth(response.accessToken, response.refreshToken, response.user);
+      setAuth(response.user, response.accessToken, response.refreshToken);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'OAuth 로그인에 실패했습니다.';
       setError(errorMessage);
@@ -131,7 +131,7 @@ export function useAuth(): UseAuthReturn {
         profileImageUrl,
       });
       
-      setAuth(response.accessToken, response.refreshToken, response.user);
+      setAuth(response.user, response.accessToken, response.refreshToken);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'OAuth 회원가입에 실패했습니다.';
       setError(errorMessage);
@@ -151,7 +151,7 @@ export function useAuth(): UseAuthReturn {
     
     try {
       const response: AuthResponse = await authService.refreshToken(storedRefreshToken);
-      setAuth(response.accessToken, response.refreshToken, response.user);
+      setAuth(response.user, response.accessToken, response.refreshToken);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '토큰 갱신에 실패했습니다.';
       setError(errorMessage);

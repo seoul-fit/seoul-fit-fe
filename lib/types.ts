@@ -9,7 +9,9 @@ export const FACILITY_CATEGORIES = {
     PARK: 'park',
     SUBWAY: 'subway',
     BIKE: 'bike',
-    COOLING_SHELTER: 'cooling_shelter'
+    COOLING_SHELTER: 'cooling_shelter',
+    CULTURAL_EVENT: 'cultural_event',
+    CULTURAL_RESERVATION: 'cultural_reservation'
   } as const;
   
   // 타입 추출 (읽기 전용)
@@ -84,6 +86,24 @@ export const FACILITY_CATEGORIES = {
           stationId?: string // 역 ID
           route?: string // 노선명
       }
+
+      culturalEvent?: {
+          codeName?: string // 장르 (미지컴/오페라 등)
+          district?: string // 지역구
+          eventDate?: string // 행사 기간
+          startDate?: string // 시작일
+          endDate?: string // 종료일
+          place?: string // 공연장소
+          orgName?: string // 주최기관
+          useTarget?: string // 이용대상
+          useFee?: string // 이용료
+          isFree?: string // 무료/유료
+          themeCode?: string // 테마코드
+          ticket?: string // 예매방법
+          mainImg?: string // 메인 이미지
+          program?: string // 프로그램 상세
+          etcDesc?: string // 기타 설명
+      }
   }
   
   export interface TimeSlot {
@@ -131,6 +151,8 @@ export const FACILITY_CATEGORIES = {
     'SUBWAY': 'subway',
     'BIKE': 'bike',
     'COOLING_SHELTER': 'cooling_shelter',
+    'CULTURAL_EVENT': 'cultural_event',
+    'CULTURAL_RESERVATION': 'cultural_reservation',
     '체육시설': 'sports',
     '문화시설': 'culture',
     '맛집': 'restaurant',
@@ -138,7 +160,9 @@ export const FACILITY_CATEGORIES = {
     '공원': 'park',
     '지하철': 'subway',
     '따릉이': 'bike',
-    '무더위쉼터': 'cooling_shelter'
+    '무더위쉼터': 'cooling_shelter',
+    '문화행사': 'cultural_event',
+    '문화예약': 'cultural_reservation'
   };
   
   export interface UserLocation {
@@ -148,6 +172,19 @@ export const FACILITY_CATEGORIES = {
       timestamp: number
   }
   
+  export interface ClusteredFacility {
+      id: string;
+      name: string;
+      position: {
+          lat: number;
+          lng: number;
+      };
+      facilities: Facility[];
+      categoryCounts: Record<FacilityCategory, number>;
+      totalCount: number;
+      primaryCategory: FacilityCategory;
+  }
+
   export interface MapState {
       isLoaded: boolean;
       isLoading: boolean;
@@ -155,6 +192,7 @@ export const FACILITY_CATEGORIES = {
       mapInstance: unknown | null;
       userLocation: UserLocation | null;
       selectedFacility: Facility | null;
+      selectedCluster: ClusteredFacility | null;
       visibleFacilities: Facility[];
       mapLevel: number;
       preferences: UserPreferences;
@@ -289,7 +327,16 @@ export interface AuthResponse {
   refreshToken: string;
   user: {
     id: number;
+    email: string;
     nickname: string;
+    status: string;
+    oauthProvider: string;
+    oauthUserId: string;
+    profileImageUrl: string;
+    interests: Array<{
+      id: number;
+      interestCategory: string;
+    }>;
   };
 }
 
@@ -314,7 +361,7 @@ export interface LocationDataResponse {
   radius: number;
   totalCount: number;
   restaurants: TouristRestaurant[];
-  libraries: any[]; // 추후 정의
+  libraries: Library[]; // 추후 정의
   parks: SeoulPark[];
   sportsFacilities: SportsFacilityProgram[];
   coolingCenters: CoolingCenter[];

@@ -1,16 +1,17 @@
 // components/map/MapView.tsx
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from 'lucide-react';
+import { FACILITY_CONFIGS } from '@/lib/facilityIcons';
 
 import { CongestionPanel } from './CongestionPanel';
 import { WeatherPanel } from './WeatherPanel';
 import { MapControls } from './MapControls';
 import { MapStatusIndicator } from './MapStatusIndicator';
-import { FacilityBottomSheet } from './FacilityBottomSheet';
+// import { FacilityBottomSheet } from './FacilityBottomSheet'; // 사용하지 않음
 import { useMapMarkers } from '@/hooks/useMapMarkers';
 import { useFacilities } from '@/hooks/useFacilities';
 import { FACILITY_CATEGORIES } from '@/lib/types';
@@ -20,9 +21,10 @@ import type {
   WeatherData, 
   Facility,
   UserPreferences,
-  FacilityCategory
+  FacilityCategory,
+  ClusteredFacility
 } from '@/lib/types';
-import type { KakaoMap } from '@/lib/kakao-map';
+import type { KakaoMap, WindowWithKakao } from '@/lib/kakao-map';
 
 interface MapViewProps {
   loading?: boolean;
@@ -45,8 +47,11 @@ interface MapViewPropsExtended extends MapViewProps {
   mapInstance?: KakaoMap | null | undefined;
   mapStatus?: { success: boolean; loading: boolean; error: string | null } | undefined;
   allFacilities?: Facility[];
+  visibleFacilities?: Facility[];
   preferences?: UserPreferences;
   onPreferenceToggle?: (category: FacilityCategory) => void;
+  onFacilitySelect?: (facility: Facility) => void;
+  onClusterSelect?: (cluster: ClusteredFacility) => void;
 }
 
 export const MapView: React.FC<MapViewPropsExtended> = ({
@@ -67,25 +72,82 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
   mapInstance,
   mapStatus,
   allFacilities = [],
+  visibleFacilities = [],
   preferences,
-  onPreferenceToggle
+  onPreferenceToggle,
+  onFacilitySelect,
+  onClusterSelect
 }) => {
-  // 백엔드로부터 받은 사용자 선호도 or 기본값 사용
+  // 백엔드로부터 받은 사용자 선호도 or 기본값 사용 (마커 표시용)
   const { visibleFacilities: filteredFacilities, preferences: internalPreferences, toggleCategory } = useFacilities({
-    facilities: allFacilities,
+    facilities: visibleFacilities, // 지하철 제외된 시설들
     initialPreferences: preferences
   });
   
   const currentPreferences = preferences || internalPreferences;
   const handleToggleCategory = onPreferenceToggle || toggleCategory;
 
-  const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
-  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+
 
   const handleFacilitySelect = useCallback((facility: Facility) => {
-    setSelectedFacility(facility);
-    setIsBottomSheetOpen(true);
-  }, []);
+    if (onFacilitySelect) {
+      onFacilitySelect(facility);
+    }
+    // 개별 시설 선택 로직은 MapContainer에서 처리
+  }, [onFacilitySelect]);
+  
+  const handleClusterSelect = useCallback((cluster: ClusteredFacility) => {
+    if (onClusterSelect) {
+      onClusterSelect(cluster);
+    }
+  }, [onClusterSelect]);
+
+  // 지하철역 클릭 처리를 위한 지도 이벤트
+  React.useEffect(() => {
+    if (!mapInstance || !mapStatus?.success) return;
+
+    const windowWithKakao = window as WindowWithKakao;
+    if (!windowWithKakao.kakao?.maps) return;
+
+    const handleMapClick = (mouseEvent: { latLng: { getLat: () => number; getLng: () => number } }) => {
+      const clickPosition = mouseEvent.latLng;
+      const lat = clickPosition.getLat();
+      const lng = clickPosition.getLng();
+      
+      // 클릭 위치 주변의 지하철역 찾기 (반경 100m)
+      const nearbySubway = allFacilities.find(facility => {
+        if (facility.category !== 'subway') return false;
+        
+        const distance = Math.sqrt(
+          Math.pow(facility.position.lat - lat, 2) + 
+          Math.pow(facility.position.lng - lng, 2)
+        ) * 111000; // 대략적인 거리 계산 (미터)
+        
+        return distance < 100; // 100m 이내
+      });
+      
+      if (nearbySubway) {
+        handleFacilitySelect(nearbySubway);
+      }
+    };
+
+    const clickListener = windowWithKakao.kakao.maps.event.addListener(
+      mapInstance,
+      'click',
+      handleMapClick
+    );
+
+    return () => {
+      try {
+        const cleanupWindow = window as WindowWithKakao;
+        if (cleanupWindow.kakao?.maps?.event && clickListener) {
+          // cleanupWindow.kakao.maps.event.removeListener(clickListener);
+        }
+      } catch {
+        // 조용히 처리
+      }
+    };
+  }, [mapInstance, mapStatus?.success, allFacilities, handleFacilitySelect]);
 
   // POI 선택 핸들러 제거 - 이제 Facility로 통합됨
 
@@ -93,7 +155,8 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
     mapInstance,
     mapStatus,
     visibleFacilities: filteredFacilities,
-    onFacilitySelect: handleFacilitySelect
+    onFacilitySelect: handleFacilitySelect,
+    onClusterSelect: handleClusterSelect
   });
 
 
@@ -199,25 +262,22 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
           
           if (count === 0 || key === 'SUBWAY') return null;
           
+          const config = FACILITY_CONFIGS[category];
+          
           return (
             <Button
               key={category}
-              variant={isActive ? "default" : "outline"}
+              variant="outline"
               size="sm"
               onClick={() => handleToggleCategory(category)}
-              className={`text-xs ${
+              className={`text-xs px-2 py-1 h-8 flex items-center gap-1 border ${
                 isActive 
-                  ? 'bg-blue-500 text-white' 
-                  : 'bg-white/90 text-gray-700'
+                  ? `${config.color} text-white border-transparent` 
+                  : 'bg-white/90 text-gray-700 border-gray-300'
               }`}
             >
-              {key === 'SPORTS' && '체육'}
-              {key === 'CULTURE' && '문화'}
-              {key === 'RESTAURANT' && '맛집'}
-              {key === 'LIBRARY' && '도서관'}
-              {key === 'PARK' && '공원'}
-              {key === 'BIKE' && '따릉이'}
-              ({count})
+              <span className="w-4 h-4">{config.icon}</span>
+              {count}
             </Button>
           );
         })}
@@ -232,17 +292,8 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
         markersCount={markersCount}
       />
 
-      {/* 시설 정보 바텀 시트 */}
-      <FacilityBottomSheet
-        facility={selectedFacility}
-        isOpen={isBottomSheetOpen}
-        onClose={() => {
-          setIsBottomSheetOpen(false);
-          setSelectedFacility(null);
-        }}
-        weatherData={weatherData}
-        congestionData={congestionData}
-      />
+
+
     </div>
   );
 };

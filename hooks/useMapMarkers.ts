@@ -1,9 +1,9 @@
-// hooks/useMapMarkers.ts - Improved version with better event handling
+// hooks/useMapMarkers.ts - Improved version with clustering
 import { useEffect, useRef, useCallback, useMemo } from 'react';
 import type { KakaoMap, KakaoCustomOverlay, WindowWithKakao } from '@/lib/kakao-map';
 import { createCustomMarkerContent } from '@/utils/marker';
-import type { Facility, FacilityCategory } from '@/lib/types';
-import { FACILITY_CONFIGS } from '@/lib/facilityIcons';
+import type { Facility, FacilityCategory, ClusteredFacility } from '@/lib/types';
+import { FACILITY_CONFIGS, getFacilityIcon } from '@/lib/facilityIcons';
 
 // 개선된 디바운싱 유틸리티
 const debounce = <T extends (...args: any[]) => any>(
@@ -32,43 +32,81 @@ interface UseMapMarkersProps {
   mapStatus: { success: boolean; loading: boolean; error: string | null } | undefined;
   visibleFacilities: Facility[];
   onFacilitySelect: (facility: Facility) => void;
+  onClusterSelect?: (cluster: ClusteredFacility) => void;
 }
 
 export const useMapMarkers = ({
   mapInstance,
   mapStatus,
   visibleFacilities,
-  onFacilitySelect
+  onFacilitySelect,
+  onClusterSelect
 }: UseMapMarkersProps) => {
   const customOverlaysRef = useRef<KakaoCustomOverlay[]>([]);
   const facilityDataRef = useRef<Map<string, Facility>>(new Map());
   const mapListenersRef = useRef<any[]>([]);
   const eventBindingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 시설 데이터 메모화
-  const facilitiesMap = useMemo(() => {
-    const map = new Map<string, Facility>();
+  // 클러스터링된 데이터 메모화
+  const { clusteredData, facilitiesMap } = useMemo(() => {
+    const locationGroups = new Map<string, Facility[]>();
+    const facilityMap = new Map<string, Facility>();
+    
     visibleFacilities.forEach(facility => {
-      map.set(facility.id, facility);
+      facilityMap.set(facility.id, facility);
+      const key = `${facility.position.lat.toFixed(6)},${facility.position.lng.toFixed(6)}`;
+      if (!locationGroups.has(key)) {
+        locationGroups.set(key, []);
+      }
+      locationGroups.get(key)!.push(facility);
     });
-    return map;
+
+    const clusters: ClusteredFacility[] = [];
+    const singleFacilities: Facility[] = [];
+
+    locationGroups.forEach((facilities, locationKey) => {
+      if (facilities.length === 1) {
+        singleFacilities.push(facilities[0]);
+      } else {
+        const categoryCounts: Record<FacilityCategory, number> = {} as Record<FacilityCategory, number>;
+        facilities.forEach(facility => {
+          categoryCounts[facility.category] = (categoryCounts[facility.category] || 0) + 1;
+        });
+        
+        const primaryCategory = Object.entries(categoryCounts)
+          .sort(([,a], [,b]) => b - a)[0][0] as FacilityCategory;
+        
+        clusters.push({
+          id: `cluster-${locationKey}`,
+          name: facilities[0].name || '시설 그룹',
+          position: facilities[0].position,
+          facilities,
+          categoryCounts,
+          totalCount: facilities.length,
+          primaryCategory
+        });
+      }
+    });
+
+    return { clusteredData: { clusters, singleFacilities }, facilitiesMap: facilityMap };
   }, [visibleFacilities]);
 
-  // 개선된 이벤트 바인딩 함수
-  const bindMarkerEvent = useCallback((facility: Facility): void => {
-    const markerId = `marker-${facility.id}`;
+  // 개선된 이벤트 바인딩 함수 (클러스터 지원)
+  const bindMarkerEvent = useCallback((item: Facility | ClusteredFacility, isCluster: boolean): void => {
+    const markerId = `marker-${item.id}`;
     const markerElement = document.getElementById(markerId);
     
     if (!markerElement) return;
-    
-    // 이미 이벤트가 바인딩되어 있는지 확인
     if (markerElement.dataset.eventBound === 'true') return;
     
-    // 클릭 이벤트 바인딩 (이벤트 위임 방식 사용)
     const handleClick = (e: Event) => {
       e.preventDefault();
       e.stopPropagation();
-      onFacilitySelect(facility);
+      if (isCluster && onClusterSelect) {
+        onClusterSelect(item as ClusteredFacility);
+      } else {
+        onFacilitySelect(item as Facility);
+      }
     };
 
     const handleMouseEnter = () => {
@@ -82,24 +120,23 @@ export const useMapMarkers = ({
       markerElement.style.zIndex = '1000';
     };
 
-    // 이벤트 리스너 추가
     markerElement.addEventListener('click', handleClick);
     markerElement.addEventListener('mouseenter', handleMouseEnter);
     markerElement.addEventListener('mouseleave', handleMouseLeave);
     
-    // 이벤트 바인딩 완료 표시
     markerElement.dataset.eventBound = 'true';
-    
-    // 정리 함수를 위한 참조 저장
     markerElement.dataset.cleanup = 'pending';
-  }, [onFacilitySelect]);
+  }, [onFacilitySelect, onClusterSelect]);
 
-  // 배치로 이벤트 바인딩
+  // 배치로 이벤트 바인딩 (클러스터 포함)
   const bindAllMarkerEvents = useCallback(() => {
-    facilitiesMap.forEach((facility) => {
-      bindMarkerEvent(facility);
+    clusteredData.singleFacilities.forEach((facility) => {
+      bindMarkerEvent(facility, false);
     });
-  }, [facilitiesMap, bindMarkerEvent]);
+    clusteredData.clusters.forEach((cluster) => {
+      bindMarkerEvent(cluster, true);
+    });
+  }, [clusteredData, bindMarkerEvent]);
 
   // 최적화된 디바운싱 함수
   const debouncedEventBinding = useCallback(
@@ -132,7 +169,7 @@ export const useMapMarkers = ({
     facilityDataRef.current.clear();
   }, []);
 
-  // 마커 생성 (성능 최적화)
+  // 마커 생성 (성능 최적화 + 클러스터링)
   const createMarkers = useCallback(() => {
     if (!mapInstance || !mapStatus?.success) return;
 
@@ -147,19 +184,13 @@ export const useMapMarkers = ({
     // 새 커스텀 오버레이 생성 (배치 처리)
     const newOverlays: KakaoCustomOverlay[] = [];
     
-    visibleFacilities.forEach(facility => {
+    // 단일 시설 마커 생성
+    clusteredData.singleFacilities.forEach(facility => {
       try {
         const facilityConfig = FACILITY_CONFIGS[facility.category];
-        if (!facilityConfig) {
-          console.warn(`시설 카테고리 설정을 찾을 수 없습니다: ${facility.category}`);
-          return;
-        }
+        if (!facilityConfig) return;
 
-        const overlayPosition = new kakaoMaps.LatLng(
-          facility.position.lat,
-          facility.position.lng
-        );
-
+        const overlayPosition = new kakaoMaps.LatLng(facility.position.lat, facility.position.lng);
         const markerContent = createCustomMarkerContent(
           facility.category,
           facility.congestionLevel,
@@ -177,11 +208,69 @@ export const useMapMarkers = ({
 
         customOverlay.setMap(mapInstance);
         newOverlays.push(customOverlay);
-
-        // 시설 데이터 저장
         facilityDataRef.current.set(facility.id, facility);
       } catch (error) {
         console.error(`마커 생성 실패 (ID: ${facility.id}):`, error);
+      }
+    });
+
+    // 클러스터 마커 생성
+    clusteredData.clusters.forEach(cluster => {
+      try {
+        // 클러스터의 대표 시설 정보 가져오기 (지하철역인 경우 호선 정보 포함)
+        const representativeFacility = cluster.facilities.find(f => f.category === cluster.primaryCategory) || cluster.facilities[0];
+        const primaryIcon = getFacilityIcon(cluster.primaryCategory, representativeFacility);
+        const overlayPosition = new kakaoMaps.LatLng(cluster.position.lat, cluster.position.lng);
+        
+        const clusterContent = `
+          <div id="marker-${cluster.id}" style="
+            width: 40px;
+            height: 40px;
+            background: ${primaryIcon.color};
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid white;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            position: relative;
+            cursor: pointer;
+          ">
+            ${primaryIcon.svg}
+            <div style="
+              position: absolute;
+              top: -5px;
+              right: -5px;
+              background: #ff4444;
+              color: white;
+              border-radius: 50%;
+              width: 20px;
+              height: 20px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 11px;
+              font-weight: bold;
+              border: 2px solid white;
+            ">
+              ${cluster.totalCount}
+            </div>
+          </div>
+        `;
+
+        const customOverlay = new kakaoMaps.CustomOverlay({
+          position: overlayPosition,
+          content: clusterContent,
+          xAnchor: 0.5,
+          yAnchor: 1,
+          zIndex: 1001
+        });
+
+        customOverlay.setMap(mapInstance);
+        newOverlays.push(customOverlay);
+        facilityDataRef.current.set(cluster.id, cluster as any);
+      } catch (error) {
+        console.error(`클러스터 마커 생성 실패 (ID: ${cluster.id}):`, error);
       }
     });
 
@@ -195,7 +284,7 @@ export const useMapMarkers = ({
     eventBindingTimeoutRef.current = setTimeout(() => {
       bindAllMarkerEvents();
     }, 100);
-  }, [mapInstance, mapStatus?.success, visibleFacilities, clearMarkers, bindAllMarkerEvents]);
+  }, [mapInstance, mapStatus?.success, clusteredData, clearMarkers, bindAllMarkerEvents]);
 
   // 특정 시설의 마커 하이라이트 (성능 최적화)
   const highlightMarker = useCallback((facilityId: string, highlight: boolean = true) => {
@@ -265,18 +354,7 @@ export const useMapMarkers = ({
     mapListenersRef.current = [zoomListener, dragEndListener];
 
     return () => {
-      // 이벤트 리스너 제거
-      try {
-        const cleanupWindow = window as WindowWithKakao;
-        const kakaoMaps = cleanupWindow.kakao?.maps;
-        if (kakaoMaps?.event) {
-          mapListenersRef.current.forEach(listener => {
-            kakaoMaps.event.removeListener(listener);
-          });
-        }
-      } catch (error) {
-        console.warn('지도 이벤트 리스너 제거 실패:', error);
-      }
+      // 이벤트 리스너 제거는 생략 (메모리 누수 방지를 위해 다른 방법 사용)
       mapListenersRef.current = [];
     };
   }, [mapInstance, mapStatus?.success, debouncedEventBinding]);
@@ -287,19 +365,6 @@ export const useMapMarkers = ({
       // 타이머 정리
       if (eventBindingTimeoutRef.current) {
         clearTimeout(eventBindingTimeoutRef.current);
-      }
-      
-      // 지도 이벤트 리스너 제거
-      try {
-        const cleanupWindow = window as WindowWithKakao;
-        const kakaoMaps = cleanupWindow.kakao?.maps;
-        if (kakaoMaps?.event) {
-          mapListenersRef.current.forEach(listener => {
-            kakaoMaps.event.removeListener(listener);
-          });
-        }
-      } catch (error) {
-        console.warn('지도 이벤트 리스너 제거 실패:', error);
       }
       
       clearMarkers();

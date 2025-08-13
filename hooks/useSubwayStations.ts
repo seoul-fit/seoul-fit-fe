@@ -47,7 +47,11 @@ export const useSubwayStations = () => {
     };
   }, []);
 
+  const [hasLoaded, setHasLoaded] = useState(false);
+
   const fetchSubwayStations = useCallback(async () => {
+    if (hasLoaded) return; // 이미 로드되었으면 스킵
+    
     setLoading(true);
     setError(null);
 
@@ -63,6 +67,7 @@ export const useSubwayStations = () => {
       if (data.success) {
         const facilities = data.data.stations.map(convertToFacility);
         setSubwayStations(facilities);
+        setHasLoaded(true); // 로드 완료 표시
       } else {
         throw new Error('지하철 데이터를 가져오는데 실패했습니다.');
       }
@@ -72,11 +77,11 @@ export const useSubwayStations = () => {
     } finally {
       setLoading(false);
     }
-  }, [convertToFacility]);
+  }, [hasLoaded, convertToFacility]);
 
   useEffect(() => {
-    fetchSubwayStations().then();
-  }, [fetchSubwayStations]);
+    fetchSubwayStations();
+  }, []);
 
   return {
     subwayStations,

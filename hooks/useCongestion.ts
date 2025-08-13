@@ -51,13 +51,17 @@ export const useCongestion = () => {
   }, []);
 
   const toggleCongestionDisplay = useCallback(async (currentLocation?: { lat: number; lng: number }) => {
-    const newShowState = !state.showCongestion;
-    setState(prev => ({ ...prev, showCongestion: newShowState }));
-
-    if (newShowState && currentLocation && !state.congestionData) {
-      await fetchCongestionData(currentLocation.lat, currentLocation.lng);
-    }
-  }, [state.showCongestion, state.congestionData, fetchCongestionData]);
+    setState(prev => {
+      const newShowState = !prev.showCongestion;
+      
+      // 비동기로 데이터 로드
+      if (newShowState && currentLocation && !prev.congestionData) {
+        fetchCongestionData(currentLocation.lat, currentLocation.lng);
+      }
+      
+      return { ...prev, showCongestion: newShowState };
+    });
+  }, [fetchCongestionData]);
 
   const refreshCongestionData = useCallback(async (currentLocation?: { lat: number; lng: number }) => {
     if (currentLocation) {
