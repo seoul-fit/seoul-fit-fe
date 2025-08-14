@@ -1,80 +1,84 @@
-// services/parks.ts - Seoul Parks service implementation (Updated with correct URLs)
-import { SeoulPark, ParkDataStatistics } from '@/lib/types';
+import axios, { AxiosError } from 'axios';
+import { Park } from '@/lib/types';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL = '/api/parks';
 
-/**
- * 공원 전체 조회
- */
-export async function getAllParks(accessToken?: string): Promise<SeoulPark[]> {
-  const response = await fetch(`${BASE_URL}/api/parks/all`, {
-    method: 'GET',
-    headers: {
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`공원 전체 조회 실패: ${response.status}`);
-  }
-
-  return response.json();
+// API 응답 타입 정의
+interface ApiResponse<T> {
+  parks?: T[];
+  data?: T[];
+  totalCount?: number;
+  success?: boolean;
+  message?: string;
 }
 
-/**
- * 근처 공원 조회
- */
-export async function getNearbyParks(
+export interface ParksResponse {
+  parks: Park[];
+  totalCount: number;
+  page?: number;
+  size?: number;
+}
+
+// 에러 처리 유틸리티
+function handleApiError(error: unknown, context: string): never {
+  if (axios.isAxiosError(error)) {
+    const axiosError = error as AxiosError;
+    if (axiosError.code === 'ECONNABORTED') {
+      throw new Error(`${context}: 요청 시간이 초과되었습니다.`);
+    }
+    if (axiosError.response?.status === 404) {
+      throw new Error(`${context}: 데이터를 찾을 수 없습니다.`);
+    }
+    if (axiosError.response && axiosError.response.status >= 500) {
+      throw new Error(`${context}: 서버 오류가 발생했습니다.`);
+    }
+  }
+  console.error(`${context} 실패:`, error);
+  throw new Error(`${context}: 데이터를 가져오는데 실패했습니다.`);
+}
+
+export async function fetchNearbyParks(
   latitude: number,
   longitude: number,
-  accessToken?: string
-): Promise<SeoulPark[]> {
-  const params = new URLSearchParams({
-    latitude: latitude.toString(),
-    longitude: longitude.toString(),
-  });
+  radius: number = 2
+): Promise<Park[]> {
+  try {
+    const response = await axios.get<ApiResponse<Park>>(`${API_BASE_URL}/nearby`, {
+      params: { latitude, longitude, radius },
+      timeout: 10000,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
 
-  const response = await fetch(`${BASE_URL}/api/parks/nearby?${params}`, {
-    method: 'GET',
-    headers: {
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`근처 공원 조회 실패: ${response.status}`);
+    const parks = response.data.parks || response.data.data || [];
+    return parks;
+  } catch (error) {
+    handleApiError(error, '근처 공원 데이터 조회');
   }
-
-  return response.json();
 }
 
-/**
- * 공원 상세 정보 조회 (향후 구현)
- */
-export async function getParkDetail(
-  parkId: number,
-  accessToken?: string
-): Promise<SeoulPark> {
-  const params = new URLSearchParams({
-    parkId: parkId.toString(),
-  });
+export async function fetchAllParks(
+  page: number = 0,
+  size: number = 100
+): Promise<ParksResponse> {
+  try {
+    const response = await axios.get<ApiResponse<Park>>(`${API_BASE_URL}/all`, {
+      params: { page, size },
+      timeout: 15000,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
 
-  const response = await fetch(`${BASE_URL}/api/parks/detail?${params}`, {
-    method: 'GET',
-    headers: {
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error('공원을 찾을 수 없습니다.');
-    }
-    throw new Error(`공원 상세 정보 조회 실패: ${response.status}`);
+    const parks = response.data.parks || response.data.data || [];
+    return {
+      parks,
+      totalCount: response.data.totalCount || 0,
+      page,
+      size
+    };
+  } catch (error) {
+    handleApiError(error, '전체 공원 데이터 조회');
   }
-
-  return response.json();
 }

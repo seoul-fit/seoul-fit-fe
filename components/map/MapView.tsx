@@ -41,6 +41,7 @@ interface MapViewProps {
   onToggleCongestion?: () => void;
   onToggleWeather?: () => void;
   onMoveToCurrentLocation?: () => void;
+  onMapClick?: () => void;
 }
 
 interface MapViewPropsExtended extends MapViewProps {
@@ -69,6 +70,7 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
   onToggleCongestion,
   onToggleWeather,
   onMoveToCurrentLocation,
+  onMapClick,
   mapInstance,
   mapStatus,
   allFacilities = [],
@@ -128,6 +130,11 @@ export const MapView: React.FC<MapViewPropsExtended> = ({
       
       if (nearbySubway) {
         handleFacilitySelect(nearbySubway);
+      }
+
+      // 지도 클릭 이벤트 처리 (검색 제안 닫기 등)
+      if (onMapClick) {
+        onMapClick();
       }
     };
 

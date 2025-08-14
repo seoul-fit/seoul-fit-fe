@@ -65,6 +65,19 @@ export const FACILITY_CATEGORIES = {
           totalSeats?: number
           studyRooms?: StudyRoom[]
           openingHours?: string
+          closeDate?: string
+          seqNo?: string
+          guCode?: string
+      }
+
+      park?: {
+          area?: string
+          openDate?: string
+          mainEquipment?: string
+          mainPlants?: string
+          zone?: string
+          managementDept?: string
+          imageUrl?: string
       }
 
       bikeFacility?: {
@@ -166,10 +179,10 @@ export const FACILITY_CATEGORIES = {
   };
   
   export interface UserLocation {
-      lat: number
-      lng: number
-      address?: string
-      timestamp: number
+      lat: number;
+      lng: number;
+      address?: string;
+      timestamp: number;
   }
   
   export interface ClusteredFacility {
@@ -189,7 +202,7 @@ export const FACILITY_CATEGORIES = {
       isLoaded: boolean;
       isLoading: boolean;
       error: string | null;
-      mapInstance: unknown | null;
+      mapInstance: KakaoMap | null;
       userLocation: UserLocation | null;
       selectedFacility: Facility | null;
       selectedCluster: ClusteredFacility | null;
@@ -197,6 +210,20 @@ export const FACILITY_CATEGORIES = {
       mapLevel: number;
       preferences: UserPreferences;
       isLocationPermissionGranted: boolean;
+  }
+  
+  // 카카오맵 관련 타입 정의
+  export interface KakaoLatLng {
+    getLat(): number;
+    getLng(): number;
+  }
+  
+  export interface KakaoMap {
+    setCenter(latlng: KakaoLatLng): void;
+    setLevel(level: number): void;
+    getLevel(): number;
+    getCenter(): KakaoLatLng;
+    setZoomable(zoomable: boolean): void;
   }
   
   // 혼잡도 데이터
@@ -459,17 +486,31 @@ export interface ProgramDataStatistics {
 }
 // ===== Additional Backend API Types =====
 
-// Library 타입
+// Library 타입 (백엔드 응답 기준)
 export interface Library {
   id: number;
-  name: string;
-  address: string;
+  lbrrySeqNo?: string;
+  lbrryName?: string;
+  guCode?: string;
+  codeValue?: string;
+  adres?: string;
+  telNo?: string;
+  hmpgUrl?: string;
+  opTime?: string;
+  fdrmCloseDate?: string;
+  lbrrySeName?: string;
+  xcnts?: number;
+  ydnts?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  // 기존 필드들 (호환성)
+  name?: string;
+  address?: string;
   latitude?: number;
   longitude?: number;
   phoneNumber?: string;
   website?: string;
   operatingHours?: string;
-  // 추가 필드들은 필요에 따라 확장
 }
 
 // Cultural Facilities 타입들

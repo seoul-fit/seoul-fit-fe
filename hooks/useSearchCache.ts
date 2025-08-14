@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 // 검색 스코어를 포함한 검색 아이템
 interface SearchItemWithScore extends SearchItem {
@@ -86,6 +86,14 @@ export interface SearchItem {
   ref_id?: number;
 }
 
+// 검색 히스토리 아이템 타입
+export interface SearchHistoryItem {
+  id: string;
+  query: string;
+  timestamp: number;
+  selectedItem?: SearchItem;
+}
+
 // POI API 응답 타입
 interface POIItem {
   id: number;
@@ -97,8 +105,71 @@ interface POIItem {
   ref_id: number;
 }
 
+// 검색 히스토리 관리 상수
+const SEARCH_HISTORY_KEY = 'seoul-fit-search-history';
+const MAX_HISTORY_ITEMS = 10;
+
+// 검색 히스토리 유틸리티 함수들
+const searchHistoryUtils = {
+  // localStorage에서 검색 히스토리 로드
+  loadHistory: (): SearchHistoryItem[] => {
+    try {
+      const stored = localStorage.getItem(SEARCH_HISTORY_KEY);
+      if (!stored) return [];
+      
+      const parsed = JSON.parse(stored);
+      if (!Array.isArray(parsed)) return [];
+      
+      return parsed.filter(item => 
+        item && 
+        typeof item.id === 'string' && 
+        typeof item.query === 'string' && 
+        typeof item.timestamp === 'number'
+      );
+    } catch (error) {
+      console.warn('검색 히스토리 로드 실패:', error);
+      return [];
+    }
+  },
+
+  // localStorage에 검색 히스토리 저장
+  saveHistory: (history: SearchHistoryItem[]): void => {
+    try {
+      localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history));
+    } catch (error) {
+      console.warn('검색 히스토리 저장 실패:', error);
+    }
+  },
+
+  // 새 검색 히스토리 아이템 생성
+  createHistoryItem: (query: string, selectedItem?: SearchItem): SearchHistoryItem => ({
+    id: `history_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    query: query.trim(),
+    timestamp: Date.now(),
+    selectedItem
+  }),
+
+  // 중복 제거 및 최대 개수 제한
+  deduplicateAndLimit: (history: SearchHistoryItem[]): SearchHistoryItem[] => {
+    const uniqueQueries = new Map<string, SearchHistoryItem>();
+    
+    // 최신 항목이 우선되도록 역순으로 처리
+    [...history].reverse().forEach(item => {
+      const normalizedQuery = item.query.toLowerCase().trim();
+      if (!uniqueQueries.has(normalizedQuery)) {
+        uniqueQueries.set(normalizedQuery, item);
+      }
+    });
+    
+    return Array.from(uniqueQueries.values())
+      .sort((a, b) => b.timestamp - a.timestamp) // 최신순 정렬
+      .slice(0, MAX_HISTORY_ITEMS); // 최대 개수 제한
+  }
+};
+
 export const useSearchCache = () => {
   const [searchCache, setSearchCache] = useState<SearchItem[]>([]);
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -125,8 +196,8 @@ export const useSearchCache = () => {
 
       // 3개 API 병렬 호출
       const [subwayRes, bikeRes, poiRes] = await Promise.allSettled([
-        fetch('/api/subway?lat=37.5665&lng=126.9780'), // 서울 중심 좌표로 지하철 전체 데이터 요청
-        fetch('/api/bike-stations?lat=37.5665&lng=126.9780&radius=30'), // 서울 전체를 포함하는 큰 반경 (30km)
+        fetch('/api/subway?lat=37.5665&lng=126.9780'),
+        fetch('/api/bike-stations?lat=37.5665&lng=126.9780&radius=30'),
         fetch('/api/search/index?page=0&size=20000')
       ]);
 
@@ -139,7 +210,15 @@ export const useSearchCache = () => {
           console.log('지하철 API 응답 구조:', subwayData);
           
           if (subwayData.success && subwayData.data?.stations) {
-            const subwayItems: SearchItem[] = subwayData.data.stations.map((station: any) => ({
+            interface SubwayStation {
+              code?: string;
+              stationId?: string;
+              name: string;
+              route?: string;
+              line?: string;
+            }
+            
+            const subwayItems: SearchItem[] = subwayData.data.stations.map((station: SubwayStation) => ({
               id: station.code || `subway_${station.stationId}`,
               name: station.name,
               category: 'subway' as const,
@@ -164,7 +243,13 @@ export const useSearchCache = () => {
       if (bikeRes.status === 'fulfilled' && bikeRes.value.ok) {
         const bikeData = await bikeRes.value.json();
         if (bikeData.success && bikeData.data?.stations) {
-          const bikeItems: SearchItem[] = bikeData.data.stations.map((station: any) => ({
+          interface BikeStation {
+            code?: string;
+            stationId?: string;
+            name: string;
+          }
+          
+          const bikeItems: SearchItem[] = bikeData.data.stations.map((station: BikeStation) => ({
             id: station.code || `bike_${station.stationId}`,
             name: station.name,
             category: 'bike' as const
@@ -218,62 +303,70 @@ export const useSearchCache = () => {
     }
   }, []);
 
-  // 고급 검색 함수
+  // 검색 캐시 전처리 (메모이제이션)
+  const preprocessedCache = useMemo(() => {
+    return searchCache.map(item => {
+      const searchFields: string[] = [item.name];
+      
+      if (item.address) {
+        searchFields.push(...item.address.split(',').map(addr => addr.trim()));
+      }
+      
+      if (item.remark) {
+        searchFields.push(...item.remark.split(',').map(remark => remark.trim()));
+      }
+      
+      if (item.aliases) {
+        searchFields.push(...item.aliases.split(',').map(alias => alias.trim()));
+      }
+      
+      return {
+        ...item,
+        searchFields
+      };
+    });
+  }, [searchCache]);
+
+  // 고급 검색 함수 (최적화됨)
   const search = useCallback((query: string, limit: number = 10): SearchItem[] => {
-    if (!query.trim() || query.length < 1) return []; // 1글자부터 검색 가능
+    if (!query.trim() || query.length < 1) return [];
 
     const trimmedQuery = query.trim();
     
-    // 각 항목에 스코어를 계산하여 SearchItemWithScore 배열 생성
-    const itemsWithScores: SearchItemWithScore[] = searchCache
+    // 전처리된 캐시를 사용하여 성능 향상
+    const itemsWithScores: SearchItemWithScore[] = preprocessedCache
       .map(item => {
-        // 검색 대상 필드들 수집
-        const searchFields: string[] = [item.name];
-        
-        // 주소가 있으면 주소도 검색 (,로 분리)
-        if (item.address) {
-          searchFields.push(...item.address.split(',').map(addr => addr.trim()));
-        }
-        
-        // remark가 있으면 remark도 검색 (,로 분리)
-        if (item.remark) {
-          searchFields.push(...item.remark.split(',').map(remark => remark.trim()));
-        }
-        
-        // aliases가 있으면 별칭도 검색 (,로 분리)
-        if (item.aliases) {
-          searchFields.push(...item.aliases.split(',').map(alias => alias.trim()));
-        }
-        
-        // 모든 필드에서 최고 점수 계산
         let maxScore = 0;
-        for (const field of searchFields) {
+        for (const field of item.searchFields) {
           const score = searchUtils.getMatchScore(field, trimmedQuery);
           maxScore = Math.max(maxScore, score);
         }
         
         return {
-          ...item,
+          id: item.id,
+          name: item.name,
+          address: item.address,
+          remark: item.remark,
+          aliases: item.aliases,
+          category: item.category,
+          ref_table: item.ref_table,
+          ref_id: item.ref_id,
           score: maxScore
         };
       })
-      .filter(item => item.score > 0) // 매치되는 항목만 필터링
+      .filter(item => item.score > 0)
       .sort((a, b) => {
-        // 1차: 스코어 순 정렬 (내림차순)
         if (b.score !== a.score) {
           return b.score - a.score;
         }
-        // 2차: 카테고리 우선순위 (오름차순)
         const aPriority = searchUtils.getCategoryPriority(a.category);
         const bPriority = searchUtils.getCategoryPriority(b.category);
         if (aPriority !== bPriority) {
           return aPriority - bPriority;
         }
-        // 3차: 이름 길이 (짧은 것 우선)
         return a.name.length - b.name.length;
       });
 
-    // 개발환경에서는 스코어 정보 로깅
     if (process.env.NODE_ENV === 'development' && itemsWithScores.length > 0) {
       console.log(`검색어 "${trimmedQuery}" 결과 (상위 5개):`, 
         itemsWithScores.slice(0, 5).map(item => ({
@@ -284,9 +377,8 @@ export const useSearchCache = () => {
       );
     }
 
-    // 스코어 정보 제거하고 SearchItem[] 형태로 반환
     return itemsWithScores.slice(0, limit).map(({ score, ...item }) => item);
-  }, [searchCache]);
+  }, [preprocessedCache]);
 
   // 카테고리별 검색
   const searchByCategory = useCallback((query: string, categories: SearchItem['category'][], limit: number = 10): SearchItem[] => {
@@ -297,9 +389,46 @@ export const useSearchCache = () => {
       .slice(0, limit);
   }, [search, searchCache]);
 
-  // 컴포넌트 마운트 시 데이터 로드
+  // 검색 히스토리 관리 함수들
+  const addToHistory = useCallback((query: string, selectedItem?: SearchItem) => {
+    if (!query.trim() || query.trim().length < 1) return;
+    
+    const newItem = searchHistoryUtils.createHistoryItem(query, selectedItem);
+    const updatedHistory = searchHistoryUtils.deduplicateAndLimit([newItem, ...searchHistory]);
+    
+    setSearchHistory(updatedHistory);
+    searchHistoryUtils.saveHistory(updatedHistory);
+  }, [searchHistory]);
+
+  const removeFromHistory = useCallback((historyId: string) => {
+    const updatedHistory = searchHistory.filter(item => item.id !== historyId);
+    setSearchHistory(updatedHistory);
+    searchHistoryUtils.saveHistory(updatedHistory);
+  }, [searchHistory]);
+
+  const clearHistory = useCallback(() => {
+    setSearchHistory([]);
+    searchHistoryUtils.saveHistory([]);
+  }, []);
+
+  // 검색 히스토리 필터링 (현재 검색어와 매치되는 항목들)
+  const getRelevantHistory = useCallback((query: string): SearchHistoryItem[] => {
+    if (!query.trim()) return searchHistory;
+    
+    const normalizedQuery = query.toLowerCase().trim();
+    return searchHistory.filter(item => 
+      item.query.toLowerCase().includes(normalizedQuery) ||
+      normalizedQuery.includes(item.query.toLowerCase())
+    );
+  }, [searchHistory]);
+
+  // 컴포넌트 마운트 시 데이터 로드 및 검색 히스토리 초기화
   useEffect(() => {
     loadSearchData();
+    
+    // 검색 히스토리 로드
+    const savedHistory = searchHistoryUtils.loadHistory();
+    setSearchHistory(savedHistory);
   }, [loadSearchData]);
 
   return {
@@ -309,6 +438,13 @@ export const useSearchCache = () => {
     search,
     searchByCategory,
     reloadData: loadSearchData,
-    totalCount: searchCache.length
+    totalCount: searchCache.length,
+    
+    // 검색 히스토리 관련
+    searchHistory,
+    addToHistory,
+    removeFromHistory,
+    clearHistory,
+    getRelevantHistory
   };
 };

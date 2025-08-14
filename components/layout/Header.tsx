@@ -1,15 +1,22 @@
 // components/layout/Header.tsx
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { Search, Menu, MapPin, X, Bell, Train, Bike, Book, Trees, Building, Loader2, Snowflake } from 'lucide-react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { Search, Menu, MapPin, X, Bell, Train, Bike, Book, Trees, Building, Loader2, Snowflake, Clock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useSearchCache, type SearchItem } from '@/hooks/useSearchCache';
+import { useSearchCache, type SearchItem, type SearchHistoryItem } from '@/hooks/useSearchCache';
+
+export interface HeaderRef {
+  closeSearchSuggestions: () => void;
+  blurSearchInput: () => void;
+}
 
 interface HeaderProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onSearchSelect?: (searchItem: SearchItem) => void;
+  onSearchClear?: () => void;
   onMenuClick: () => void;
 }
 
@@ -28,11 +35,13 @@ const getCategoryIcon = (category: SearchItem['category']) => {
   }
 };
 
-export default function Header({ 
+const Header = React.forwardRef<HeaderRef, HeaderProps>(({ 
   searchQuery, 
-  onSearchChange, 
-  onMenuClick 
-}: HeaderProps) {
+  onSearchChange,
+  onSearchSelect,
+  onSearchClear,
+  onMenuClick
+}, ref) => {
   const [notificationCount] = useState<number>(3);
   const [isFocused, setIsFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<SearchItem[]>([]);
@@ -41,43 +50,99 @@ export default function Header({
   const suggestionRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 검색 캐시 훅 사용
-  const { search, isLoading: cacheLoading, error: cacheError } = useSearchCache();
+  // 검색 캐시 훅 사용 (검색 히스토리 포함)
+  const { 
+    search, 
+    isLoading: cacheLoading, 
+    error: cacheError,
+    searchHistory,
+    addToHistory,
+    removeFromHistory,
+    clearHistory,
+    getRelevantHistory
+  } = useSearchCache();
 
-  // 검색어 변경 핸들러
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 디바운싱된 검색 함수 (메모이제이션)
+  const debouncedSearch = useMemo(() => {
+    let timeoutId: NodeJS.Timeout;
+    return (value: string) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        try {
+          const results = search(value, 10);
+          setSuggestions(results);
+          setShowSuggestions(results.length > 0 || getRelevantHistory(value).length > 0);
+        } catch (error) {
+          console.error('검색 중 오류:', error);
+          setSuggestions([]);
+          setShowSuggestions(getRelevantHistory(value).length > 0);
+        }
+      }, 200);
+    };
+  }, [search, getRelevantHistory]);
+
+  // 검색어 변경 핸들러 (최적화됨)
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     onSearchChange(value);
     
-    // 기존 타이머 클리어
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
     
-    if (value.length > 0) { // 1글자부터 검색
-      // 디바운싱 적용 (200ms 지연으로 단축)
-      searchTimeoutRef.current = setTimeout(() => {
-        try {
-          const results = search(value, 10); // 10개 제한
-          setSuggestions(results);
-          setShowSuggestions(results.length > 0);
-        } catch (error) {
-          console.error('검색 중 오류:', error);
-          setSuggestions([]);
-          setShowSuggestions(false);
-        }
-      }, 200); // 초성 검색으로 빨라졌으므로 지연시간 단축
+    if (value.length > 0) {
+      debouncedSearch(value);
     } else {
-      setShowSuggestions(false);
       setSuggestions([]);
+      setShowSuggestions(searchHistory.length > 0);
+      if (onSearchClear) {
+        onSearchClear();
+      }
     }
-  };
+  }, [onSearchChange, onSearchClear, debouncedSearch, searchHistory.length]);
 
   // 검색 제안 선택
-  const handleSuggestionClick = (suggestion: SearchItem) => {
+  const handleSuggestionClick = async (suggestion: SearchItem) => {
     onSearchChange(suggestion.name);
     setShowSuggestions(false);
     searchRef.current?.blur();
+    
+    // 검색 히스토리에 추가
+    addToHistory(suggestion.name, suggestion);
+    
+    // 검색 결과 선택 이벤트 발생
+    if (onSearchSelect) {
+      try {
+        await onSearchSelect(suggestion);
+      } catch (error) {
+        console.error('검색 결과 선택 실패:', error);
+      }
+    }
+  };
+
+  // 검색 히스토리 아이템 클릭
+  const handleHistoryClick = async (historyItem: SearchHistoryItem) => {
+    onSearchChange(historyItem.query);
+    setShowSuggestions(false);
+    searchRef.current?.blur();
+    
+    // 히스토리를 최신으로 업데이트
+    addToHistory(historyItem.query, historyItem.selectedItem);
+    
+    // 선택된 아이템이 있으면 해당 아이템으로 이동
+    if (historyItem.selectedItem && onSearchSelect) {
+      try {
+        await onSearchSelect(historyItem.selectedItem);
+      } catch (error) {
+        console.error('검색 히스토리 선택 실패:', error);
+      }
+    }
+  };
+
+  // 검색 히스토리 개별 삭제
+  const handleRemoveHistoryItem = (e: React.MouseEvent, historyId: string) => {
+    e.stopPropagation(); // 부모 클릭 이벤트 방지
+    removeFromHistory(historyId);
   };
 
   // 검색 초기화
@@ -85,6 +150,11 @@ export default function Header({
     onSearchChange('');
     setShowSuggestions(false);
     searchRef.current?.focus();
+    
+    // 검색 초기화 이벤트 발생
+    if (onSearchClear) {
+      onSearchClear();
+    }
   };
 
   // 외부 클릭 감지
@@ -105,12 +175,29 @@ export default function Header({
 
   // 컴포넌트 언마운트 시 타이머 정리
   useEffect(() => {
+    const currentTimeout = searchTimeoutRef.current;
     return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
+      if (currentTimeout) {
+        clearTimeout(currentTimeout);
       }
     };
   }, []);
+
+  // 검색 제안 닫기 함수
+  const closeSearchSuggestions = useCallback(() => {
+    setShowSuggestions(false);
+  }, []);
+
+  // 검색창 포커스 해제 함수
+  const blurSearchInput = useCallback(() => {
+    searchRef.current?.blur();
+  }, []);
+
+  // ref로 외부 함수 노출
+  React.useImperativeHandle(ref, () => ({
+    closeSearchSuggestions,
+    blurSearchInput
+  }), [closeSearchSuggestions, blurSearchInput]);
 
   return (
     <div className="p-4">
@@ -128,7 +215,13 @@ export default function Header({
               placeholder="장소, 주소 검색"
               value={searchQuery}
               onChange={handleSearchChange}
-              onFocus={() => setIsFocused(true)}
+              onFocus={() => {
+                setIsFocused(true);
+                // 검색창 포커스 시 검색 히스토리 표시
+                if (!searchQuery && searchHistory.length > 0) {
+                  setShowSuggestions(true);
+                }
+              }}
               onBlur={() => setIsFocused(false)}
               className="flex-1 bg-transparent px-3 py-2.5 outline-none text-gray-700 placeholder-gray-400 min-w-0"
             />
@@ -156,36 +249,105 @@ export default function Header({
                 </div>
               )}
               
-              {!cacheLoading && suggestions.length > 0 && suggestions.map((suggestion) => (
-                <button
-                  key={suggestion.id}
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
-                >
-                  {getCategoryIcon(suggestion.category)}
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 truncate">
-                      {suggestion.name}
-                      {suggestion.remark && (
-                        <span className="ml-2 text-xs text-gray-400">
-                          ({suggestion.remark.split(',')[0]})
-                        </span>
-                      )}
-                    </div>
-                    {suggestion.address && (
-                      <div className="text-sm text-gray-500 truncate">
-                        {suggestion.address.split(',')[0]}
+              {!cacheLoading && (() => {
+                const relevantHistory = getRelevantHistory(searchQuery);
+                const hasHistory = relevantHistory.length > 0;
+                const hasSuggestions = suggestions.length > 0;
+                
+                return (
+                  <>
+                    {/* 검색 히스토리 섹션 */}
+                    {hasHistory && (
+                      <>
+                        <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                          <span className="text-xs font-medium text-gray-600 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            최근 검색
+                          </span>
+                          {relevantHistory.length > 0 && (
+                            <button
+                              onClick={() => clearHistory()}
+                              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              전체 삭제
+                            </button>
+                          )}
+                        </div>
+                        {relevantHistory.slice(0, 5).map((historyItem) => (
+                          <div
+                            key={historyItem.id}
+                            onClick={() => handleHistoryClick(historyItem)}
+                            className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 group cursor-pointer"
+                          >
+                            <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-gray-700 truncate">
+                                {historyItem.query}
+                              </div>
+                              {historyItem.selectedItem && (
+                                <div className="text-xs text-gray-400 truncate">
+                                  {historyItem.selectedItem.address?.split(',')[0] || historyItem.selectedItem.name}
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              onClick={(e) => handleRemoveHistoryItem(e, historyItem.id)}
+                              className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded-full transition-all flex-shrink-0"
+                              aria-label="히스토리 삭제"
+                            >
+                              <X className="w-3 h-3 text-gray-400" />
+                            </button>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                    
+                    {/* 자동완성 결과 섹션 */}
+                    {hasSuggestions && (
+                      <>
+                        {hasHistory && (
+                          <div className="px-4 py-2 bg-gray-50 border-b border-gray-100">
+                            <span className="text-xs font-medium text-gray-600">
+                              검색 결과
+                            </span>
+                          </div>
+                        )}
+                        {suggestions.map((suggestion) => (
+                          <button
+                            key={suggestion.id}
+                            onClick={() => handleSuggestionClick(suggestion)}
+                            className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
+                          >
+                            {getCategoryIcon(suggestion.category)}
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-gray-900 truncate">
+                                {suggestion.name}
+                                {suggestion.remark && (
+                                  <span className="ml-2 text-xs text-gray-400">
+                                    ({suggestion.remark.split(',')[0]})
+                                  </span>
+                                )}
+                              </div>
+                              {suggestion.address && (
+                                <div className="text-sm text-gray-500 truncate">
+                                  {suggestion.address.split(',')[0]}
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </>
+                    )}
+                    
+                    {/* 결과 없음 메시지 */}
+                    {!hasHistory && !hasSuggestions && searchQuery.length > 0 && (
+                      <div className="px-4 py-3 text-center text-gray-500">
+                        검색 결과가 없습니다
                       </div>
                     )}
-                  </div>
-                </button>
-              ))}
-              
-              {!cacheLoading && suggestions.length === 0 && showSuggestions && (
-                <div className="px-4 py-3 text-center text-gray-500">
-                  검색 결과가 없습니다
-                </div>
-              )}
+                  </>
+                );
+              })()}
               
               {cacheError && (
                 <div className="px-4 py-3 text-center text-red-500 text-sm">
@@ -249,4 +411,8 @@ export default function Header({
       </header>
     </div>
   );
-}
+});
+
+Header.displayName = 'Header';
+
+export default Header;
