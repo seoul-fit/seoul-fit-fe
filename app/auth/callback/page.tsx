@@ -3,6 +3,21 @@
 import {Suspense, useCallback, useEffect, useState} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
 import {useAuthStore} from '@/store/authStore';
+import {FACILITY_CONFIGS} from '@/lib/facilityIcons';
+import {type FacilityCategory} from '@/lib/types';
+import {Check} from 'lucide-react';
+
+// User 정보
+interface UserInfoResponse {
+    user: {
+        provider: string;
+        oauthUserId: string;
+        nickname: string;
+        email: string;
+        profileImageUrl: string;
+    };
+    isNewUser: boolean;
+}
 
 function AuthContent() {
     const router = useRouter();
@@ -10,35 +25,23 @@ function AuthContent() {
     const {setAuth} = useAuthStore();
     const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'need_signup' | 'success_signup'>('loading');
     const [errorMessage, setErrorMessage] = useState('');
-
-    // User 정보 (백엔드 응답)
-    interface UserInfoResponse {
-        user: {
-            provider: string;
-            oauthUserId: string;
-            nickname: string;
-            email: string;
-            profileImageUrl: string;
-        };
-        isNewUser: boolean;
-    }
-
-
-
     const [userInfo, setUserInfo] = useState<UserInfoResponse['user'] | null>(null);
     const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
+    // 관심사 목록
     const interestOptions = [
-        { value: 'SPORTS', label: '체육시설', emoji: '🏃‍♂️' },
-        { value: 'CULTURE', label: '문화시설', emoji: '🏛️' },
-        { value: 'RESTAURANTS', label: '맛집', emoji: '🍽️' },
-        { value: 'LIBRARY', label: '도서관', emoji: '📚' },
-        { value: 'PARK', label: '공원', emoji: '🌳' },
-        { value: 'BIKE', label: '따릉이', emoji: '🚲' },
-        { value: 'WEATHER', label: '날씨', emoji: '🌤️' },
-        { value: 'CONGESTION', label: '인구혼잡도', emoji: '👥' }
+        { value: 'SPORTS', category: 'sports' as FacilityCategory },
+        { value: 'CULTURE', category: 'culture' as FacilityCategory },
+        { value: 'RESTAURANTS', category: 'restaurant' as FacilityCategory },
+        { value: 'LIBRARY', category: 'library' as FacilityCategory },
+        { value: 'PARK', category: 'park' as FacilityCategory },
+        { value: 'BIKE', category: 'bike' as FacilityCategory },
+        { value: 'COOLING_SHELTER', category: 'cooling_shelter' as FacilityCategory },
+        { value: 'CULTURAL_EVENT', category: 'cultural_event' as FacilityCategory },
+        { value: 'CULTURAL_RESERVATION', category: 'cultural_reservation' as FacilityCategory }
     ];
 
+    // 관심사 변경
     const handleInterestChange = (value: string) => {
         setSelectedInterests(prev => 
             prev.includes(value) 
@@ -47,7 +50,7 @@ function AuthContent() {
         );
     };
 
-    // Exception Handler
+    // 에러 발생 시
     const handleError = useCallback((errorMsg: string, shouldRedirect: boolean = true) => {
         console.error('Authentication error:', errorMsg);
 
@@ -62,13 +65,13 @@ function AuthContent() {
         return false;
     }, [router]);
 
-    // 카카오 재로그인을 위한 리다이렉트 함수
+    // 기존 사용자 로그인 시도 → 카카오 재로그인을 위해 리다이렉트
     const redirectToKakaoLogin = useCallback(() => {
         const KAKAO_CLIENT_ID = '349f89103b32e7135ad6f15e0a73509b';
         const REDIRECT_URI = encodeURIComponent('http://localhost:3000/auth/callback');
         const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${KAKAO_CLIENT_ID}&redirect_uri=${REDIRECT_URI}`;
 
-        // 현재 상태를 로컬스토리지에 저장 (로그인 시도 중임을 표시)
+        // 현재 상태를 로컬스토리지에 저장 (로그인 시도 중임)
         localStorage.setItem('kakao_login_attempt', 'true');
         localStorage.setItem('kakao_login_type', 'existing_user');
 
@@ -298,28 +301,63 @@ function AuthContent() {
     if (status === 'need_signup') {
         return (
             <div className="min-h-screen bg-gray-50 py-12">
-                <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
-                    <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">관심사 선택</h2>
+                <div className="max-w-lg mx-auto bg-white rounded-xl shadow-lg p-8">
+                    <div className="text-center mb-8">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-2">관심사 선택</h2>
+                        <p className="text-gray-600">관심사를 선택하여 맞춤 정보를 받아보세요</p>
+                        <div className="mt-3 inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                            {selectedInterests.length}개 선택
+                        </div>
+                    </div>
+
                     {/* 관심사 선택 */}
-                    <div className="mb-6">
-                        <h4 className="text-lg font-medium text-gray-800 mb-3">관심사를 선택해주세요</h4>
-                        <div className="space-y-2">
-                            {interestOptions.map((option) => (
-                                <label
-                                    key={option.value}
-                                    className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                                >
-                                    <input
-                                        type="checkbox"
-                                        value={option.value}
-                                        checked={selectedInterests.includes(option.value)}
-                                        onChange={() => handleInterestChange(option.value)}
-                                        className="mr-3"
-                                    />
-                                    <span className="text-lg mr-2">{option.emoji}</span>
-                                    <span className="text-gray-800">{option.label}</span>
-                                </label>
-                            ))}
+                    <div className="mb-8">
+                        <div className="space-y-3">
+                            {interestOptions.map((option, index) => {
+                                const config = FACILITY_CONFIGS[option.category];
+                                const isSelected = selectedInterests.includes(option.value);
+                                
+                                return (
+                                    <div 
+                                        key={option.value}
+                                        className={`group flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer transform hover:scale-[1.02] active:scale-[0.98] ${
+                                            isSelected 
+                                                ? 'border-blue-200 bg-blue-50 hover:bg-blue-100 shadow-sm' 
+                                                : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 hover:shadow-sm'
+                                        }`}
+                                        onClick={() => handleInterestChange(option.value)}
+                                        style={{
+                                            animationDelay: `${index * 50}ms`
+                                        }}
+                                    >
+                                        {/* 시설 정보 */}
+                                        <div className="flex items-center space-x-4">
+                                            <div className={`w-12 h-12 rounded-full ${config.color} flex items-center justify-center text-white transition-transform duration-200 group-hover:scale-110`}>
+                                                {config.icon}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="font-semibold text-gray-800 group-hover:text-gray-900 text-base transition-colors duration-200">
+                                                    {config.label}
+                                                </h3>
+                                                <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+                                                    {config.description}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* 체크박스 */}
+                                        <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
+                                            isSelected
+                                                ? 'bg-blue-600 border-blue-600 text-white scale-110'
+                                                : 'border-gray-300 group-hover:border-gray-400 group-hover:scale-105'
+                                        }`}>
+                                            <Check className={`w-4 h-4 transition-all duration-200 ${
+                                                isSelected ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
+                                            }`} />
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
 
@@ -327,12 +365,12 @@ function AuthContent() {
                     <button
                         onClick={handleSignUp}
                         disabled={selectedInterests.length === 0}
-                        className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                        className="w-full bg-blue-600 text-white py-4 px-6 rounded-xl font-semibold hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
                     >
                         회원가입 완료
                     </button>
 
-                    <p className="text-xs text-gray-500 text-center mt-3">
+                    <p className="text-sm text-gray-500 text-center mt-4">
                         최소 1개 이상의 관심사를 선택해주세요
                     </p>
                 </div>
