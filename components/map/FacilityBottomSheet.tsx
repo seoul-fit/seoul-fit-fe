@@ -392,7 +392,7 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-medium text-blue-600">
-                          {arrival.barvlDt}초
+                          {arrival.barvlDt}
                         </div>
                         <div className="text-xs text-gray-500">
                           {arrival.arvlMsg2}

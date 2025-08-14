@@ -3,6 +3,30 @@ import { NextRequest, NextResponse } from "next/server";
 const API_KEY = process.env.SEOUL_API_KEY || '6a4166475a7065613533747a62786a';
 const BASE_URL = 'http://swopenapi.seoul.go.kr/api/subway';
 
+function formatArrivalMessage(message: string): string {
+    return message.replace(/\[(\d+)\]번째 전역/g, '$1번째 전역');
+}
+
+function formatTime(seconds: string): string {
+    if (seconds.includes('분') || seconds.includes('초')) {
+        return seconds;
+    }
+    
+    const sec = parseInt(seconds);
+    if (sec === 0) return seconds;
+    
+    const minutes = Math.floor(sec / 60);
+    const remainingSeconds = sec % 60;
+    
+    if (minutes > 0 && remainingSeconds > 0) {
+        return `${minutes}분 ${remainingSeconds}초`;
+    } else if (minutes > 0) {
+        return `${minutes}분`;
+    } else {
+        return `${remainingSeconds}초`;
+    }
+}
+
 interface SubwayArrivalRow {
     subwayId: string;
     updnLine: string;
@@ -33,8 +57,6 @@ export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const stationName = searchParams.get('stationName');
-
-        console.log("지하철역명 ::: " + stationName);
 
         if (!stationName) {
             return NextResponse.json(
@@ -81,10 +103,10 @@ export async function GET(request: NextRequest) {
                     updnLine: arrival.updnLine,
                     trainLineNm: arrival.trainLineNm,
                     statnNm: arrival.statnNm,
-                    barvlDt: arrival.barvlDt,
+                    barvlDt: formatTime(arrival.barvlDt),
                     btrainNo: arrival.btrainNo,
                     bstatnNm: arrival.bstatnNm,
-                    arvlMsg2: arrival.arvlMsg2,
+                    arvlMsg2: formatArrivalMessage(arrival.arvlMsg2),
                     arvlMsg3: arrival.arvlMsg3,
                     arvlCd: arrival.arvlCd
                 }))
