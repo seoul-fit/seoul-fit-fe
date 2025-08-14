@@ -418,6 +418,22 @@ export interface SportsFacilityProgram {
   // 추가 필드들은 필요에 따라 확장
 }
 
+// 지도 마커용 Restaurant 타입
+export interface Restaurant {
+  id: string;
+  name: string;
+  address: string;
+  newAddress: string;
+  phone: string;
+  website: string;
+  operatingHours: string;
+  subwayInfo: string;
+  representativeMenu: string;
+  latitude: number;
+  longitude: number;
+  postUrl: string;
+}
+
 // Data Statistics 타입들
 export interface ParkDataStatistics {
   totalParks: number;

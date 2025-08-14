@@ -20,6 +20,7 @@ import { useCurrentLocationMarker } from '@/hooks/useCurrentLocationMarker';
 import { usePOI } from '@/hooks/usePOI';
 import { convertPOIToFacility } from '@/services/poi';
 import { getNearbyBikeStations, convertBikeStationToFacility } from '@/services/bikeStation';
+import { convertRestaurantToFacility } from '@/services/restaurant';
 import { useCoolingShelter } from '@/hooks/useCoolingShelter';
 import { useSubwayStations } from '@/hooks/useSubwayStations';
 import { useParks } from '@/hooks/useParks';
@@ -27,8 +28,9 @@ import { useLibraries } from '@/hooks/useLibraries';
 import { useCulturalSpaces } from '@/hooks/useCulturalSpaces';
 import { useCulturalEvents } from '@/hooks/useCulturalEvents';
 import { useCulturalReservations } from '@/hooks/useCulturalReservations';
+import { useRestaurants } from '@/hooks/useRestaurants';
 import { useZoomLevel } from '@/hooks/useZoomLevel';
-import type { BikeStationData, UserPreferences, FacilityCategory, ClusteredFacility, Facility } from '@/lib/types';
+import type { BikeStationData, UserPreferences, FacilityCategory, ClusteredFacility, Facility, Restaurant } from '@/lib/types';
 
 interface MapContainerProps {
   className?: string;
@@ -104,6 +106,9 @@ export default function MapContainer({ preferences, onPreferenceToggle }: MapCon
   
   // 문화예약 상태
   const { culturalReservations, error: culturalReservationsError, fetchCulturalReservations } = useCulturalReservations();
+  
+  // 맛집 상태
+  const { restaurants, error: restaurantsError, fetchRestaurants } = useRestaurants();
 
   // 마지막 데이터 로드 위치 추적
   const lastLoadedLocationRef = useRef<{ lat: number; lng: number } | null>(null);
@@ -234,11 +239,17 @@ export default function MapContainer({ preferences, onPreferenceToggle }: MapCon
     })), 
     [culturalReservations]
   );
+  
+  // 맛집을 Facility로 변환 (메모화)
+  const facilitiesFromRestaurants = useMemo(() => 
+    restaurants.map(restaurant => convertRestaurantToFacility(restaurant)), 
+    [restaurants]
+  );
 
   // 모든 시설 통합 (지하철 제외 - 카카오맵 기본 지하철역 사용)
   const allFacilities = useMemo(() => 
-    [...facilitiesFromPOIs, ...facilitiesFromBikes, ...coolingShelterFacilities, ...facilitiesFromParks, ...facilitiesFromLibraries, ...facilitiesFromCulturalSpaces, ...facilitiesFromCulturalEvents, ...facilitiesFromCulturalReservations],
-    [facilitiesFromPOIs, facilitiesFromBikes, coolingShelterFacilities, facilitiesFromParks, facilitiesFromLibraries, facilitiesFromCulturalSpaces, facilitiesFromCulturalEvents, facilitiesFromCulturalReservations]
+    [...facilitiesFromPOIs, ...facilitiesFromBikes, ...coolingShelterFacilities, ...facilitiesFromParks, ...facilitiesFromLibraries, ...facilitiesFromCulturalSpaces, ...facilitiesFromCulturalEvents, ...facilitiesFromCulturalReservations, ...facilitiesFromRestaurants],
+    [facilitiesFromPOIs, facilitiesFromBikes, coolingShelterFacilities, facilitiesFromParks, facilitiesFromLibraries, facilitiesFromCulturalSpaces, facilitiesFromCulturalEvents, facilitiesFromCulturalReservations, facilitiesFromRestaurants]
   );
   
   // 클러스터링된 마커 데이터 (사용하지 않으므로 제거)
@@ -330,7 +341,9 @@ export default function MapContainer({ preferences, onPreferenceToggle }: MapCon
         // 문화행사 위치 기반 호출
         fetchCulturalEvents(lat, lng).then(() => console.log('문화행사 데이터:', culturalEvents.length, '개')),
         // 문화예약 위치 기반 호출
-        fetchCulturalReservations(lat, lng).then(() => console.log('문화예약 데이터:', culturalReservations.length, '개'))
+        fetchCulturalReservations(lat, lng).then(() => console.log('문화예약 데이터:', culturalReservations.length, '개')),
+        // 맛집 위치 기반 호출
+        fetchRestaurants(lat, lng).then(() => console.log('맛집 데이터:', restaurants.length, '개'))
       ];
 
       await Promise.allSettled(promises);
@@ -343,7 +356,7 @@ export default function MapContainer({ preferences, onPreferenceToggle }: MapCon
         setIsLoadingData(false);
       }, 500);
     }
-  }, [searchRadius, isLoadingData, fetchCongestionData, fetchWeatherData, fetchNearbyPOIs, fetchParks, fetchCoolingShelters, fetchLibraries, fetchCulturalSpaces, fetchCulturalEvents, fetchCulturalReservations, parks.length, coolingShelterFacilities.length, libraries.length, culturalSpaces.length, culturalEvents.length, culturalReservations.length]);
+  }, [searchRadius, isLoadingData, fetchCongestionData, fetchWeatherData, fetchNearbyPOIs, fetchParks, fetchCoolingShelters, fetchLibraries, fetchCulturalSpaces, fetchCulturalEvents, fetchCulturalReservations, fetchRestaurants, parks.length, coolingShelterFacilities.length, libraries.length, culturalSpaces.length, culturalEvents.length, culturalReservations.length, restaurants.length]);
 
   // 디바운싱된 위치 변경 핸들러 (마커 드래그 시 currentLocation 업데이트 포함)
   const debouncedLocationChange = useCallback(

@@ -2,9 +2,10 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, Menu, MapPin, X, Bell } from 'lucide-react';
+import { Search, Menu, MapPin, X, Bell, Train, Bike, Book, Trees, Building, Loader2, Snowflake } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useSearchCache, type SearchItem } from '@/hooks/useSearchCache';
 
 interface HeaderProps {
   searchQuery: string;
@@ -12,12 +13,20 @@ interface HeaderProps {
   onMenuClick: () => void;
 }
 
-interface SearchSuggestion {
-  id: string;
-  name: string;
-  address: string;
-  type: string;
-}
+// 카테고리별 아이콘 매핑
+const getCategoryIcon = (category: SearchItem['category']) => {
+  switch (category) {
+    case 'subway': return <Train className="w-4 h-4 text-blue-500" />;
+    case 'bike': return <Bike className="w-4 h-4 text-green-500" />;
+    case 'library': return <Book className="w-4 h-4 text-purple-500" />;
+    case 'park': return <Trees className="w-4 h-4 text-emerald-500" />;
+    case 'cultural_event': 
+    case 'cultural_reservation': return <Building className="w-4 h-4 text-orange-500" />;
+    case 'cooling_center': return <Snowflake className="w-4 h-4 text-cyan-500" />;
+    case 'restaurant': return <MapPin className="w-4 h-4 text-red-500" />;
+    default: return <MapPin className="w-4 h-4 text-gray-400" />;
+  }
+};
 
 export default function Header({ 
   searchQuery, 
@@ -26,41 +35,46 @@ export default function Header({
 }: HeaderProps) {
   const [notificationCount] = useState<number>(3);
   const [isFocused, setIsFocused] = useState(false);
-  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [suggestions, setSuggestions] = useState<SearchItem[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const suggestionRef = useRef<HTMLDivElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 검색 캐시 훅 사용
+  const { search, isLoading: cacheLoading, error: cacheError } = useSearchCache();
 
   // 검색어 변경 핸들러
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     onSearchChange(value);
     
-    // 실제 구현에서는 디바운싱된 API 호출
-    if (value.length > 1) {
-      // Mock 검색 결과
-      setSuggestions([
-        {
-          id: '1',
-          name: '서울체육관',
-          address: '서울시 송파구 방이동',
-          type: 'sports'
-        },
-        {
-          id: '2',
-          name: '국립중앙박물관',
-          address: '서울시 용산구 서빙고로',
-          type: 'culture'
+    // 기존 타이머 클리어
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    if (value.length > 0) { // 1글자부터 검색
+      // 디바운싱 적용 (200ms 지연으로 단축)
+      searchTimeoutRef.current = setTimeout(() => {
+        try {
+          const results = search(value, 10); // 10개 제한
+          setSuggestions(results);
+          setShowSuggestions(results.length > 0);
+        } catch (error) {
+          console.error('검색 중 오류:', error);
+          setSuggestions([]);
+          setShowSuggestions(false);
         }
-      ]);
-      setShowSuggestions(true);
+      }, 200); // 초성 검색으로 빨라졌으므로 지연시간 단축
     } else {
       setShowSuggestions(false);
+      setSuggestions([]);
     }
   };
 
   // 검색 제안 선택
-  const handleSuggestionClick = (suggestion: SearchSuggestion) => {
+  const handleSuggestionClick = (suggestion: SearchItem) => {
     onSearchChange(suggestion.name);
     setShowSuggestions(false);
     searchRef.current?.blur();
@@ -87,6 +101,15 @@ export default function Header({
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
   }, []);
 
   return (
@@ -121,24 +144,54 @@ export default function Header({
           </div>
 
           {/* 검색 제안 드롭다운 */}
-          {showSuggestions && suggestions.length > 0 && (
+          {(showSuggestions || cacheLoading) && (
             <div
               ref={suggestionRef}
               className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto"
             >
-              {suggestions.map((suggestion) => (
+              {cacheLoading && (
+                <div className="px-4 py-3 text-center text-gray-500 flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  데이터 로딩 중...
+                </div>
+              )}
+              
+              {!cacheLoading && suggestions.length > 0 && suggestions.map((suggestion) => (
                 <button
                   key={suggestion.id}
                   onClick={() => handleSuggestionClick(suggestion)}
                   className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
                 >
-                  <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  {getCategoryIcon(suggestion.category)}
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 truncate">{suggestion.name}</div>
-                    <div className="text-sm text-gray-500 truncate">{suggestion.address}</div>
+                    <div className="font-medium text-gray-900 truncate">
+                      {suggestion.name}
+                      {suggestion.remark && (
+                        <span className="ml-2 text-xs text-gray-400">
+                          ({suggestion.remark.split(',')[0]})
+                        </span>
+                      )}
+                    </div>
+                    {suggestion.address && (
+                      <div className="text-sm text-gray-500 truncate">
+                        {suggestion.address.split(',')[0]}
+                      </div>
+                    )}
                   </div>
                 </button>
               ))}
+              
+              {!cacheLoading && suggestions.length === 0 && showSuggestions && (
+                <div className="px-4 py-3 text-center text-gray-500">
+                  검색 결과가 없습니다
+                </div>
+              )}
+              
+              {cacheError && (
+                <div className="px-4 py-3 text-center text-red-500 text-sm">
+                  {cacheError}
+                </div>
+              )}
             </div>
           )}
         </div>

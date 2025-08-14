@@ -40,5 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Amazon Q rules (keep in repository)
-!.amazonq/
+# Amazon Q rules (ignore from repository)
+.amazonq/
