@@ -4,7 +4,7 @@ const API_KEY = process.env.SEOUL_API_KEY || '6a4166475a7065613533747a62786a';
 const BASE_URL = 'http://swopenapi.seoul.go.kr/api/subway';
 
 function formatArrivalMessage(message: string): string {
-    return message.replace(/\[(\d+)\]번째 전역/g, '$1번째 전역');
+    return message.replace(/\[(\d+)]번째 전역/g, '$1번째 전역');
 }
 
 function formatTime(seconds: string): string {
@@ -82,8 +82,6 @@ export async function GET(request: NextRequest) {
         }
 
         const data: SubwayArrivalResponse = await response.json();
-
-        console.log("도착 정보 응답값 ::: " + JSON.stringify(data));
 
         if (data.errorMessage && data.errorMessage.code !== 'INFO-000') {
             return NextResponse.json(
