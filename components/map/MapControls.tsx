@@ -10,7 +10,9 @@ import {
   CloudRain,
   Sun,
   Navigation,
-  Thermometer
+  Thermometer,
+  Play,
+  Pause
 } from 'lucide-react';
 import type { CongestionData, WeatherData } from '@/lib/types';
 
@@ -163,7 +165,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
         </div>
       </div>
 
-      {/* 오른쪽 아래 - 내 위치 아이콘 */}
+      {/* 오른쪽 아래 - 내 위치 버튼 */}
       <div className="absolute bottom-24 md:bottom-20 right-4 z-30">
         <Button
           variant="secondary"

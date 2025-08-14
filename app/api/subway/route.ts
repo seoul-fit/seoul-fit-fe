@@ -1,130 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
-
-// 서울 열린데이터 광장 API 키
-const API_KEY = process.env.SEOUL_API_KEY || '4b46766a7673706939395769456b6b';
-const BASE_URL = 'http://openapi.seoul.go.kr:8088';
-
-// 서울시 역사마스터 정보 API 응답 데이터
-interface SubwayStationRow {
-    BLDN_ID: string;
-    BLDN_NM: string;
-    ROUTE: string;
-    LAT: string;
-    LOT: string;
-}
-
-interface SubwayApiResponse {
-    subwayStationMaster: {
-        list_total_count: number;
-        RESULT: {
-            CODE: string;
-            MESSAGE: string;
-        };
-        row: SubwayStationRow[];
-    };
-}
-
-// 지하철 데이터 캐시
-let subwayCache: {
-    data: SubwayStationRow[] | null,
-    fetchTime: string | null
-} = {
-    data: null,
-    fetchTime: null
-};
+import { serverCache } from '@/lib/serverCache';
+import { dataScheduler } from '@/lib/scheduler';
+import type { SubwayStationRow } from '@/lib/seoulApi';
 
 /**
- * GET 반경 내 지하철 역 조회
- * Query Parameters: lat(위도), lng(경도), radius(반경km, 기본값 1.5)
+ * GET 지하철 역 조회 (캐시 기반)
+ * Query Parameters: lat(위도), lng(경도) - 호환성을 위해 유지하지만 전체 데이터 반환
  */
 export async function GET(request: NextRequest) {
     try {
-        const { searchParams } = new URL(request.url);
-        const latParam = searchParams.get('lat');
-        const lngParam = searchParams.get('lng');
+        // 스케줄러 초기화 확인 및 대기
+        if (!serverCache.has('subway_stations')) {
+            console.log('[지하철API] 캐시 없음, 초기화 대기...');
+            // instrumentation 초기화 완료 대기
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // 여전히 캐시가 없으면 초기화 실행
+            if (!serverCache.has('subway_stations')) {
+                await dataScheduler.initialize();
+            }
+        }
 
-        if (!latParam || !lngParam) {
+        // 캐시에서 지하철 데이터 조회
+        const stations = serverCache.get<SubwayStationRow[]>('subway_stations');
+        const cacheInfo = serverCache.getInfo('subway_stations');
+
+        if (!stations) {
             return NextResponse.json(
-                { error: '위도(lat)와 경도(lng) 파라미터가 필요합니다.' },
-                { status: 400 }
+                { error: '지하철 데이터를 불러올 수 없습니다.' },
+                { status: 503 }
             );
         }
 
-        const lat = parseFloat(latParam);
-        const lng = parseFloat(lngParam);
-
-        if (isNaN(lat) || isNaN(lng)) {
-            return NextResponse.json(
-                { error: '올바른 좌표 형식이 아닙니다.' },
-                { status: 400 }
-            );
-        }
-
-        // 지하철 캐시 확인
-        if (subwayCache.data) {
-            const allStations = subwayCache.data.map((station) => ({
-                code: `SUBWAY_${station.BLDN_ID}`,
-                name: `${station.BLDN_NM} 역`,
-                lat: parseFloat(station.LAT),
-                lng: parseFloat(station.LOT),
-                stationId: station.BLDN_ID,
-                route: station.ROUTE
-            }));
-
-            return NextResponse.json({
-                success: true,
-                data: {
-                    count: allStations.length,
-                    stations: allStations,
-                    cached: true,
-                    fetchTime: subwayCache.fetchTime
-                }
-            });
-        }
-
-        // 캐시 없으면 서울시 역사마스터 정보 API 호출
-        const fetchTime = new Date().toISOString();
-
-        const apiUrl1 = `${BASE_URL}/${API_KEY}/json/subwayStationMaster/1/800/`; // 2025.08.12 기준 780개 역 데이터 반환
-        const response = await fetch(apiUrl1, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-
-        if (!response.ok) {
-            console.error(`지하철 API 호출 실패: ${response.status} ${response.statusText}`);
-            return NextResponse.json(
-                { error: `지하철 API 호출 실패: ${response.status}` },
-                { status: 502 }
-            );
-        }
-
-        const data: SubwayApiResponse = await response.json();
-
-        // API 응답 결과 코드 확인
-        if (data.subwayStationMaster.RESULT.CODE !== 'INFO-000') {
-            console.error(`지하철 API 응답 에러: ${data.subwayStationMaster.RESULT.MESSAGE}`);
-            return NextResponse.json(
-                { error: `지하철 API 응답 에러: ${data.subwayStationMaster.RESULT.MESSAGE}` },
-                { status: 502 }
-            );
-        }
-
-        const stations = data.subwayStationMaster.row;
-
-        // 캐시 업데이트
-        subwayCache = {
-            data: stations,
-            fetchTime: fetchTime
-        };
-
-        console.log(`캐시 업데이트 완료: ${stations.length}개 역 저장`);
-
+        // 데이터 변환
         const allStations = stations.map((station) => ({
             code: `SUBWAY_${station.BLDN_ID}`,
-            name: `${station.BLDN_NM} 역`,
+            name: `${station.BLDN_NM}역`,
             lat: parseFloat(station.LAT),
             lng: parseFloat(station.LOT),
             stationId: station.BLDN_ID,
@@ -136,12 +47,12 @@ export async function GET(request: NextRequest) {
             data: {
                 count: allStations.length,
                 stations: allStations,
-                cached: false,
-                fetchTime: fetchTime
+                cached: true,
+                fetchTime: new Date(cacheInfo?.timestamp || 0).toISOString()
             }
         });
     } catch (error) {
-        console.error('지하철 역 조회 중 오류:', error);
+        console.error('[지하철API] 조회 중 오류:', error);
         return NextResponse.json(
             { error: '서버 내부 오류가 발생했습니다.' },
             { status: 500 }

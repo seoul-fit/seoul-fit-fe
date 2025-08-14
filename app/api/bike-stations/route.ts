@@ -1,31 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-
-// 서울시 공통 API 키
-const API_KEY = process.env.SEOUL_API_KEY || '4b46766a7673706939395769456b6b';
-const BASE_URL = 'http://openapi.seoul.go.kr:8088';
-
-// 서울시 따릉이 API 응답 타입
-interface BikeStationRaw {
-    stationId: string;
-    stationName: string;
-    stationLatitude: string;
-    stationLongitude: string;
-    rackTotCnt: string;
-    parkingBikeTotCnt: string;
-    shared: string;
-}
-
-// 캐시 설정
-const CACHE_DURATION = 60 * 1000; // 1분
-let bikeCache: {
-    data: BikeStationRaw[] | null,
-    timestamp: number,
-    fetchTime: string | null
-} = {
-    data: null,
-    timestamp: 0,
-    fetchTime: null
-};
+import { serverCache } from '@/lib/serverCache';
+import { dataScheduler } from '@/lib/scheduler';
+import type { BikeStationRow } from '@/lib/seoulApi';
 
 /**
  * 두 좌표 간의 거리 계산 (km)
@@ -42,7 +18,7 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
 }
 
 /**
- * GET 반경 내 따릉이 대여소 조회
+ * GET 반경 내 따릉이 대여소 조회 (캐시 기반)
  * Query Parameters: lat(위도), lng(경도), radius(반경km, 기본값 1.5)
  */
 export async function GET(request: NextRequest) {
@@ -70,148 +46,34 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // 캐시 확인
-        const now = Date.now();
-        if (bikeCache.data && (now - bikeCache.timestamp) < CACHE_DURATION) {
-            console.log('따릉이 데이터 캐시 사용');
-            const cachedData = bikeCache.data as BikeStationRaw[];
+        // 스케줄러 초기화 확인 및 대기
+        if (!serverCache.has('bike_stations')) {
+            console.log('[따릉이API] 캐시 없음, 초기화 대기...');
+            // instrumentation 초기화 완료 대기
+            await new Promise(resolve => setTimeout(resolve, 2000));
             
-            // 반경 내 대여소 필터링 (캐시된 데이터에서)
-            const nearbyStations = cachedData
-                .filter((station: BikeStationRaw) => {
-                    const stationLat = parseFloat(station.stationLatitude);
-                    const stationLng = parseFloat(station.stationLongitude);
-                    
-                    if (isNaN(stationLat) || isNaN(stationLng)) return false;
-                    
-                    const distance = calculateDistance(lat, lng, stationLat, stationLng);
-                    return distance <= radius;
-                })
-                .map((station: BikeStationRaw) => ({
-                    code: `BIKE_${station.stationId}`,
-                    name: `${station.stationName} 따릉이 대여소`,
-                    lat: parseFloat(station.stationLatitude),
-                    lng: parseFloat(station.stationLongitude),
-                    distance: calculateDistance(lat, lng, parseFloat(station.stationLatitude), parseFloat(station.stationLongitude)),
-                    stationId: station.stationId,
-                    rackTotCnt: station.rackTotCnt,
-                    parkingBikeTotCnt: station.parkingBikeTotCnt,
-                    shared: station.shared
-                }))
-                .sort((a, b) => a.distance - b.distance);
-
-            return NextResponse.json({
-                success: true,
-                data: {
-                    center: { lat, lng },
-                    radius,
-                    count: nearbyStations.length,
-                    stations: nearbyStations,
-                    cached: true,
-                    fetchTime: bikeCache.fetchTime
-                }
-            });
+            // 여전히 캐시가 없으면 초기화 실행
+            if (!serverCache.has('bike_stations')) {
+                await dataScheduler.initialize();
+            }
         }
 
-        // 캐시가 없거나 만료된 경우 API 호출 (2회 나누어 호출)
-        console.log('따릉이 데이터 API 호출 (2회 분할)');
-        const fetchTime = new Date().toISOString();
-        
-        // 첫 번째 호출: 1~1000
-        const apiUrl1 = `${BASE_URL}/${API_KEY}/json/bikeList/1/1000/`;
-        const response1 = await fetch(apiUrl1, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        // 캐시에서 따릉이 데이터 조회
+        const stations = serverCache.get<BikeStationRow[]>('bike_stations');
+        const cacheInfo = serverCache.getInfo('bike_stations');
 
-        if (!response1.ok) {
-            console.error(`따릉이 API 첫 번째 호출 실패: ${response1.status} ${response1.statusText}`);
+        if (!stations) {
             return NextResponse.json(
-                { error: `따릉이 API 첫 번째 호출 실패: ${response1.status}` },
-                { status: 502 }
+                { error: '따릉이 데이터를 불러올 수 없습니다.' },
+                { status: 503 }
             );
         }
 
-        const responseText1 = await response1.text();
-        
-        // XML 응답인지 확인
-        if (responseText1.startsWith('<')) {
-            console.error('따릉이 API 첫 번째 호출이 XML 형태로 응답했습니다:', responseText1.substring(0, 100));
-            return NextResponse.json([], { status: 200 });
-        }
-        
-        let data1;
-        try {
-            data1 = JSON.parse(responseText1);
-        } catch (parseError) {
-            console.error('따릉이 API 첫 번째 응답 JSON 파싱 실패:', parseError);
-            return NextResponse.json([], { status: 200 });
-        }
-        
-        // 두 번째 호출: 1001~2000
-        const apiUrl2 = `${BASE_URL}/${API_KEY}/json/bikeList/1001/2000/`;
-        const response2 = await fetch(apiUrl2, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        console.log(`[따릉이API] 캐시에서 조회: ${stations.length}개 대여소`);
 
-        if (!response2.ok) {
-            console.error(`따릉이 API 두 번째 호출 실패: ${response2.status} ${response2.statusText}`);
-            return NextResponse.json(
-                { error: `따릉이 API 두 번째 호출 실패: ${response2.status}` },
-                { status: 502 }
-            );
-        }
-
-        const responseText2 = await response2.text();
-        
-        // XML 응답인지 확인
-        if (responseText2.startsWith('<')) {
-            console.error('따릉이 API 두 번째 호출이 XML 형태로 응답했습니다:', responseText2.substring(0, 100));
-            return NextResponse.json([], { status: 200 });
-        }
-        
-        let data2;
-        try {
-            data2 = JSON.parse(responseText2);
-        } catch (parseError) {
-            console.error('따릉이 API 두 번째 응답 JSON 파싱 실패:', parseError);
-            return NextResponse.json([], { status: 200 });
-        }
-        
-        // API 응답 결과 코드 확인
-        if ((data1.RESULT && data1.RESULT.CODE !== 'INFO-000') || 
-            (data2.RESULT && data2.RESULT.CODE !== 'INFO-000')) {
-            console.error(`API 응답 에러: ${data1.RESULT?.MESSAGE || data2.RESULT?.MESSAGE}`);
-            return NextResponse.json(
-                { error: `따릉이 API 응답 에러: ${data1.RESULT?.MESSAGE || data2.RESULT?.MESSAGE}` },
-                { status: 502 }
-            );
-        }
-
-        // 두 응답 데이터 합치기
-        const bikeStations1 = data1.rentBikeStatus?.row || data1.row || [];
-        const bikeStations2 = data2.rentBikeStatus?.row || data2.row || [];
-        const bikeStations = [...bikeStations1, ...bikeStations2];
-        
-        console.log(`따릉이 데이터 로드 완료: 첫 번째 ${bikeStations1.length}개, 두 번째 ${bikeStations2.length}개, 총 ${bikeStations.length}개`);
-        
-        // 캐시 업데이트
-        bikeCache = {
-            data: bikeStations,
-            timestamp: now,
-            fetchTime: fetchTime
-        };
-        
-        console.log(`캐시 업데이트 완료: ${bikeStations.length}개 대여소 저장`);
-        
         // 반경 내 대여소 필터링
-        const nearbyStations = bikeStations
-            .filter((station: { stationLatitude: string; stationLongitude: string }) => {
+        const nearbyStations = stations
+            .filter((station) => {
                 const stationLat = parseFloat(station.stationLatitude);
                 const stationLng = parseFloat(station.stationLongitude);
                 
@@ -220,19 +82,18 @@ export async function GET(request: NextRequest) {
                 const distance = calculateDistance(lat, lng, stationLat, stationLng);
                 return distance <= radius;
             })
-            .map((station: { stationId: string; stationName: string; stationLatitude: string; stationLongitude: string; rackTotCnt: number; parkingBikeTotCnt: number; shared: number }) => ({
-                code: `BIKE_${station.stationId}`,
-                name: `${station.stationName} 따릉이 대여소`,
+            .map((station) => ({
+                code: station.stationId,
+                name: station.stationName,
                 lat: parseFloat(station.stationLatitude),
                 lng: parseFloat(station.stationLongitude),
                 distance: calculateDistance(lat, lng, parseFloat(station.stationLatitude), parseFloat(station.stationLongitude)),
-                // 추가 따릉이 정보
                 stationId: station.stationId,
-                rackTotCnt: station.rackTotCnt, // 거치대 총 개수
-                parkingBikeTotCnt: station.parkingBikeTotCnt, // 주차 자전거 총 건수
-                shared: station.shared // 거치율
+                rackTotCnt: station.rackTotCnt,
+                parkingBikeTotCnt: station.parkingBikeTotCnt,
+                shared: station.shared
             }))
-            .sort((a: { distance: number }, b: { distance: number }) => a.distance - b.distance);
+            .sort((a, b) => a.distance - b.distance);
 
         return NextResponse.json({
             success: true,
@@ -241,13 +102,15 @@ export async function GET(request: NextRequest) {
                 radius,
                 count: nearbyStations.length,
                 stations: nearbyStations,
-                cached: false,
-                fetchTime: fetchTime
+                cached: true,
+                fetchTime: new Date(cacheInfo?.timestamp || 0).toISOString()
             }
         });
 
+
+
     } catch (error) {
-        console.error('따릉이 대여소 조회 중 오류:', error);
+        console.error('[따릉이API] 조회 중 오류:', error);
         return NextResponse.json(
             { error: '서버 내부 오류가 발생했습니다.' },
             { status: 500 }

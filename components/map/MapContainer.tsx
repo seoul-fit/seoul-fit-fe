@@ -79,7 +79,11 @@ const MapContainer = React.forwardRef<MapContainerRef, MapContainerProps>(({ pre
   });
 
   // 위치 관련 hooks
-  const { currentLocation, moveToCurrentLocation, setCurrentLocation } = useLocation(mapInstance);
+  const { 
+    currentLocation, 
+    moveToCurrentLocation, 
+    setCurrentLocation
+  } = useLocation(mapInstance);
   
   // 줌 레벨 관련 hooks
   const { zoomInfo, isZooming, searchRadius } = useZoomLevel({ 
@@ -657,6 +661,8 @@ const MapContainer = React.forwardRef<MapContainerRef, MapContainerProps>(({ pre
           </div>
         </div>
       )}
+
+
 
       {/* 지도 뷰 - 전체 화면 */}
       <MapView
