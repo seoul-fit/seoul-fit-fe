@@ -547,3 +547,22 @@ export interface NotificationResult {
   type: string;
   // 추가 필드들은 필요에 따라 확장
 }
+
+// 지하철 실시간 도착 정보 타입
+export interface SubwayArrival {
+  subwayId: string;
+  updnLine: string;
+  trainLineNm: string;
+  statnNm: string;
+  barvlDt: string;
+  btrainNo: string;
+  bstatnNm: string;
+  arvlMsg2: string;
+  arvlMsg3: string;
+  arvlCd: string;
+}
+
+export interface SubwayArrivalData {
+  stationName: string;
+  arrivals: SubwayArrival[];
+}

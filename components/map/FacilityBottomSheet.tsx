@@ -3,9 +3,9 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { X, ChevronUp, ChevronDown, MapPin, Clock, Phone, Users, Cloud, Info, MessageCircleMore } from 'lucide-react';
+import { X, ChevronUp, ChevronDown, MapPin, Clock, Phone, Users, Cloud, Info, MessageCircleMore, Train } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { Facility, CongestionData, WeatherData } from '@/lib/types';
+import type { Facility, CongestionData, WeatherData, SubwayArrivalData } from '@/lib/types';
 import { FACILITY_CONFIGS } from '@/lib/facilityIcons';
 import { SubwayStationIcon } from './SubwayStationIcon';
 
@@ -39,6 +39,8 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
     currentY: 0,
     startTime: 0
   });
+  const [subwayArrival, setSubwayArrival] = useState<SubwayArrivalData | null>(null);
+  const [isLoadingArrival, setIsLoadingArrival] = useState(false);
   
   const sheetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -53,8 +55,33 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
         currentY: 0,
         startTime: 0
       });
+      setSubwayArrival(null);
     }
   }, [isOpen, facility]);
+
+  // 지하철역인 경우 실시간 도착 정보 가져오기
+  useEffect(() => {
+    if (facility?.category === 'subway' && facility.name && isOpen) {
+      const fetchSubwayArrival = async () => {
+        setIsLoadingArrival(true);
+        try {
+          const stationName = facility.name.replace(' 역', '');
+          const response = await fetch(`/api/subway/arrival?stationName=${encodeURIComponent(stationName)}`);
+          const result = await response.json();
+          
+          if (result.success) {
+            setSubwayArrival(result.data);
+          }
+        } catch (error) {
+          console.error('지하철 도착 정보 조회 실패:', error);
+        } finally {
+          setIsLoadingArrival(false);
+        }
+      };
+
+      fetchSubwayArrival();
+    }
+  }, [facility, isOpen]);
 
   // 드래그 시작 처리
   const handleDragStart = useCallback((clientY: number) => {
@@ -333,6 +360,52 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
               </div>
             )}
           </div>
+
+          {/* 지하철 실시간 도착 정보 */}
+          {facility.category === 'subway' && (
+            <div className="mb-6">
+              <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+                <Train className="w-4 h-4 mr-2" />
+                실시간 도착 정보
+              </h4>
+              {isLoadingArrival ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-sm text-gray-500">도착 정보 조회 중...</span>
+                </div>
+              ) : subwayArrival && subwayArrival.arrivals.length > 0 ? (
+                <div className="space-y-2">
+                  {subwayArrival.arrivals.slice(0, 4).map((arrival, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium text-gray-900">
+                            {arrival.trainLineNm}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {arrival.updnLine}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          {arrival.bstatnNm} 방면
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-blue-600">
+                          {arrival.barvlDt}초
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {arrival.arvlMsg2}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 py-2">도착 정보가 없습니다.</p>
+              )}
+            </div>
+          )}
 
           {/* 확장된 내용 */}
           {isExpanded && (
