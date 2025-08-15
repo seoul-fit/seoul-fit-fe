@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useSearchCache, type SearchItem, type SearchHistoryItem } from '@/hooks/useSearchCache';
 import { useAuthStore } from '@/store/authStore';
+import { useNotificationStore } from '@/store/notificationStore';
 
 export interface HeaderRef {
   closeSearchSuggestions: () => void;
@@ -43,8 +44,8 @@ const Header = React.forwardRef<HeaderRef, HeaderProps>(({
   onSearchClear,
   onMenuClick
 }, ref) => {
-  const { isAuthenticated } = useAuthStore();
-  const [notificationCount] = useState<number>(3);
+  const { isAuthenticated, user, accessToken } = useAuthStore();
+  const { unreadCount: notificationCount, fetchUnreadCount } = useNotificationStore();
   const [isFocused, setIsFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<SearchItem[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -184,6 +185,13 @@ const Header = React.forwardRef<HeaderRef, HeaderProps>(({
       }
     };
   }, []);
+
+  // 인증된 사용자의 알림 개수 초기 로드
+  useEffect(() => {
+    if (isAuthenticated && user && accessToken) {
+      fetchUnreadCount(user.id, accessToken);
+    }
+  }, [isAuthenticated, user, accessToken, fetchUnreadCount]);
 
   // 검색 제안 닫기 함수
   const closeSearchSuggestions = useCallback(() => {

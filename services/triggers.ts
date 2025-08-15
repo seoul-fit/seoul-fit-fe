@@ -30,6 +30,16 @@ export async function evaluateLocationTriggers(
       return false;
     }
 
+    // 위치 기반 트리거 평가 후 알림 개수 업데이트
+    try {
+      const { useNotificationStore } = await import('@/store/notificationStore');
+      const { fetchUnreadCount } = useNotificationStore.getState();
+      await fetchUnreadCount(parseInt(request.userId), accessToken);
+    } catch (notificationError) {
+      // 알림 개수 업데이트 실패해도 위치 트리거는 성공으로 처리
+      console.error('알림 개수 업데이트 실패:', notificationError);
+    }
+
     return response.ok;
   } catch (error) {
     console.error('💥 위치 기반 트리거 평가 실패:', error);
