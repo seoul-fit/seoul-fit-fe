@@ -37,7 +37,7 @@ export default function SideBar({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  // 사이드바 열릴 때 사용자 관심사 조회 (디바운싱 적용)
+  // 사이드바 열릴 때 사용자 관심사 조회 (디바운싱 적용 및 중복 호출 방지)
   useEffect(() => {
     if (isOpen && isAuthenticated && onPreferencesRefresh) {
       const timeoutId = setTimeout(() => {
@@ -46,7 +46,7 @@ export default function SideBar({
       
       return () => clearTimeout(timeoutId);
     }
-  }, [isOpen, isAuthenticated, onPreferencesRefresh]);
+  }, [isOpen, isAuthenticated]); // onPreferencesRefresh 의존성 제거
 
   // 키보드 접근성 및 포커스 관리
   useEffect(() => {

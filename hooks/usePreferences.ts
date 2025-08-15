@@ -123,14 +123,46 @@ export function usePreferences() {
     setPreferences(defaultPreferences);
   };
 
+  // 무한 호출 방지를 위해 의존성 배열 최적화
   const refreshPreferences = useCallback(async () => {
     if (isAuthenticated && user?.id) {
       setIsLoaded(false);
-      await loadUserPreferences();
+      try {
+        const userInterests = await getUserInterests(user.id);
+        // 모든 선호도를 false로 초기화
+        const userPreferences: UserPreferences = {
+          sports: false,
+          culture: false,
+          restaurant: false,
+          library: false,
+          park: false,
+          subway: false,
+          bike: false,
+          cooling_shelter: false,
+          cultural_event: false,
+          cultural_reservation: false
+        };
+
+        // 사용자 관심사에 따라 선호도 설정
+        userInterests.interests.forEach(interest => {
+          const facilityCategory = INTEREST_CATEGORY_MAP[interest.category];
+          if (facilityCategory) {
+            userPreferences[facilityCategory] = true;
+          }
+        });
+        
+        setPreferences(userPreferences);
+        setIsLoaded(true);
+      } catch (error) {
+        console.error('사용자 관심사를 불러오는데 실패했습니다:', error);
+        setPreferences(defaultPreferences);
+        setIsLoaded(true);
+      }
     } else {
-      loadLocalPreferences();
+      setPreferences(defaultPreferences);
+      setIsLoaded(true);
     }
-  }, [isAuthenticated, user?.id, loadUserPreferences, loadLocalPreferences]);
+  }, [isAuthenticated, user?.id]);
 
   return {
     preferences,
