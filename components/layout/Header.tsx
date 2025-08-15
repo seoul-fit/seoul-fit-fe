@@ -6,6 +6,7 @@ import { Search, Menu, MapPin, X, Bell, Train, Bike, Book, Trees, Building, Load
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useSearchCache, type SearchItem, type SearchHistoryItem } from '@/hooks/useSearchCache';
+import { useAuthStore } from '@/store/authStore';
 
 export interface HeaderRef {
   closeSearchSuggestions: () => void;
@@ -42,6 +43,7 @@ const Header = React.forwardRef<HeaderRef, HeaderProps>(({
   onSearchClear,
   onMenuClick
 }, ref) => {
+  const { isAuthenticated } = useAuthStore();
   const [notificationCount] = useState<number>(3);
   const [isFocused, setIsFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<SearchItem[]>([]);
@@ -360,44 +362,46 @@ const Header = React.forwardRef<HeaderRef, HeaderProps>(({
 
         {/* 우측 버튼들 */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          {/* 알림 버튼 */}
-          <div className="relative">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="relative">
-                  <Bell className="h-4 w-4" />
-                  {notificationCount > 0 && (
-                    <div className="absolute -top-2 -right-2 h-5 w-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center min-w-[1.25rem]">
-                      {notificationCount > 99 ? '99+' : notificationCount}
+          {/* 알림 버튼 - 로그인 상태에서만 표시 */}
+          {isAuthenticated && (
+            <div className="relative">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="relative">
+                    <Bell className="h-4 w-4" />
+                    {notificationCount > 0 && (
+                      <div className="absolute -top-2 -right-2 h-5 w-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center min-w-[1.25rem]">
+                        {notificationCount > 99 ? '99+' : notificationCount}
+                      </div>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuItem className="font-medium">
+                    알림 목록
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="text-sm">새로운 시설이 추가되었습니다</span>
                     </div>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuItem className="font-medium">
-                  알림 목록
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-sm">새로운 시설이 추가되었습니다</span>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm">혼잡도 정보가 업데이트되었습니다</span>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                    <span className="text-sm">즐겨찾기 시설 이용 가능</span>
-                  </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-sm">혼잡도 정보가 업데이트되었습니다</span>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                      <span className="text-sm">즐겨찾기 시설 이용 가능</span>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
 
           {/* 메뉴 버튼 */}
           <button
