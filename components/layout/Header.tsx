@@ -45,7 +45,14 @@ const Header = React.forwardRef<HeaderRef, HeaderProps>(({
   onMenuClick
 }, ref) => {
   const { isAuthenticated, user, accessToken } = useAuthStore();
-  const { unreadCount: notificationCount, fetchUnreadCount } = useNotificationStore();
+  const { 
+    unreadCount: notificationCount, 
+    notifications, 
+    isLoadingHistory, 
+    fetchUnreadCount, 
+    fetchNotificationHistory,
+    markAsRead 
+  } = useNotificationStore();
   const [isFocused, setIsFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<SearchItem[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -192,6 +199,52 @@ const Header = React.forwardRef<HeaderRef, HeaderProps>(({
       fetchUnreadCount(user.id, accessToken);
     }
   }, [isAuthenticated, user, accessToken, fetchUnreadCount]);
+
+  // 알림 드롭다운 열릴 때 알림 히스토리 로드
+  const handleNotificationDropdownOpen = () => {
+    if (isAuthenticated && user && accessToken) {
+      fetchNotificationHistory(user.id, accessToken);
+    }
+  };
+
+  // 알림 클릭 시 읽음 처리
+  const handleNotificationClick = async (notificationId: number) => {
+    if (accessToken && user) {
+      await markAsRead(notificationId, user.id, accessToken);
+    }
+  };
+
+  // 알림 타입별 아이콘 가져오기
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'CONGESTION':
+        return <div className="w-2 h-2 bg-orange-500 rounded-full"></div>;
+      case 'LOCATION':
+        return <div className="w-2 h-2 bg-blue-500 rounded-full"></div>;
+      case 'EVENT':
+        return <div className="w-2 h-2 bg-green-500 rounded-full"></div>;
+      case 'SYSTEM':
+        return <div className="w-2 h-2 bg-purple-500 rounded-full"></div>;
+      default:
+        return <div className="w-2 h-2 bg-gray-500 rounded-full"></div>;
+    }
+  };
+
+  // 날짜 포맷팅 함수
+  const formatNotificationDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) {
+      return '방금 전';
+    } else if (diffInHours < 24) {
+      return `${diffInHours}시간 전`;
+    } else {
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `${diffInDays}일 전`;
+    }
+  };
 
   // 검색 제안 닫기 함수
   const closeSearchSuggestions = useCallback(() => {
@@ -373,7 +426,7 @@ const Header = React.forwardRef<HeaderRef, HeaderProps>(({
           {/* 알림 버튼 - 로그인 상태에서만 표시 */}
           {isAuthenticated && (
             <div className="relative">
-              <DropdownMenu>
+              <DropdownMenu onOpenChange={(open) => open && handleNotificationDropdownOpen()}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="icon" className="relative">
                     <Bell className="h-4 w-4" />
@@ -384,28 +437,55 @@ const Header = React.forwardRef<HeaderRef, HeaderProps>(({
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
-                  <DropdownMenuItem className="font-medium">
+                <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto">
+                  <DropdownMenuItem className="font-medium border-b">
                     알림 목록
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-sm">새로운 시설이 추가되었습니다</span>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm">혼잡도 정보가 업데이트되었습니다</span>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                      <span className="text-sm">즐겨찾기 시설 이용 가능</span>
-                    </div>
-                  </DropdownMenuItem>
+                  
+                  {isLoadingHistory ? (
+                    <DropdownMenuItem>
+                      <div className="flex items-center gap-2 w-full justify-center py-4">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm text-gray-500">로딩 중...</span>
+                      </div>
+                    </DropdownMenuItem>
+                  ) : notifications.length > 0 ? (
+                    notifications.map((notification) => (
+                      <DropdownMenuItem 
+                        key={notification.id}
+                        className={`cursor-pointer border-b last:border-b-0 ${
+                          notification.status === 'SENT' ? 'bg-blue-50' : ''
+                        }`}
+                        onClick={() => handleNotificationClick(notification.id)}
+                      >
+                        <div className="flex items-start gap-3 w-full py-2">
+                          {getNotificationIcon(notification.type)}
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate">
+                              {notification.title}
+                            </div>
+                            <div className="text-xs text-gray-600 mt-1 line-clamp-2">
+                              {notification.message}
+                            </div>
+                            <div className="flex items-center justify-between mt-2">
+                              <span className="text-xs text-gray-400">
+                                {formatNotificationDate(notification.sentAt)}
+                              </span>
+                              {notification.status === 'SENT' && (
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </DropdownMenuItem>
+                    ))
+                  ) : (
+                    <DropdownMenuItem>
+                      <div className="flex items-center justify-center w-full py-8">
+                        <span className="text-sm text-gray-500">알림이 없습니다</span>
+                      </div>
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

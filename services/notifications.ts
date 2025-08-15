@@ -1,5 +1,5 @@
 // services/notifications.ts - Notifications service implementation
-import { Notification } from '@/lib/types';
+import { Notification, NotificationPage } from '@/lib/types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
@@ -45,14 +45,49 @@ export async function getUnreadNotificationCount(
 }
 
 /**
+ * 알림 히스토리 조회 (페이지네이션)
+ */
+export async function getNotificationHistory(
+  userId: number,
+  accessToken: string,
+  page: number = 0,
+  size: number = 20
+): Promise<NotificationPage> {
+  const response = await fetch(`${BASE_URL}/api/notifications?userId=${userId}&page=${page}&size=${size}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`알림 히스토리 조회 실패: ${response.status}`);
+  }
+
+  const result = await response.json();
+  
+  return {
+    content: result.content || [],
+    pageNumber: result.pageNumber || 0,
+    pageSize: result.pageSize || size,
+    totalElements: result.totalElements || 0,
+    totalPages: result.totalPages || 0,
+    first: result.first || true,
+    last: result.last || true,
+  };
+}
+
+/**
  * 알림 읽음 처리
  */
 export async function markNotificationAsRead(
   notificationId: number,
+  userId: number,
   accessToken: string
 ): Promise<void> {
-  const response = await fetch(`${BASE_URL}/api/notifications/${notificationId}/read`, {
-    method: 'PUT',
+  const response = await fetch(`${BASE_URL}/api/notifications/${notificationId}/read?userId=${userId}`, {
+    method: 'PATCH',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
       'Content-Type': 'application/json',

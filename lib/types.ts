@@ -568,7 +568,33 @@ export interface AirQuality {
   // 추가 필드들은 필요에 따라 확장
 }
 
-// Notification 타입
+// Notification Types
+export type NotificationType = 'CONGESTION' | 'LOCATION' | 'SYSTEM' | 'EVENT';
+export type NotificationStatus = 'SENT' | 'READ' | 'DELIVERED';
+
+export interface TriggerCondition {
+  id: number;
+  type: string;
+  name: string;
+  description?: string;
+}
+
+// Backend API response for notification history
+export interface NotificationHistoryResult {
+  id: number;
+  userId: number;
+  type: NotificationType;
+  title: string;
+  message: string;
+  data?: string;
+  triggerCondition?: TriggerCondition;
+  locationInfo?: string;
+  status: NotificationStatus;
+  sentAt: string;
+  readAt?: string;
+}
+
+// Legacy notification type for compatibility
 export interface Notification {
   id: number;
   title: string;
@@ -576,7 +602,17 @@ export interface Notification {
   type: string;
   isRead: boolean;
   createdAt: string;
-  // 추가 필드들은 필요에 따라 확장
+}
+
+// Paginated notification response
+export interface NotificationPage {
+  content: NotificationHistoryResult[];
+  pageNumber: number;
+  pageSize: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
 }
 
 // Trigger Evaluation 타입
