@@ -65,8 +65,7 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
       const fetchSubwayArrival = async () => {
         setIsLoadingArrival(true);
         try {
-          const stationName = facility.name.replace(' 역', '');
-          const response = await fetch(`/api/subway/arrival?stationName=${encodeURIComponent(stationName)}`);
+          const response = await fetch(`/api/subway/arrival?stationName=${encodeURIComponent(facility.name)}`);
           const result = await response.json();
           
           if (result.success) {

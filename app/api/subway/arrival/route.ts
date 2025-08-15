@@ -65,7 +65,9 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        const apiUrl = `${BASE_URL}/${API_KEY}/json/realtimeStationArrival/0/10/${encodeURIComponent(stationName)}`;
+        // "역" 접미사 제거 (서울시 API는 역명만 받음)
+        const cleanStationName = stationName.replace(/역$/, '');
+        const apiUrl = `${BASE_URL}/${API_KEY}/json/realtimeStationArrival/0/10/${encodeURIComponent(cleanStationName)}`;
 
         const response = await fetch(apiUrl, {
             method: 'GET',
