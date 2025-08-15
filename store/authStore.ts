@@ -45,6 +45,7 @@ export const useAuthStore = create<AuthToken>()(
                     secure: false, // HTTPS만 허용 (개발 환경은 false)
                     sameSite: 'lax' // CSRF 공격 방지
                 });
+                localStorage.setItem('access_token', accessToken);
 
                 if (refreshToken) {
                     Cookies.set('refresh_token', refreshToken, {
@@ -63,10 +64,11 @@ export const useAuthStore = create<AuthToken>()(
                 });
             },
 
-            // User 상태 초기화
+            // User 상태 초기화 (로그아웃 시에만 호출)
             clearAuth: () => {
                 Cookies.remove('access_token');
                 Cookies.remove('refresh_token');
+                localStorage.removeItem('access_token');
 
                 set({
                     user: null,
@@ -78,7 +80,16 @@ export const useAuthStore = create<AuthToken>()(
 
             // User 상태 확인
             checkAuthStatus: async () => {
-                const accessToken = Cookies.get('access_token');
+                const accessToken = Cookies.get('access_token') || localStorage.getItem('access_token');
+                
+                // localStorage에서 복원했다면 쿠키에도 다시 저장
+                if (accessToken && !Cookies.get('access_token')) {
+                    Cookies.set('access_token', accessToken, {
+                        expires: 30,
+                        secure: false,
+                        sameSite: 'lax'
+                    });
+                }
 
                 if (!accessToken) {
                     // accessToken 없는 경우 User 상태 초기화
@@ -86,98 +97,111 @@ export const useAuthStore = create<AuthToken>()(
                     return false;
                 }
 
-                try {
-                    // accessToken으로 User 정보 확인
-                    const response = await fetch('http://localhost:8080/api/auth/me', {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${accessToken}`,
-                            'Content-Type': 'application/json',
-                        },
-                    });
-
-                    if (response.ok) {
-                        const userData = await response.json();
-
-                        // 유효한 accessToken인 경우 User 상태 업데이트
-                        set({
-                            user: userData,
-                            accessToken,
-                            refreshToken: Cookies.get('refresh_token') || null,
-                            isAuthenticated: true,
+                const currentState = get();
+                
+                // persist된 user 정보가 있으면 토큰 유효성 검증
+                if (currentState.user?.oauthUserId && currentState.user?.oauthProvider) {
+                    try {
+                        // OAuth 정보로 사용자 정보 조회
+                        const response = await fetch(`http://localhost:8080/api/users/me?oauthUserId=${currentState.user.oauthUserId}&oauthProvider=${currentState.user.oauthProvider}`, {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${accessToken}`,
+                                'Content-Type': 'application/json',
+                            },
                         });
 
-                        // 인증 확인 성공 시 현재 위치로 트리거 호출
-                        if (navigator.geolocation) {
-                            navigator.geolocation.getCurrentPosition(
-                                (position) => {
-                                    import('@/services/triggers').then(({ evaluateLocationTriggers }) => {
-                                        evaluateLocationTriggers({
-                                            userId: userData.id.toString(),
-                                            latitude: position.coords.latitude,
-                                            longitude: position.coords.longitude,
-                                            radius: 1000
-                                        }, accessToken).catch(error => 
-                                            console.error('위치 트리거 호출 실패:', error)
-                                        );
-                                    });
-                                },
-                                (error) => console.error('위치 정보 가져오기 실패:', error)
-                            );
-                        }
+                        if (response.ok) {
+                            const userResult = await response.json();
 
-                        return true;
-                    } else if (response.status === 401) {
-                        // accessToken 만료 시 refreshToken으로 갱신
-                        const refreshToken = Cookies.get('refresh_token');
-
-                        if (refreshToken) {
-                            const refreshResponse = await fetch('http://localhost:8080/api/auth/refresh', {
-                                method: 'POST',
-                                headers: {
-                                    'Refresh-Token': refreshToken,
-                                    'Content-Type': 'application/json',
-                                },
+                            // 유효한 accessToken인 경우 User 상태 업데이트
+                            set({
+                                user: userResult.user,
+                                accessToken,
+                                refreshToken: Cookies.get('refresh_token') || null,
+                                isAuthenticated: true,
                             });
 
-                            if (refreshResponse.ok) {
-                                const tokenData = await refreshResponse.json();
-                                get().setAuth(tokenData.user, tokenData.accessToken, tokenData.refreshToken);
-                                
-                                // 토큰 갱신 성공 시 현재 위치로 트리거 호출
-                                if (navigator.geolocation) {
-                                    navigator.geolocation.getCurrentPosition(
-                                        (position) => {
-                                            import('@/services/triggers').then(({ evaluateLocationTriggers }) => {
-                                                evaluateLocationTriggers({
-                                                    userId: tokenData.user.id.toString(),
-                                                    latitude: position.coords.latitude,
-                                                    longitude: position.coords.longitude,
-                                                    radius: 1000
-                                                }, tokenData.accessToken).catch(error => 
-                                                    console.error('위치 트리거 호출 실패:', error)
-                                                );
-                                            });
-                                        },
-                                        (error) => console.error('위치 정보 가져오기 실패:', error)
-                                    );
-                                }
-                                
-                                return true;
+                            // 인증 확인 성공 시 현재 위치로 트리거 호출
+                            if (navigator.geolocation) {
+                                navigator.geolocation.getCurrentPosition(
+                                    (position) => {
+                                        import('@/services/triggers').then(({ evaluateLocationTriggers }) => {
+                                            evaluateLocationTriggers({
+                                                userId: userResult.user.id.toString(),
+                                                latitude: position.coords.latitude,
+                                                longitude: position.coords.longitude,
+                                                radius: 1000
+                                            }, accessToken).catch(error => 
+                                                console.error('위치 트리거 호출 실패:', error)
+                                            );
+                                        });
+                                    },
+                                    (error) => console.error('위치 정보 가져오기 실패:', error)
+                                );
                             }
-                        }
 
-                        // 갱신 실패 시, User 상태 초기화
-                        get().clearAuth();
-                        return false;
-                    } else {
+                            return true;
+                        } else if (response.status === 401) {
+                            // accessToken 만료 시 refreshToken으로 갱신
+                            const refreshToken = Cookies.get('refresh_token');
+
+                            if (refreshToken) {
+                                const refreshResponse = await fetch('http://localhost:8080/api/auth/refresh', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Refresh-Token': refreshToken,
+                                        'Content-Type': 'application/json',
+                                    },
+                                });
+
+                                if (refreshResponse.ok) {
+                                    const tokenData = await refreshResponse.json();
+                                    get().setAuth(tokenData.user, tokenData.accessToken, tokenData.refreshToken);
+                                    
+                                    // 토큰 갱신 성공 시 현재 위치로 트리거 호출
+                                    if (navigator.geolocation) {
+                                        navigator.geolocation.getCurrentPosition(
+                                            (position) => {
+                                                import('@/services/triggers').then(({ evaluateLocationTriggers }) => {
+                                                    evaluateLocationTriggers({
+                                                        userId: tokenData.user.id.toString(),
+                                                        latitude: position.coords.latitude,
+                                                        longitude: position.coords.longitude,
+                                                        radius: 1000
+                                                    }, tokenData.accessToken).catch(error => 
+                                                        console.error('위치 트리거 호출 실패:', error)
+                                                    );
+                                                });
+                                            },
+                                            (error) => console.error('위치 정보 가져오기 실패:', error)
+                                        );
+                                    }
+                                    
+                                    return true;
+                                }
+                            }
+
+                            // 갱신 실패 시, User 상태 초기화
+                            get().clearAuth();
+                            return false;
+                        } else {
+                            get().clearAuth();
+                            return false;
+                        }
+                    } catch (error) {
+                        console.error('Auth status check failed:', error);
                         get().clearAuth();
                         return false;
                     }
-                } catch (error) {
-                    console.error('Auth status check failed:', error);
-                    get().clearAuth();
-                    return false;
+                } else {
+                    // persist된 user 정보가 없으면 단순히 토큰만 설정
+                    set({
+                        accessToken,
+                        refreshToken: Cookies.get('refresh_token') || null,
+                        isAuthenticated: !!accessToken,
+                    });
+                    return !!accessToken;
                 }
             },
         }),

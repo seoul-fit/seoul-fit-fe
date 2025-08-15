@@ -23,8 +23,6 @@ export const kakaoLogout = async () => {
     throw new Error('로그아웃 요청에 실패했습니다.');
   }
 
-  // 로컬스토리지에서 토큰 제거
-  localStorage.removeItem('access_token');
   localStorage.removeItem('kakao_login_attempt');
   localStorage.removeItem('kakao_login_type');
 };
