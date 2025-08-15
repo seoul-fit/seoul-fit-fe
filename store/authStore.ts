@@ -107,6 +107,25 @@ export const useAuthStore = create<AuthToken>()(
                             isAuthenticated: true,
                         });
 
+                        // 인증 확인 성공 시 현재 위치로 트리거 호출
+                        if (navigator.geolocation) {
+                            navigator.geolocation.getCurrentPosition(
+                                (position) => {
+                                    import('@/services/triggers').then(({ evaluateLocationTriggers }) => {
+                                        evaluateLocationTriggers({
+                                            userId: userData.id.toString(),
+                                            latitude: position.coords.latitude,
+                                            longitude: position.coords.longitude,
+                                            radius: 1000
+                                        }, accessToken).catch(error => 
+                                            console.error('위치 트리거 호출 실패:', error)
+                                        );
+                                    });
+                                },
+                                (error) => console.error('위치 정보 가져오기 실패:', error)
+                            );
+                        }
+
                         return true;
                     } else if (response.status === 401) {
                         // accessToken 만료 시 refreshToken으로 갱신
@@ -124,6 +143,26 @@ export const useAuthStore = create<AuthToken>()(
                             if (refreshResponse.ok) {
                                 const tokenData = await refreshResponse.json();
                                 get().setAuth(tokenData.user, tokenData.accessToken, tokenData.refreshToken);
+                                
+                                // 토큰 갱신 성공 시 현재 위치로 트리거 호출
+                                if (navigator.geolocation) {
+                                    navigator.geolocation.getCurrentPosition(
+                                        (position) => {
+                                            import('@/services/triggers').then(({ evaluateLocationTriggers }) => {
+                                                evaluateLocationTriggers({
+                                                    userId: tokenData.user.id.toString(),
+                                                    latitude: position.coords.latitude,
+                                                    longitude: position.coords.longitude,
+                                                    radius: 1000
+                                                }, tokenData.accessToken).catch(error => 
+                                                    console.error('위치 트리거 호출 실패:', error)
+                                                );
+                                            });
+                                        },
+                                        (error) => console.error('위치 정보 가져오기 실패:', error)
+                                    );
+                                }
+                                
                                 return true;
                             }
                         }

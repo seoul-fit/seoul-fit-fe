@@ -1,6 +1,6 @@
-// hooks/useLocation.ts
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { KakaoMap, WindowWithKakao } from '@/lib/kakao-map';
+import { useLocationTrigger } from './useLocationTrigger';
 
 interface LocationInfo {
   address: string;
@@ -11,6 +11,7 @@ interface LocationInfo {
 export const useLocation = (mapInstance: KakaoMap | null) => {
   const [currentLocation, setCurrentLocation] = useState<LocationInfo | null>(null);
   const watchIdRef = useRef<number | null>(null);
+  const { handleLocationChange } = useLocationTrigger();
 
   // 실시간 위치 추적 시작 (자동)
   const startLocationTracking = useCallback(() => {
@@ -36,11 +37,15 @@ export const useLocation = (mapInstance: KakaoMap | null) => {
         // 지도 중심을 새 위치로 이동
         mapInstance.setCenter(new kakaoMaps.LatLng(lat, lng));
 
+        const coords = { lat, lng };
         setCurrentLocation({
           address: '현재 위치',
-          coords: { lat, lng },
+          coords,
           type: 'current'
         });
+        
+        // 위치 변화 시 트리거 호출
+        handleLocationChange(coords);
       },
       (error) => {
         console.error('GPS 오류:', error.message);
@@ -72,11 +77,15 @@ export const useLocation = (mapInstance: KakaoMap | null) => {
         mapInstance.setCenter(new kakaoMaps.LatLng(lat, lng));
         mapInstance.setLevel(3);
 
+        const coords = { lat, lng };
         setCurrentLocation({
           address: '현재 위치',
-          coords: { lat, lng },
+          coords,
           type: 'current'
         });
+        
+        // 위치 변화 시 트리거 호출
+        handleLocationChange(coords);
         
         // 실시간 추적 시작
         setTimeout(() => {

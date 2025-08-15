@@ -1,8 +1,8 @@
-// hooks/useAuth.ts - Comprehensive authentication hook
 import { useState, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import * as authService from '@/services/auth';
 import { OAuthProvider, UserInterests, AuthResponse } from '@/lib/types';
+import { useLocationTrigger } from './useLocationTrigger';
 
 export interface UseAuthReturn {
   // State
@@ -10,8 +10,8 @@ export interface UseAuthReturn {
   error: string | null;
   
   // OAuth Actions
-  verifyOAuthCode: (provider: OAuthProvider, authorizationCode: string, redirectUri: string) => Promise<any>;
-  checkOAuthUser: (provider: OAuthProvider, oauthUserId: string) => Promise<any>;
+  verifyOAuthCode: (provider: OAuthProvider, authorizationCode: string, redirectUri: string) => Promise<unknown>;
+  checkOAuthUser: (provider: OAuthProvider, oauthUserId: string) => Promise<unknown>;
   oauthLogin: (provider: OAuthProvider, authorizationCode: string, redirectUri: string) => Promise<void>;
   oauthSignup: (
     provider: OAuthProvider,
@@ -27,7 +27,7 @@ export interface UseAuthReturn {
   // Utility Actions
   refreshToken: () => Promise<void>;
   checkEmailDuplicate: (email: string) => Promise<boolean>;
-  getOAuthUrl: (provider: OAuthProvider, redirectUri: string, scope?: string, state?: string) => Promise<any>;
+  getOAuthUrl: (provider: OAuthProvider, redirectUri: string, scope?: string, state?: string) => Promise<unknown>;
   
   // Clear error
   clearError: () => void;
@@ -37,6 +37,7 @@ export function useAuth(): UseAuthReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { setAuth, clearAuth, accessToken, refreshToken: storedRefreshToken } = useAuthStore();
+  const { handleLoginSuccess } = useLocationTrigger();
 
   const clearError = useCallback(() => {
     setError(null);
@@ -101,6 +102,19 @@ export function useAuth(): UseAuthReturn {
       });
       
       setAuth(response.user, response.accessToken, response.refreshToken);
+      
+      // 로그인 성공 후 현재 위치로 트리거 호출
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            handleLoginSuccess({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            });
+          },
+          (error) => console.error('위치 정보 가져오기 실패:', error)
+        );
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'OAuth 로그인에 실패했습니다.';
       setError(errorMessage);
@@ -132,6 +146,19 @@ export function useAuth(): UseAuthReturn {
       });
       
       setAuth(response.user, response.accessToken, response.refreshToken);
+      
+      // 회원가입 성공 후 현재 위치로 트리거 호출
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            handleLoginSuccess({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            });
+          },
+          (error) => console.error('위치 정보 가져오기 실패:', error)
+        );
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'OAuth 회원가입에 실패했습니다.';
       setError(errorMessage);
