@@ -217,8 +217,8 @@ function AuthContent() {
             const signUpData = {
                 provider: userInfo.provider,
                 oauthUserId: userInfo.oauthUserId,
-                nickname: userInfo.nickname || 'tester',
-                email: userInfo.email || 'test@test.com',
+                nickname: userInfo.nickname || 'tester_' + userInfo.oauthUserId,
+                email: userInfo.email || userInfo.oauthUserId + '@test.com',
                 profileImageUrl: userInfo.profileImageUrl || 'https://example.com/profile.jpg',
                 interests: selectedInterests
             };
