@@ -8,11 +8,19 @@ export interface UseAuthReturn {
   // State
   isLoading: boolean;
   error: string | null;
-  
+
   // OAuth Actions
-  verifyOAuthCode: (provider: OAuthProvider, authorizationCode: string, redirectUri: string) => Promise<unknown>;
+  verifyOAuthCode: (
+    provider: OAuthProvider,
+    authorizationCode: string,
+    redirectUri: string
+  ) => Promise<unknown>;
   checkOAuthUser: (provider: OAuthProvider, oauthUserId: string) => Promise<unknown>;
-  oauthLogin: (provider: OAuthProvider, authorizationCode: string, redirectUri: string) => Promise<void>;
+  oauthLogin: (
+    provider: OAuthProvider,
+    authorizationCode: string,
+    redirectUri: string
+  ) => Promise<void>;
   oauthSignup: (
     provider: OAuthProvider,
     oauthUserId: string,
@@ -23,12 +31,17 @@ export interface UseAuthReturn {
   ) => Promise<void>;
   oauthLogout: () => Promise<void>;
   unlinkOAuth: () => Promise<void>;
-  
+
   // Utility Actions
   refreshToken: () => Promise<void>;
   checkEmailDuplicate: (email: string) => Promise<boolean>;
-  getOAuthUrl: (provider: OAuthProvider, redirectUri: string, scope?: string, state?: string) => Promise<unknown>;
-  
+  getOAuthUrl: (
+    provider: OAuthProvider,
+    redirectUri: string,
+    scope?: string,
+    state?: string
+  ) => Promise<unknown>;
+
   // Clear error
   clearError: () => void;
 }
@@ -43,37 +56,34 @@ export function useAuth(): UseAuthReturn {
     setError(null);
   }, []);
 
-  const verifyOAuthCode = useCallback(async (
-    provider: OAuthProvider,
-    authorizationCode: string,
-    redirectUri: string
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const result = await authService.verifyOAuthCode({
-        provider,
-        authorizationCode,
-        redirectUri,
-      });
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'OAuth 인가코드 검증에 실패했습니다.';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const verifyOAuthCode = useCallback(
+    async (provider: OAuthProvider, authorizationCode: string, redirectUri: string) => {
+      setIsLoading(true);
+      setError(null);
 
-  const checkOAuthUser = useCallback(async (
-    provider: OAuthProvider,
-    oauthUserId: string
-  ) => {
+      try {
+        const result = await authService.verifyOAuthCode({
+          provider,
+          authorizationCode,
+          redirectUri,
+        });
+        return result;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'OAuth 인가코드 검증에 실패했습니다.';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  const checkOAuthUser = useCallback(async (provider: OAuthProvider, oauthUserId: string) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const result = await authService.checkOAuthUser(provider, oauthUserId);
       return result;
@@ -86,87 +96,89 @@ export function useAuth(): UseAuthReturn {
     }
   }, []);
 
-  const oauthLogin = useCallback(async (
-    provider: OAuthProvider,
-    authorizationCode: string,
-    redirectUri: string
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const response: AuthResponse = await authService.oauthLogin({
-        provider,
-        authorizationCode,
-        redirectUri,
-      });
-      
-      setAuth(response.user, response.accessToken, response.refreshToken);
-      
-      // 로그인 성공 후 현재 위치로 트리거 호출
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            handleLoginSuccess({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            });
-          },
-          (error) => console.error('위치 정보 가져오기 실패:', error)
-        );
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'OAuth 로그인에 실패했습니다.';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [setAuth]);
+  const oauthLogin = useCallback(
+    async (provider: OAuthProvider, authorizationCode: string, redirectUri: string) => {
+      setIsLoading(true);
+      setError(null);
 
-  const oauthSignup = useCallback(async (
-    provider: OAuthProvider,
-    oauthUserId: string,
-    nickname: string,
-    email: string,
-    interests: UserInterests[],
-    profileImageUrl?: string
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const response: AuthResponse = await authService.oauthSignup({
-        provider,
-        oauthUserId,
-        nickname,
-        email,
-        interests,
-        profileImageUrl,
-      });
-      
-      setAuth(response.user, response.accessToken, response.refreshToken);
-      
-      // 회원가입 성공 후 현재 위치로 트리거 호출
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            handleLoginSuccess({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            });
-          },
-          (error) => console.error('위치 정보 가져오기 실패:', error)
-        );
+      try {
+        const response: AuthResponse = await authService.oauthLogin({
+          provider,
+          authorizationCode,
+          redirectUri,
+        });
+
+        setAuth(response.user, response.accessToken, response.refreshToken);
+
+        // 로그인 성공 후 현재 위치로 트리거 호출
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            position => {
+              handleLoginSuccess({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              });
+            },
+            error => console.error('위치 정보 가져오기 실패:', error)
+          );
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'OAuth 로그인에 실패했습니다.';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'OAuth 회원가입에 실패했습니다.';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [setAuth]);
+    },
+    [setAuth]
+  );
+
+  const oauthSignup = useCallback(
+    async (
+      provider: OAuthProvider,
+      oauthUserId: string,
+      nickname: string,
+      email: string,
+      interests: UserInterests[],
+      profileImageUrl?: string
+    ) => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response: AuthResponse = await authService.oauthSignup({
+          provider,
+          oauthUserId,
+          nickname,
+          email,
+          interests,
+          profileImageUrl,
+        });
+
+        setAuth(response.user, response.accessToken, response.refreshToken);
+
+        // 회원가입 성공 후 현재 위치로 트리거 호출
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            position => {
+              handleLoginSuccess({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              });
+            },
+            error => console.error('위치 정보 가져오기 실패:', error)
+          );
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'OAuth 회원가입에 실패했습니다.';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [setAuth]
+  );
 
   const refreshTokenAction = useCallback(async () => {
     if (!storedRefreshToken) {
@@ -175,7 +187,7 @@ export function useAuth(): UseAuthReturn {
 
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response: AuthResponse = await authService.refreshToken(storedRefreshToken);
       setAuth(response.user, response.accessToken, response.refreshToken);
@@ -197,7 +209,7 @@ export function useAuth(): UseAuthReturn {
 
     setIsLoading(true);
     setError(null);
-    
+
     try {
       await authService.oauthLogout(accessToken);
       clearAuth();
@@ -219,7 +231,7 @@ export function useAuth(): UseAuthReturn {
 
     setIsLoading(true);
     setError(null);
-    
+
     try {
       await authService.unlinkOAuth(accessToken);
       clearAuth();
@@ -235,7 +247,7 @@ export function useAuth(): UseAuthReturn {
   const checkEmailDuplicate = useCallback(async (email: string): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const isDuplicate = await authService.checkEmailDuplicate(email);
       return isDuplicate;
@@ -248,26 +260,24 @@ export function useAuth(): UseAuthReturn {
     }
   }, []);
 
-  const getOAuthUrl = useCallback(async (
-    provider: OAuthProvider,
-    redirectUri: string,
-    scope?: string,
-    state?: string
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const result = await authService.getOAuthUrl(provider, redirectUri, scope, state);
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'OAuth URL 생성에 실패했습니다.';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const getOAuthUrl = useCallback(
+    async (provider: OAuthProvider, redirectUri: string, scope?: string, state?: string) => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const result = await authService.getOAuthUrl(provider, redirectUri, scope, state);
+        return result;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'OAuth URL 생성에 실패했습니다.';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
 
   return {
     isLoading,

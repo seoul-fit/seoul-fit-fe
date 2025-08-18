@@ -86,7 +86,7 @@ class DataScheduler {
     }
 
     console.log('[스케줄러] 따릉이 1분 주기 갱신 시작');
-    
+
     this.bikeInterval = setInterval(async () => {
       await this.loadBikeData();
     }, 60 * 1000); // 1분
@@ -105,7 +105,7 @@ class DataScheduler {
   getStatus(): { initialized: boolean; cacheStatus: Record<string, unknown> } {
     return {
       initialized: this.isInitialized,
-      cacheStatus: serverCache.getStatus()
+      cacheStatus: serverCache.getStatus(),
     };
   }
 }

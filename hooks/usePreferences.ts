@@ -14,7 +14,7 @@ const defaultPreferences: UserPreferences = {
   bike: true,
   cooling_shelter: true,
   cultural_event: true,
-  cultural_reservation: true
+  cultural_reservation: true,
 };
 
 export function usePreferences() {
@@ -26,7 +26,7 @@ export function usePreferences() {
   // 사용자 선호도 조회
   const loadUserPreferences = useCallback(async () => {
     if (!isAuthenticated || !user?.id) return;
-    
+
     try {
       const userInterests = await getUserInterests(user.id);
       // 모든 선호도를 false로 초기화
@@ -40,7 +40,7 @@ export function usePreferences() {
         bike: false,
         cooling_shelter: false,
         cultural_event: false,
-        cultural_reservation: false
+        cultural_reservation: false,
       };
 
       // 사용자 관심사에 따라 선호도 설정
@@ -50,7 +50,7 @@ export function usePreferences() {
           userPreferences[facilityCategory] = true;
         }
       });
-      
+
       setPreferences(userPreferences);
       setIsLoaded(true);
     } catch (error) {
@@ -63,7 +63,7 @@ export function usePreferences() {
   // 로컬 스토리지에서 선호도 로드
   const loadLocalPreferences = useCallback(() => {
     if (isLoaded) return;
-    
+
     setPreferences(defaultPreferences);
     setIsLoaded(true);
   }, [isLoaded]);
@@ -80,18 +80,18 @@ export function usePreferences() {
   const togglePreference = async (type: FacilityCategory) => {
     const newPreferences = {
       ...preferences,
-      [type]: !preferences[type]
+      [type]: !preferences[type],
     };
-    
+
     // 최소 1개 선택 검증
     const selectedCount = Object.values(newPreferences).filter(Boolean).length;
     if (selectedCount === 0) {
       setShowWarning(true);
       return;
     }
-    
+
     setPreferences(newPreferences);
-    
+
     if (isAuthenticated && user?.id) {
       try {
         const facilityToInterestMap: Record<FacilityCategory, string> = {
@@ -104,13 +104,13 @@ export function usePreferences() {
           bike: 'BIKE',
           cooling_shelter: 'COOLING_SHELTER',
           cultural_event: 'CULTURAL_EVENT',
-          cultural_reservation: 'CULTURAL_RESERVATION'
+          cultural_reservation: 'CULTURAL_RESERVATION',
         };
-        
+
         const selectedInterests = Object.entries(newPreferences)
           .filter(([_, isSelected]) => isSelected)
           .map(([category]) => facilityToInterestMap[category as FacilityCategory]);
-        
+
         await updateUserInterests(user.id, selectedInterests);
       } catch (error) {
         console.error('선호도 업데이트 실패:', error);
@@ -140,7 +140,7 @@ export function usePreferences() {
           bike: false,
           cooling_shelter: false,
           cultural_event: false,
-          cultural_reservation: false
+          cultural_reservation: false,
         };
 
         // 사용자 관심사에 따라 선호도 설정
@@ -150,7 +150,7 @@ export function usePreferences() {
             userPreferences[facilityCategory] = true;
           }
         });
-        
+
         setPreferences(userPreferences);
         setIsLoaded(true);
       } catch (error) {
@@ -170,6 +170,6 @@ export function usePreferences() {
     resetPreferences,
     refreshPreferences,
     showWarning,
-    setShowWarning
+    setShowWarning,
   };
 }

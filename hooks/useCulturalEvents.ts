@@ -9,7 +9,7 @@ export const useCulturalEvents = () => {
   const fetchCulturalEvents = useCallback(async (lat: number, lng: number) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const data = await getNearbyCulturalEvents(lat, lng);
       setCulturalEvents(data);
@@ -25,6 +25,6 @@ export const useCulturalEvents = () => {
     culturalEvents,
     isLoading,
     error,
-    fetchCulturalEvents
+    fetchCulturalEvents,
   };
 };

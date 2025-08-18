@@ -15,7 +15,7 @@ export interface UseLocationDataReturn {
   locationData: LocationDataResponse | null;
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
   getNearbyLocationData: (query: LocationQuery) => Promise<LocationDataResponse>;
   getPersonalizedLocationData: (query: LocationQuery) => Promise<LocationDataResponse>;
@@ -24,7 +24,7 @@ export interface UseLocationDataReturn {
   getNearbyParks: (query: LocationQuery) => Promise<any>;
   getNearbySportsFacilities: (query: LocationQuery) => Promise<any>;
   getNearbyCoolingCenters: (query: LocationQuery) => Promise<any>;
-  
+
   // Clear functions
   clearLocationData: () => void;
   clearError: () => void;
@@ -44,147 +44,175 @@ export function useLocationData(): UseLocationDataReturn {
     setError(null);
   }, []);
 
-  const getNearbyLocationData = useCallback(async (query: LocationQuery): Promise<LocationDataResponse> => {
-    if (!accessToken) {
-      throw new Error('인증 토큰이 없습니다.');
-    }
+  const getNearbyLocationData = useCallback(
+    async (query: LocationQuery): Promise<LocationDataResponse> => {
+      if (!accessToken) {
+        throw new Error('인증 토큰이 없습니다.');
+      }
 
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const data = await locationService.getNearbyLocationData(query, accessToken);
-      setLocationData(data);
-      return data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '위치 기반 통합 데이터 조회에 실패했습니다.';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [accessToken]);
+      setIsLoading(true);
+      setError(null);
 
-  const getPersonalizedLocationData = useCallback(async (query: LocationQuery): Promise<LocationDataResponse> => {
-    if (!accessToken) {
-      throw new Error('인증 토큰이 없습니다.');
-    }
+      try {
+        const data = await locationService.getNearbyLocationData(query, accessToken);
+        setLocationData(data);
+        return data;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : '위치 기반 통합 데이터 조회에 실패했습니다.';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [accessToken]
+  );
 
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const data = await locationService.getPersonalizedLocationData(query, accessToken);
-      setLocationData(data);
-      return data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '개인화된 위치 기반 데이터 조회에 실패했습니다.';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [accessToken]);
+  const getPersonalizedLocationData = useCallback(
+    async (query: LocationQuery): Promise<LocationDataResponse> => {
+      if (!accessToken) {
+        throw new Error('인증 토큰이 없습니다.');
+      }
 
-  const getNearbyRestaurants = useCallback(async (query: LocationQuery) => {
-    if (!accessToken) {
-      throw new Error('인증 토큰이 없습니다.');
-    }
+      setIsLoading(true);
+      setError(null);
 
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const data = await locationService.getNearbyRestaurants(query, accessToken);
-      return data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '위치 기반 맛집 조회에 실패했습니다.';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [accessToken]);
+      try {
+        const data = await locationService.getPersonalizedLocationData(query, accessToken);
+        setLocationData(data);
+        return data;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : '개인화된 위치 기반 데이터 조회에 실패했습니다.';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [accessToken]
+  );
 
-  const getNearbyLibraries = useCallback(async (query: LocationQuery) => {
-    if (!accessToken) {
-      throw new Error('인증 토큰이 없습니다.');
-    }
+  const getNearbyRestaurants = useCallback(
+    async (query: LocationQuery) => {
+      if (!accessToken) {
+        throw new Error('인증 토큰이 없습니다.');
+      }
 
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const data = await locationService.getNearbyLibraries(query, accessToken);
-      return data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '위치 기반 도서관 조회에 실패했습니다.';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [accessToken]);
+      setIsLoading(true);
+      setError(null);
 
-  const getNearbyParks = useCallback(async (query: LocationQuery) => {
-    if (!accessToken) {
-      throw new Error('인증 토큰이 없습니다.');
-    }
+      try {
+        const data = await locationService.getNearbyRestaurants(query, accessToken);
+        return data;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : '위치 기반 맛집 조회에 실패했습니다.';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [accessToken]
+  );
 
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const data = await locationService.getNearbyParksFromBackend(query, accessToken);
-      return data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '위치 기반 공원 조회에 실패했습니다.';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [accessToken]);
+  const getNearbyLibraries = useCallback(
+    async (query: LocationQuery) => {
+      if (!accessToken) {
+        throw new Error('인증 토큰이 없습니다.');
+      }
 
-  const getNearbySportsFacilities = useCallback(async (query: LocationQuery) => {
-    if (!accessToken) {
-      throw new Error('인증 토큰이 없습니다.');
-    }
+      setIsLoading(true);
+      setError(null);
 
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const data = await locationService.getNearbySportsFacilities(query, accessToken);
-      return data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '위치 기반 체육시설 조회에 실패했습니다.';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [accessToken]);
+      try {
+        const data = await locationService.getNearbyLibraries(query, accessToken);
+        return data;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : '위치 기반 도서관 조회에 실패했습니다.';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [accessToken]
+  );
 
-  const getNearbyCoolingCenters = useCallback(async (query: LocationQuery) => {
-    if (!accessToken) {
-      throw new Error('인증 토큰이 없습니다.');
-    }
+  const getNearbyParks = useCallback(
+    async (query: LocationQuery) => {
+      if (!accessToken) {
+        throw new Error('인증 토큰이 없습니다.');
+      }
 
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const data = await locationService.getNearbyCoolingCentersFromBackend(query, accessToken);
-      return data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '위치 기반 무더위쉼터 조회에 실패했습니다.';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [accessToken]);
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const data = await locationService.getNearbyParksFromBackend(query, accessToken);
+        return data;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : '위치 기반 공원 조회에 실패했습니다.';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [accessToken]
+  );
+
+  const getNearbySportsFacilities = useCallback(
+    async (query: LocationQuery) => {
+      if (!accessToken) {
+        throw new Error('인증 토큰이 없습니다.');
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const data = await locationService.getNearbySportsFacilities(query, accessToken);
+        return data;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : '위치 기반 체육시설 조회에 실패했습니다.';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [accessToken]
+  );
+
+  const getNearbyCoolingCenters = useCallback(
+    async (query: LocationQuery) => {
+      if (!accessToken) {
+        throw new Error('인증 토큰이 없습니다.');
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const data = await locationService.getNearbyCoolingCentersFromBackend(query, accessToken);
+        return data;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : '위치 기반 무더위쉼터 조회에 실패했습니다.';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [accessToken]
+  );
 
   return {
     locationData,

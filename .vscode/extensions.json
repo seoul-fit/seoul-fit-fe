@@ -1,0 +1,40 @@
+{
+  // Seoul Fit Frontend - Recommended VSCode Extensions
+  // Essential extensions for contributing to this project
+
+  "recommendations": [
+    // Code Quality & Formatting
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+
+    // TypeScript & React
+    "bradlc.vscode-tailwindcss",
+    "formulahendry.auto-rename-tag",
+    "christian-kohler.path-intellisense",
+    "christian-kohler.npm-intellisense",
+
+    // Development Tools
+    "ms-vscode.vscode-typescript-next",
+    "streetsidesoftware.code-spell-checker",
+    "eamodio.gitlens",
+    "ms-vscode.vscode-json",
+
+    // Markdown & Documentation
+    "yzhang.markdown-all-in-one",
+    "davidanson.vscode-markdownlint",
+
+    // Optional but Helpful
+    "ms-vscode-remote.remote-containers",
+    "github.copilot",
+    "github.copilot-chat",
+
+    // Testing (for future use)
+    "orta.vscode-jest"
+  ],
+
+  "unwantedRecommendations": [
+    // Extensions that conflict with our setup
+    "hookyqr.beautify",
+    "ms-vscode.vscode-typescript"
+  ]
+}

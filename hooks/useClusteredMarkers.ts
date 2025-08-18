@@ -27,7 +27,7 @@ interface MarkerData {
 export function useClusteredMarkers(facilities: Facility[]) {
   const { markers, clusteredFacilities } = useMemo(() => {
     const locationGroups = new Map<string, Facility[]>();
-    
+
     facilities.forEach(facility => {
       const key = `${facility.position.lat.toFixed(6)},${facility.position.lng.toFixed(6)}`;
       if (!locationGroups.has(key)) {
@@ -43,7 +43,7 @@ export function useClusteredMarkers(facilities: Facility[]) {
       if (groupFacilities.length === 1) {
         const facility = groupFacilities[0];
         const icon = getFacilityIcon(facility.category);
-        
+
         markerData.push({
           id: facility.id,
           position: facility.position,
@@ -65,23 +65,27 @@ export function useClusteredMarkers(facilities: Facility[]) {
               </div>
             `,
             size: { width: 32, height: 32 },
-            anchor: { x: 16, y: 16 }
+            anchor: { x: 16, y: 16 },
           },
           facility,
-          isCluster: false
+          isCluster: false,
         });
       } else {
         const centerLat = groupFacilities[0].position.lat;
         const centerLng = groupFacilities[0].position.lng;
-        
-        const categoryCounts: Record<FacilityCategory, number> = {} as Record<FacilityCategory, number>;
+
+        const categoryCounts: Record<FacilityCategory, number> = {} as Record<
+          FacilityCategory,
+          number
+        >;
         groupFacilities.forEach(facility => {
           categoryCounts[facility.category] = (categoryCounts[facility.category] || 0) + 1;
         });
-        
-        const primaryCategory = Object.entries(categoryCounts)
-          .sort(([,a], [,b]) => b - a)[0][0] as FacilityCategory;
-        
+
+        const primaryCategory = Object.entries(categoryCounts).sort(
+          ([, a], [, b]) => b - a
+        )[0][0] as FacilityCategory;
+
         const clusteredFacility: ClusteredFacility = {
           id: `cluster-${locationKey}`,
           name: groupFacilities[0].name || '시설 그룹',
@@ -89,13 +93,13 @@ export function useClusteredMarkers(facilities: Facility[]) {
           facilities: groupFacilities,
           categoryCounts,
           totalCount: groupFacilities.length,
-          primaryCategory
+          primaryCategory,
         };
-        
+
         clusters.push(clusteredFacility);
-        
+
         const primaryIcon = getFacilityIcon(primaryCategory);
-        
+
         markerData.push({
           id: clusteredFacility.id,
           position: { lat: centerLat, lng: centerLng },
@@ -136,10 +140,10 @@ export function useClusteredMarkers(facilities: Facility[]) {
               </div>
             `,
             size: { width: 40, height: 40 },
-            anchor: { x: 20, y: 20 }
+            anchor: { x: 20, y: 20 },
           },
           cluster: clusteredFacility,
-          isCluster: true
+          isCluster: true,
         });
       }
     });

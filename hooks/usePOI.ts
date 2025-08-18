@@ -12,7 +12,7 @@ export const usePOI = () => {
   const [state, setState] = useState<UsePOIState>({
     pois: [],
     loading: false,
-    error: null
+    error: null,
   });
 
   const fetchNearbyPOIs = useCallback(async (lat: number, lng: number, radius: number = 1.5) => {
@@ -20,22 +20,22 @@ export const usePOI = () => {
 
     try {
       const pois = await getNearbyPOIs(lat, lng, radius);
-      
-      setState(prev => ({ 
-        ...prev, 
+
+      setState(prev => ({
+        ...prev,
         pois,
         loading: false,
-        error: null
+        error: null,
       }));
 
       return pois;
     } catch (error) {
       console.error('POI 데이터 조회 실패:', error);
-      setState(prev => ({ 
-        ...prev, 
+      setState(prev => ({
+        ...prev,
         pois: [],
         loading: false,
-        error: 'POI 정보를 불러오는데 실패했습니다.'
+        error: 'POI 정보를 불러오는데 실패했습니다.',
       }));
       return [];
     }
@@ -45,13 +45,13 @@ export const usePOI = () => {
     setState({
       pois: [],
       loading: false,
-      error: null
+      error: null,
     });
   }, []);
 
   return {
     ...state,
     fetchNearbyPOIs,
-    clearPOIs
+    clearPOIs,
   };
 };

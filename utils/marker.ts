@@ -8,10 +8,7 @@ import { getFacilityIcon } from '@/lib/facilityIcons';
  * @param poiCode POI 코드
  * @returns HTML 문자열
  */
-export const createPOIMarkerContent = (
-  poiName: string,
-  poiCode: string
-): string => {
+export const createPOIMarkerContent = (poiName: string, poiCode: string): string => {
   return `
     <div 
       id="poi-marker-${poiCode}" 
@@ -78,7 +75,7 @@ export const createCustomMarkerContent = (
   let statusBadge = '';
   if (facilityCategory === 'bike' && facility?.bikeFacility) {
     const { availableBikes = 0 } = facility.bikeFacility;
-    
+
     // 이용 가능한 자전거 수에 따른 색상 결정
     let badgeColor = '#EF4444'; // 빨간색: 이용불가 (0대)
     if (availableBikes > 5) {
@@ -88,7 +85,7 @@ export const createCustomMarkerContent = (
     } else if (availableBikes > 0) {
       badgeColor = '#EF4444'; // 빨간색: 부족 (1-2대)
     }
-    
+
     statusBadge = `
       <div style="
         position: absolute;
@@ -163,8 +160,8 @@ export const createCustomMarkerContent = (
 export const getCrowdLevelClass = (crowdLevel: 'low' | 'medium' | 'high'): string => {
   const classMap = {
     low: 'marker-crowd-low',
-    medium: 'marker-crowd-medium', 
-    high: 'marker-crowd-high'
+    medium: 'marker-crowd-medium',
+    high: 'marker-crowd-high',
   };
   return classMap[crowdLevel];
 };
@@ -175,7 +172,7 @@ export const getCrowdLevelClass = (crowdLevel: 'low' | 'medium' | 'high'): strin
  * @param animation - 적용할 애니메이션 타입
  */
 export const applyMarkerAnimation = (
-  markerId: string, 
+  markerId: string,
   animation: 'bounce' | 'pulse' | 'shake' | 'none'
 ): void => {
   const markerElement = document.getElementById(`marker-${markerId}`);
@@ -187,7 +184,7 @@ export const applyMarkerAnimation = (
   // 새 애니메이션 적용
   if (animation !== 'none') {
     markerElement.classList.add(`marker-${animation}`);
-    
+
     // 일정 시간 후 애니메이션 제거 (bounce, shake의 경우)
     if (animation === 'bounce' || animation === 'shake') {
       setTimeout(() => {
@@ -204,15 +201,15 @@ export const applyMarkerAnimation = (
  * @param show - 표시 여부
  */
 export const toggleMarkerTooltip = (
-  markerId: string, 
-  content: string, 
+  markerId: string,
+  content: string,
   show: boolean = true
 ): void => {
   const markerElement = document.getElementById(`marker-${markerId}`);
   if (!markerElement) return;
 
   const existingTooltip = markerElement.querySelector('.marker-tooltip');
-  
+
   if (!show && existingTooltip) {
     existingTooltip.remove();
     return;
@@ -237,7 +234,7 @@ export const toggleMarkerTooltip = (
       pointer-events: none;
       z-index: 1001;
     `;
-    
+
     markerElement.appendChild(tooltip);
   }
 };

@@ -103,11 +103,17 @@ interface RestaurantData {
   subwayInfo?: string;
 }
 
-type SearchDetailData = LibraryData | ParkData | CulturalEventData | CulturalReservationData | CoolingCenterData | RestaurantData;
+type SearchDetailData =
+  | LibraryData
+  | ParkData
+  | CulturalEventData
+  | CulturalReservationData
+  | CoolingCenterData
+  | RestaurantData;
 
 // 카테고리별 상세 데이터를 Facility로 변환하는 함수들
 export function convertSearchResultToFacility(
-  category: SearchItem['category'], 
+  category: SearchItem['category'],
   data: SearchDetailData,
   searchItem: SearchItem
 ): Facility | null {
@@ -143,19 +149,21 @@ function convertLibraryToFacility(data: LibraryData, searchItem: SearchItem): Fa
     category: 'library',
     position: {
       lat: data.xcnts || data.latitude || 0,
-      lng: data.ydnts || data.longitude || 0
+      lng: data.ydnts || data.longitude || 0,
     },
     address: data.adres || data.address || searchItem.address || '',
     phone: data.telNo || data.phoneNumber,
     website: data.hmpgUrl || data.website,
-    description: `${data.lbrrySeName || ''} | ${data.codeValue || ''}`.trim().replace(/^\\|\\s*|\\s*\\|$/g, ''),
+    description: `${data.lbrrySeName || ''} | ${data.codeValue || ''}`
+      .trim()
+      .replace(/^\\|\\s*|\\s*\\|$/g, ''),
     congestionLevel: 'low',
     operatingHours: data.opTime || data.operatingHours,
     library: {
       closeDate: data.fdrmCloseDate,
       seqNo: data.lbrrySeqNo,
-      guCode: data.guCode
-    }
+      guCode: data.guCode,
+    },
   };
 }
 
@@ -167,7 +175,7 @@ function convertParkToFacility(data: ParkData, searchItem: SearchItem): Facility
     category: 'park',
     position: {
       lat: data.latitude || 0,
-      lng: data.longitude || 0
+      lng: data.longitude || 0,
     },
     address: data.address || searchItem.address || '',
     phone: data.adminTel,
@@ -182,8 +190,8 @@ function convertParkToFacility(data: ParkData, searchItem: SearchItem): Facility
       mainPlants: data.mainPlants,
       zone: data.zone,
       managementDept: data.managementDept,
-      imageUrl: data.imageUrl
-    }
+      imageUrl: data.imageUrl,
+    },
   };
 }
 
@@ -195,11 +203,13 @@ function convertCulturalEventToFacility(data: CulturalEventData, searchItem: Sea
     category: 'cultural_event',
     position: {
       lat: data.latitude || 0,
-      lng: data.longitude || 0
+      lng: data.longitude || 0,
     },
     address: `${data.place || ''} (${data.district || ''})`.trim(),
     phone: data.orgName ? `주최: ${data.orgName}` : undefined,
-    description: `${data.codeName || ''} | ${data.useTarget || ''}`.trim().replace(/^\\|\\s*|\\s*\\|$/g, ''),
+    description: `${data.codeName || ''} | ${data.useTarget || ''}`
+      .trim()
+      .replace(/^\\|\\s*|\\s*\\|$/g, ''),
     congestionLevel: 'low',
     operatingHours: data.eventDate || `${data.startDate} ~ ${data.endDate}`,
     website: data.orgLink || data.homepageAddr,
@@ -218,27 +228,30 @@ function convertCulturalEventToFacility(data: CulturalEventData, searchItem: Sea
       ticket: data.ticket,
       mainImg: data.mainImg,
       program: data.program,
-      etcDesc: data.etcDesc
-    }
+      etcDesc: data.etcDesc,
+    },
   };
 }
 
 // 문화예약 데이터 변환
-function convertCulturalReservationToFacility(data: CulturalReservationData, searchItem: SearchItem): Facility {
+function convertCulturalReservationToFacility(
+  data: CulturalReservationData,
+  searchItem: SearchItem
+): Facility {
   return {
     id: searchItem.id,
     name: data.name || searchItem.name,
     category: 'cultural_reservation',
     position: {
       lat: data.latitude || 0,
-      lng: data.longitude || 0
+      lng: data.longitude || 0,
     },
     address: data.address || searchItem.address || '',
     phone: data.phoneNumber,
     description: data.description,
     congestionLevel: 'low',
     website: data.reservationUrl,
-    isReservable: true
+    isReservable: true,
   };
 }
 
@@ -250,7 +263,7 @@ function convertCoolingCenterToFacility(data: CoolingCenterData, searchItem: Sea
     category: 'cooling_shelter',
     position: {
       lat: data.latitude || data.mapCoordY || 0,
-      lng: data.longitude || data.mapCoordX || 0
+      lng: data.longitude || data.mapCoordX || 0,
     },
     address: data.roadAddress || data.lotAddress || searchItem.address || '',
     congestionLevel: 'low',
@@ -259,8 +272,8 @@ function convertCoolingCenterToFacility(data: CoolingCenterData, searchItem: Sea
       facilityType2: data.facilityType2,
       capacity: data.capacity,
       areaSize: data.areaSize,
-      remarks: data.remarks
-    }
+      remarks: data.remarks,
+    },
   };
 }
 
@@ -272,7 +285,7 @@ function convertRestaurantToFacility(data: RestaurantData, searchItem: SearchIte
     category: 'restaurant',
     position: {
       lat: data.latitude || 0,
-      lng: data.longitude || 0
+      lng: data.longitude || 0,
     },
     address: data.address || data.newAddress || searchItem.address || '',
     phone: data.phone,
@@ -284,7 +297,7 @@ function convertRestaurantToFacility(data: RestaurantData, searchItem: SearchIte
       cuisine: data.representativeMenu || '정보 없음',
       priceRange: 'medium',
       rating: undefined,
-      reviewSummary: data.subwayInfo
-    }
+      reviewSummary: data.subwayInfo,
+    },
   };
 }

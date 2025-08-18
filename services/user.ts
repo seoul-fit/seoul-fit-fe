@@ -24,7 +24,7 @@ export async function getUser(userId: number, accessToken: string): Promise<User
   const response = await fetch(`${BASE_URL}/api/users/${userId}`, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
   });
@@ -43,7 +43,7 @@ export async function getMyInfo(authUserId: number, accessToken: string): Promis
   const response = await fetch(`${BASE_URL}/api/users/me?authUserId=${authUserId}`, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
   });
@@ -59,14 +59,14 @@ export async function getMyInfo(authUserId: number, accessToken: string): Promis
  * 사용자 정보 수정
  */
 export async function updateUser(
-  userId: number, 
-  updateData: UpdateUserRequest, 
+  userId: number,
+  updateData: UpdateUserRequest,
   accessToken: string
 ): Promise<UserResult> {
   const response = await fetch(`${BASE_URL}/api/users/${userId}`, {
     method: 'PUT',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(updateData),
@@ -86,7 +86,7 @@ export async function deleteUser(userId: number, accessToken: string): Promise<v
   const response = await fetch(`${BASE_URL}/api/users/${userId}`, {
     method: 'DELETE',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
   });
@@ -103,7 +103,7 @@ export async function getUserInterests(userId: number, accessToken: string) {
   const response = await fetch(`${BASE_URL}/api/users/interests`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(userId),
@@ -119,14 +119,11 @@ export async function getUserInterests(userId: number, accessToken: string) {
 /**
  * 사용자 관심사 변경
  */
-export async function updateUserInterests(
-  request: UserInterestRequest, 
-  accessToken: string
-) {
+export async function updateUserInterests(request: UserInterestRequest, accessToken: string) {
   const response = await fetch(`${BASE_URL}/api/users/interests`, {
     method: 'PUT',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(request),

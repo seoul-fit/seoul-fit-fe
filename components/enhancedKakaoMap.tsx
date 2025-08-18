@@ -1,14 +1,14 @@
 'use client';
 
-import React, {useState, useRef} from 'react';
-import {Alert, AlertDescription} from "@/components/ui/alert";
-import {usePreferences} from '@/hooks/usePreferences';
-import {Info} from "lucide-react";
+import React, { useState, useRef } from 'react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { usePreferences } from '@/hooks/usePreferences';
+import { Info } from 'lucide-react';
 import Header, { HeaderRef } from './layout/Header';
 import SideBar from './layout/SideBar';
 import MapContainer, { MapContainerRef } from './map/MapContainer';
 import LogoutModal from './auth/LogoutModal';
-import { useKakaoLogin } from "@/hooks/useKakaoLogin";
+import { useKakaoLogin } from '@/hooks/useKakaoLogin';
 import type { SearchItem } from '@/hooks/useSearchCache';
 
 // 기존 타입 정의들
@@ -21,7 +21,8 @@ export default function SeoulFitMapApp() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showLogoutSuccess, setShowLogoutSuccess] = useState(false);
-  const { preferences, togglePreference, refreshPreferences, showWarning, setShowWarning } = usePreferences();
+  const { preferences, togglePreference, refreshPreferences, showWarning, setShowWarning } =
+    usePreferences();
   const { login, logout } = useKakaoLogin();
   const [searchQuery, setSearchQuery] = useState('');
   const mapContainerRef = useRef<MapContainerRef>(null);
@@ -31,7 +32,7 @@ export default function SeoulFitMapApp() {
   const [mapStatus] = useState<MapStatus>({
     loading: true,
     error: null,
-    success: false
+    success: false,
   });
 
   const handleSearch = (query: string) => {
@@ -69,7 +70,7 @@ export default function SeoulFitMapApp() {
   return (
     <>
       {/* 헤더 섹션 - 고정 */}
-      <div className="sticky top-0 z-50 bg-white border-b border-gray-200">
+      <div className='sticky top-0 z-50 bg-white border-b border-gray-200'>
         <Header
           ref={headerRef}
           searchQuery={searchQuery}
@@ -95,17 +96,17 @@ export default function SeoulFitMapApp() {
 
       {/* 에러 알림 */}
       {mapStatus.error && (
-        <div className="p-4">
-          <Alert variant="destructive">
-            <Info className="h-4 w-4" />
+        <div className='p-4'>
+          <Alert variant='destructive'>
+            <Info className='h-4 w-4' />
             <AlertDescription>{mapStatus.error}</AlertDescription>
           </Alert>
         </div>
       )}
 
       {/* 지도 영역 - 전체 화면에서 헤더 제외한 나머지 */}
-      <div className="h-[calc(100vh-80px)] relative">
-        <MapContainer 
+      <div className='h-[calc(100vh-80px)] relative'>
+        <MapContainer
           ref={mapContainerRef}
           preferences={preferences}
           onPreferenceToggle={togglePreference}
@@ -125,7 +126,7 @@ export default function SeoulFitMapApp() {
             setShowLogoutModal(false);
             setShowLogoutSuccess(true);
             setTimeout(() => {
-                window.location.href = '/';
+              window.location.href = '/';
             }, 3000);
           } catch (error) {
             console.error('로그아웃 실패:', error);

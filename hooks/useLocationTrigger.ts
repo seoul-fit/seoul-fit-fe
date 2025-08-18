@@ -17,12 +17,15 @@ export const useLocationTrigger = () => {
     }
 
     try {
-      await evaluateLocationTriggers({
-        userId: user.id.toString(),
-        latitude: coords.lat,
-        longitude: coords.lng,
-        radius: 1000
-      }, accessToken);
+      await evaluateLocationTriggers(
+        {
+          userId: user.id.toString(),
+          latitude: coords.lat,
+          longitude: coords.lng,
+          radius: 1000,
+        },
+        accessToken
+      );
     } catch (error) {
       console.error('사용자 위치 기반 트리거 호출 실패:', error);
     }
@@ -36,7 +39,8 @@ export const useLocationTrigger = () => {
     }
 
     const distance = getDistance(lastLocationRef.current, coords);
-    if (distance > 100) { // 100m 이상 이동 시
+    if (distance > 100) {
+      // 100m 이상 이동 시
       lastLocationRef.current = coords;
       callLocationTrigger(coords).then();
     }
@@ -51,22 +55,22 @@ export const useLocationTrigger = () => {
 
   return {
     handleLocationChange,
-    handleLoginSuccess
+    handleLoginSuccess,
   };
 };
 
 // 두 좌표 간 거리 계산
 function getDistance(pos1: LocationCoords, pos2: LocationCoords): number {
   const R = 6371e3;
-  const p1 = pos1.lat * Math.PI/180;
-  const p2 = pos2.lat * Math.PI/180;
-  const a1 = (pos2.lat-pos1.lat) * Math.PI/180;
-  const a2 = (pos2.lng-pos1.lng) * Math.PI/180;
+  const p1 = (pos1.lat * Math.PI) / 180;
+  const p2 = (pos2.lat * Math.PI) / 180;
+  const a1 = ((pos2.lat - pos1.lat) * Math.PI) / 180;
+  const a2 = ((pos2.lng - pos1.lng) * Math.PI) / 180;
 
-  const a = Math.sin(a1/2) * Math.sin(a1/2) +
-          Math.cos(p1) * Math.cos(p2) *
-          Math.sin(a2/2) * Math.sin(a2/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const a =
+    Math.sin(a1 / 2) * Math.sin(a1 / 2) +
+    Math.cos(p1) * Math.cos(p2) * Math.sin(a2 / 2) * Math.sin(a2 / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return R * c;
 }

@@ -10,10 +10,7 @@ export async function GET(
     const { indexId } = await params;
 
     if (!indexId) {
-      return NextResponse.json(
-        { error: 'indexId가 필요합니다.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'indexId가 필요합니다.' }, { status: 400 });
     }
 
     const response = await fetch(`${BACKEND_BASE_URL}/api/search/data/${indexId}`, {
@@ -21,7 +18,7 @@ export async function GET(
       headers: {
         'Content-Type': 'application/json',
       },
-      cache: 'no-store'
+      cache: 'no-store',
     });
 
     if (!response.ok) {
@@ -34,12 +31,8 @@ export async function GET(
 
     const data = await response.json();
     return NextResponse.json(data);
-
   } catch (error) {
     console.error('상세 검색 API 오류:', error);
-    return NextResponse.json(
-      { error: '서버 오류가 발생했습니다.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }

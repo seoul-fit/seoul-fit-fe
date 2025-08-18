@@ -27,10 +27,14 @@ const getZoomRange = (level: number): ZoomRange => {
  */
 export const getSearchRadius = (zoomRange: ZoomRange): number => {
   switch (zoomRange) {
-    case 'far': return 5.0;    // 넓은 범위 검색
-    case 'medium': return 2.0; // 중간 범위 검색
-    case 'close': return 1.0;  // 좁은 범위 검색
-    default: return 2.0;
+    case 'far':
+      return 5.0; // 넓은 범위 검색
+    case 'medium':
+      return 2.0; // 중간 범위 검색
+    case 'close':
+      return 1.0; // 좁은 범위 검색
+    default:
+      return 2.0;
   }
 };
 
@@ -40,9 +44,9 @@ export const getSearchRadius = (zoomRange: ZoomRange): number => {
 export const useZoomLevel = ({ mapInstance, mapStatus }: UseZoomLevelProps) => {
   const [zoomInfo, setZoomInfo] = useState<ZoomLevelInfo>({
     level: 3,
-    range: 'far'
+    range: 'far',
   });
-  
+
   const [isZooming, setIsZooming] = useState(false);
   const zoomStartListener = useRef<any>(null);
   const zoomChangedListener = useRef<any>(null);
@@ -55,16 +59,19 @@ export const useZoomLevel = ({ mapInstance, mapStatus }: UseZoomLevelProps) => {
   }, []);
 
   // 디바운스된 줌 변경 핸들러
-  const debouncedZoomUpdate = useCallback((level: number) => {
-    if (debounceTimeout.current) {
-      clearTimeout(debounceTimeout.current);
-    }
-    
-    debounceTimeout.current = setTimeout(() => {
-      updateZoomLevel(level);
-      setIsZooming(false);
-    }, 300);
-  }, [updateZoomLevel]);
+  const debouncedZoomUpdate = useCallback(
+    (level: number) => {
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+      }
+
+      debounceTimeout.current = setTimeout(() => {
+        updateZoomLevel(level);
+        setIsZooming(false);
+      }, 300);
+    },
+    [updateZoomLevel]
+  );
 
   // 줌 시작 핸들러
   const handleZoomStart = useCallback(() => {
@@ -74,7 +81,7 @@ export const useZoomLevel = ({ mapInstance, mapStatus }: UseZoomLevelProps) => {
   // 줌 변경 핸들러
   const handleZoomChanged = useCallback(() => {
     if (!mapInstance) return;
-    
+
     try {
       const currentLevel = mapInstance.getLevel();
       debouncedZoomUpdate(currentLevel);
@@ -109,7 +116,6 @@ export const useZoomLevel = ({ mapInstance, mapStatus }: UseZoomLevelProps) => {
         'zoom_changed',
         handleZoomChanged
       );
-
     } catch (error) {
       console.error('줌 이벤트 리스너 등록 실패:', error);
     }
@@ -132,7 +138,7 @@ export const useZoomLevel = ({ mapInstance, mapStatus }: UseZoomLevelProps) => {
   // 수동으로 줌 레벨 새로고침
   const refreshZoomLevel = useCallback(() => {
     if (!mapInstance) return;
-    
+
     try {
       const currentLevel = mapInstance.getLevel();
       updateZoomLevel(currentLevel);
@@ -145,6 +151,6 @@ export const useZoomLevel = ({ mapInstance, mapStatus }: UseZoomLevelProps) => {
     zoomInfo,
     isZooming,
     searchRadius: getSearchRadius(zoomInfo.range),
-    refreshZoomLevel
+    refreshZoomLevel,
   };
 };

@@ -47,8 +47,8 @@ export async function fetchNearbyParks(
       params: { latitude, longitude, radius },
       timeout: 10000,
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     });
 
     const parks = response.data.parks || response.data.data || [];
@@ -58,17 +58,14 @@ export async function fetchNearbyParks(
   }
 }
 
-export async function fetchAllParks(
-  page: number = 0,
-  size: number = 100
-): Promise<ParksResponse> {
+export async function fetchAllParks(page: number = 0, size: number = 100): Promise<ParksResponse> {
   try {
     const response = await axios.get<ApiResponse<Park>>(`${API_BASE_URL}/all`, {
       params: { page, size },
       timeout: 15000,
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     });
 
     const parks = response.data.parks || response.data.data || [];
@@ -76,7 +73,7 @@ export async function fetchAllParks(
       parks,
       totalCount: response.data.totalCount || 0,
       page,
-      size
+      size,
     };
   } catch (error) {
     handleApiError(error, '전체 공원 데이터 조회');

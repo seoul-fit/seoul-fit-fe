@@ -12,7 +12,7 @@ export async function getAllCulturalSpaces(accessToken?: string): Promise<Cultur
   const response = await fetch(`${BASE_URL}/api/v1/cultural-spaces/all`, {
     method: 'GET',
     headers: {
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       'Content-Type': 'application/json',
     },
   });
@@ -40,7 +40,7 @@ export async function getNearbyCulturalSpaces(
   const response = await fetch(`${BASE_URL}/api/v1/cultural-spaces/nearby?${params}`, {
     method: 'GET',
     headers: {
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       'Content-Type': 'application/json',
     },
   });
@@ -61,7 +61,7 @@ export async function getAllCulturalEvents(accessToken?: string): Promise<Cultur
   const response = await fetch(`${BASE_URL}/api/v1/cultural-events/all`, {
     method: 'GET',
     headers: {
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       'Content-Type': 'application/json',
     },
   });
@@ -89,7 +89,7 @@ export async function getNearbyCulturalEvents(
   const response = await fetch(`${BASE_URL}/api/v1/cultural-events/nearby?${params}`, {
     method: 'GET',
     headers: {
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       'Content-Type': 'application/json',
     },
   });
@@ -106,11 +106,13 @@ export async function getNearbyCulturalEvents(
 /**
  * 문화 예약 전체 조회
  */
-export async function getAllCulturalReservations(accessToken?: string): Promise<CulturalReservation[]> {
+export async function getAllCulturalReservations(
+  accessToken?: string
+): Promise<CulturalReservation[]> {
   const response = await fetch(`${BASE_URL}/api/v1/cultural-reservations/all`, {
     method: 'GET',
     headers: {
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       'Content-Type': 'application/json',
     },
   });
@@ -138,7 +140,7 @@ export async function getNearbyCulturalReservations(
   const response = await fetch(`${BASE_URL}/api/v1/cultural-reservations/nearby?${params}`, {
     method: 'GET',
     headers: {
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       'Content-Type': 'application/json',
     },
   });

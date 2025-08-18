@@ -10,7 +10,7 @@ export function useRestaurants() {
   const fetchRestaurants = useCallback(async (lat: number, lng: number) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const data = await getNearbyRestaurants(lat, lng);
       setRestaurants(data);
@@ -32,6 +32,6 @@ export function useRestaurants() {
     isLoading,
     error,
     fetchRestaurants,
-    clearRestaurants
+    clearRestaurants,
   };
 }

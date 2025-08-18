@@ -10,7 +10,7 @@ export function useParks() {
   const fetchParks = useCallback(async (lat: number, lng: number, radius: number = 2) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const data = await fetchNearbyParks(lat, lng, radius);
       setParks(data);
@@ -25,7 +25,7 @@ export function useParks() {
   const fetchAllParksData = useCallback(async (page: number = 0, size: number = 100) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetchAllParks(page, size);
       setParks(response.parks);
@@ -50,6 +50,6 @@ export function useParks() {
     error,
     fetchParks,
     fetchAllParksData,
-    clearParks
+    clearParks,
   };
 }

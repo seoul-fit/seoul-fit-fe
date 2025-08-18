@@ -47,8 +47,8 @@ export async function fetchNearbyLibraries(
       params: { latitude, longitude, radius },
       timeout: 10000,
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     });
 
     const libraries = response.data.libraries || response.data.data || [];
@@ -67,8 +67,8 @@ export async function fetchAllLibraries(
       params: { page, size },
       timeout: 15000,
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     });
 
     const libraries = response.data.libraries || response.data.data || [];
@@ -76,7 +76,7 @@ export async function fetchAllLibraries(
       libraries,
       totalCount: response.data.totalCount || 0,
       page,
-      size
+      size,
     };
   } catch (error) {
     handleApiError(error, '전체 도서관 데이터 조회');

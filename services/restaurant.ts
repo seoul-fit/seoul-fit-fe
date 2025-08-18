@@ -2,7 +2,7 @@ import type { Restaurant } from '@/lib/types';
 
 /**
  * 현재 위치 기준 반경 내 맛집 조회
- * @param lat 현재 위치 위도  
+ * @param lat 현재 위치 위도
  * @param lng 현재 위치 경도
  * @return 반경 내 맛집 목록
  */
@@ -15,7 +15,7 @@ export async function getNearbyRestaurants(lat: number, lng: number): Promise<Re
     }
 
     // Next.js API Route 호출
-    const apiUrl = `/api/restaurants?lat=${lat}&lng=${lng}`;
+    const apiUrl = `/api/v1/restaurants?lat=${lat}&lng=${lng}`;
 
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -68,7 +68,7 @@ export function convertRestaurantToFacility(restaurant: Restaurant): any {
       subwayInfo: restaurant.subwayInfo,
       postUrl: restaurant.postUrl,
       oldAddress: restaurant.address,
-      newAddress: restaurant.newAddress
-    }
+      newAddress: restaurant.newAddress,
+    },
   };
 }

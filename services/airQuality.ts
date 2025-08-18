@@ -10,7 +10,7 @@ export async function getAllAirQuality(accessToken?: string): Promise<AirQuality
   const response = await fetch(`${BASE_URL}/api/v1/air-quality/all`, {
     method: 'GET',
     headers: {
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       'Content-Type': 'application/json',
     },
   });
@@ -38,7 +38,7 @@ export async function getNearbyAirQuality(
   const response = await fetch(`${BASE_URL}/api/v1/air-quality/nearby?${params}`, {
     method: 'GET',
     headers: {
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       'Content-Type': 'application/json',
     },
   });

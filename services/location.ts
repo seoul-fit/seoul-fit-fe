@@ -25,7 +25,7 @@ export async function getNearbyLocationData(
   const response = await fetch(`${BASE_URL}/api/location/nearby?${params}`, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
   });
@@ -53,7 +53,7 @@ export async function getPersonalizedLocationData(
   const response = await fetch(`${BASE_URL}/api/location/nearby/personalized?${params}`, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
   });
@@ -68,10 +68,7 @@ export async function getPersonalizedLocationData(
 /**
  * 위치 기반 맛집 조회
  */
-export async function getNearbyRestaurants(
-  query: LocationQuery,
-  accessToken: string
-) {
+export async function getNearbyRestaurants(query: LocationQuery, accessToken: string) {
   const params = new URLSearchParams({
     latitude: query.latitude.toString(),
     longitude: query.longitude.toString(),
@@ -81,7 +78,7 @@ export async function getNearbyRestaurants(
   const response = await fetch(`${BASE_URL}/api/location/restaurants?${params}`, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
   });
@@ -96,10 +93,7 @@ export async function getNearbyRestaurants(
 /**
  * 위치 기반 도서관 조회
  */
-export async function getNearbyLibraries(
-  query: LocationQuery,
-  accessToken: string
-) {
+export async function getNearbyLibraries(query: LocationQuery, accessToken: string) {
   const params = new URLSearchParams({
     latitude: query.latitude.toString(),
     longitude: query.longitude.toString(),
@@ -109,7 +103,7 @@ export async function getNearbyLibraries(
   const response = await fetch(`${BASE_URL}/api/location/libraries?${params}`, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
   });
@@ -124,10 +118,7 @@ export async function getNearbyLibraries(
 /**
  * 위치 기반 공원 조회
  */
-export async function getNearbyParksFromBackend(
-  query: LocationQuery,
-  accessToken: string
-) {
+export async function getNearbyParksFromBackend(query: LocationQuery, accessToken: string) {
   const params = new URLSearchParams({
     latitude: query.latitude.toString(),
     longitude: query.longitude.toString(),
@@ -137,7 +128,7 @@ export async function getNearbyParksFromBackend(
   const response = await fetch(`${BASE_URL}/api/location/parks?${params}`, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
   });
@@ -152,10 +143,7 @@ export async function getNearbyParksFromBackend(
 /**
  * 위치 기반 체육시설 조회
  */
-export async function getNearbySportsFacilities(
-  query: LocationQuery,
-  accessToken: string
-) {
+export async function getNearbySportsFacilities(query: LocationQuery, accessToken: string) {
   const params = new URLSearchParams({
     latitude: query.latitude.toString(),
     longitude: query.longitude.toString(),
@@ -165,7 +153,7 @@ export async function getNearbySportsFacilities(
   const response = await fetch(`${BASE_URL}/api/location/sports-facilities?${params}`, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
   });
@@ -193,7 +181,7 @@ export async function getNearbyCoolingCentersFromBackend(
   const response = await fetch(`${BASE_URL}/api/location/cooling-centers?${params}`, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
   });

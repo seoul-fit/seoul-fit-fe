@@ -9,7 +9,7 @@ export const useCulturalSpaces = () => {
   const fetchCulturalSpaces = useCallback(async (lat: number, lng: number) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const data = await getNearbyCulturalSpaces(lat, lng);
       setCulturalSpaces(data);
@@ -25,6 +25,6 @@ export const useCulturalSpaces = () => {
     culturalSpaces,
     isLoading,
     error,
-    fetchCulturalSpaces
+    fetchCulturalSpaces,
   };
 };

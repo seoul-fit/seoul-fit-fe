@@ -14,24 +14,24 @@ interface SubwayStationIconProps {
 export const SubwayStationIcon: React.FC<SubwayStationIconProps> = ({
   route = '',
   size = 'md',
-  className = ''
+  className = '',
 }) => {
   const color = getSubwayLineColor(route);
-  
+
   const sizeClasses = {
     sm: 'w-6 h-6 p-1',
     md: 'w-8 h-8 p-1.5',
-    lg: 'w-12 h-12 p-2'
+    lg: 'w-12 h-12 p-2',
   };
-  
+
   const iconSizes = {
     sm: 'w-4 h-4',
     md: 'w-5 h-5',
-    lg: 'w-8 h-8'
+    lg: 'w-8 h-8',
   };
 
   return (
-    <div 
+    <div
       className={`${sizeClasses[size]} rounded-full flex items-center justify-center shadow-lg ${className}`}
       style={{ backgroundColor: color }}
     >

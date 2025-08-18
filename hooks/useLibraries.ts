@@ -10,7 +10,7 @@ export function useLibraries() {
   const fetchLibraries = useCallback(async (lat: number, lng: number, radius: number = 2) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const data = await fetchNearbyLibraries(lat, lng, radius);
       setLibraries(data);
@@ -25,7 +25,7 @@ export function useLibraries() {
   const fetchAllLibrariesData = useCallback(async (page: number = 0, size: number = 100) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetchAllLibraries(page, size);
       setLibraries(response.libraries);
@@ -50,6 +50,6 @@ export function useLibraries() {
     error,
     fetchLibraries,
     fetchAllLibrariesData,
-    clearLibraries
+    clearLibraries,
   };
 }

@@ -16,7 +16,7 @@ export const useLocation = (mapInstance: KakaoMap | null) => {
   // 실시간 위치 추적 시작 (자동)
   const startLocationTracking = useCallback(() => {
     if (!mapInstance || !navigator.geolocation) return;
-    
+
     if (watchIdRef.current !== null) {
       console.log('이미 위치 추적 중');
       return;
@@ -26,14 +26,14 @@ export const useLocation = (mapInstance: KakaoMap | null) => {
     if (!windowWithKakao.kakao?.maps) return;
 
     const kakaoMaps = windowWithKakao.kakao.maps;
-    
+
     console.log('실시간 위치 추적 시작');
-    
+
     const watchId = navigator.geolocation.watchPosition(
-      (position) => {
+      position => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
-        
+
         // 지도 중심을 새 위치로 이동
         mapInstance.setCenter(new kakaoMaps.LatLng(lat, lng));
 
@@ -41,22 +41,22 @@ export const useLocation = (mapInstance: KakaoMap | null) => {
         setCurrentLocation({
           address: '현재 위치',
           coords,
-          type: 'current'
+          type: 'current',
         });
-        
+
         // 위치 변화 시 트리거 호출
         handleLocationChange(coords);
       },
-      (error) => {
+      error => {
         console.error('GPS 오류:', error.message);
       },
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 1000
+        maximumAge: 1000,
       }
     );
-    
+
     watchIdRef.current = watchId;
   }, [mapInstance]);
 
@@ -68,12 +68,12 @@ export const useLocation = (mapInstance: KakaoMap | null) => {
     if (!windowWithKakao.kakao?.maps) return;
 
     const kakaoMaps = windowWithKakao.kakao.maps;
-    
+
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      position => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
-        
+
         mapInstance.setCenter(new kakaoMaps.LatLng(lat, lng));
         mapInstance.setLevel(3);
 
@@ -81,24 +81,24 @@ export const useLocation = (mapInstance: KakaoMap | null) => {
         setCurrentLocation({
           address: '현재 위치',
           coords,
-          type: 'current'
+          type: 'current',
         });
-        
+
         // 위치 변화 시 트리거 호출
         handleLocationChange(coords);
-        
+
         // 실시간 추적 시작
         setTimeout(() => {
           startLocationTracking();
         }, 500);
       },
-      (error) => {
+      error => {
         console.error('위치 오류:', error.message);
       },
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 60000
+        maximumAge: 60000,
       }
     );
   }, [mapInstance, startLocationTracking]);
@@ -109,7 +109,7 @@ export const useLocation = (mapInstance: KakaoMap | null) => {
       const timer = setTimeout(() => {
         moveToCurrentLocation();
       }, 500);
-      
+
       return () => clearTimeout(timer);
     }
   }, [mapInstance, currentLocation, moveToCurrentLocation]);
@@ -127,6 +127,6 @@ export const useLocation = (mapInstance: KakaoMap | null) => {
   return {
     currentLocation,
     moveToCurrentLocation,
-    setCurrentLocation
+    setCurrentLocation,
   };
 };

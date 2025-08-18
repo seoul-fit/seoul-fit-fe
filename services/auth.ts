@@ -123,12 +123,15 @@ export async function refreshToken(refreshToken: string): Promise<AuthResponse> 
  * 이메일 중복 확인
  */
 export async function checkEmailDuplicate(email: string): Promise<boolean> {
-  const response = await fetch(`${BASE_URL}/api/auth/check-email?email=${encodeURIComponent(email)}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+  const response = await fetch(
+    `${BASE_URL}/api/auth/check-email?email=${encodeURIComponent(email)}`,
+    {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }
+  );
 
   if (!response.ok) {
     throw new Error(`이메일 중복 확인 실패: ${response.status}`);
@@ -141,9 +144,9 @@ export async function checkEmailDuplicate(email: string): Promise<boolean> {
  * OAuth 인증 URL 생성
  */
 export async function getOAuthUrl(
-  provider: OAuthProvider, 
-  redirectUri: string, 
-  scope?: string, 
+  provider: OAuthProvider,
+  redirectUri: string,
+  scope?: string,
   state?: string
 ) {
   const params = new URLSearchParams({
@@ -173,7 +176,7 @@ export async function oauthLogout(accessToken: string) {
   const response = await fetch(`${BASE_URL}/api/auth/oauth/logout`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
   });
@@ -192,7 +195,7 @@ export async function unlinkOAuth(accessToken: string) {
   const response = await fetch(`${BASE_URL}/api/auth/oauth/unlink`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
   });

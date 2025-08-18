@@ -12,15 +12,15 @@ export async function GET(request: NextRequest) {
     const response = await axios.get(`${BACKEND_BASE_URL}/api/parks/all`, {
       params: {
         page: parseInt(page),
-        size: parseInt(size)
+        size: parseInt(size),
       },
-      timeout: 15000
+      timeout: 15000,
     });
 
     return NextResponse.json(response.data);
   } catch (error) {
     console.error('전체 공원 데이터 조회 실패:', error);
-    
+
     if (axios.isAxiosError(error)) {
       return NextResponse.json(
         { error: '공원 데이터를 가져오는데 실패했습니다.' },
@@ -28,9 +28,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(
-      { error: '서버 오류가 발생했습니다.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }

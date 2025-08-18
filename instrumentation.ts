@@ -3,7 +3,7 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     const { dataScheduler } = await import('./lib/scheduler');
-    
+
     console.log('[서버시작] 데이터 캐시 초기화 시작...');
     try {
       await dataScheduler.initialize();

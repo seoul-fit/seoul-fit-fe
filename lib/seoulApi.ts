@@ -49,7 +49,7 @@ interface BikeApiResponse {
 export async function loadAllSubwayStations(): Promise<SubwayStationRow[]> {
   try {
     console.log('[서울API] 지하철 전체 데이터 로드 시작...');
-    
+
     const apiUrl = `${BASE_URL}/${API_KEY}/json/subwayStationMaster/1/800/`;
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -70,7 +70,7 @@ export async function loadAllSubwayStations(): Promise<SubwayStationRow[]> {
 
     const stations = data.subwayStationMaster.row;
     console.log(`[서울API] 지하철 데이터 로드 완료: ${stations.length}개 역`);
-    
+
     return stations;
   } catch (error) {
     console.error('[서울API] 지하철 데이터 로드 실패:', error);
@@ -107,9 +107,12 @@ async function fetchBikeBatch(startIndex: number, endIndex: number): Promise<Bik
   }
 
   const responseText = await response.text();
-  
+
   if (responseText.trim().startsWith('<')) {
-    console.error(`[서울API] HTML 응답 받음 (${startIndex}-${endIndex}):`, responseText.substring(0, 300));
+    console.error(
+      `[서울API] HTML 응답 받음 (${startIndex}-${endIndex}):`,
+      responseText.substring(0, 300)
+    );
     throw new Error(`따릉이 API에서 HTML 응답을 받았습니다. API 키나 URL을 확인해주세요.`);
   }
 
@@ -120,7 +123,12 @@ async function fetchBikeBatch(startIndex: number, endIndex: number): Promise<Bik
     throw new Error('따릉이 API 응답을 JSON으로 파싱할 수 없습니다.');
   }
 
-  if (typeof data === 'object' && data !== null && 'RESULT' in data && !('rentBikeStatus' in data)) {
+  if (
+    typeof data === 'object' &&
+    data !== null &&
+    'RESULT' in data &&
+    !('rentBikeStatus' in data)
+  ) {
     const errorResult = (data as { RESULT: { CODE: string; MESSAGE: string } }).RESULT;
     throw new Error(`따릉이 API 에러: ${errorResult.CODE} - ${errorResult.MESSAGE}`);
   }
@@ -139,16 +147,18 @@ async function fetchBikeBatch(startIndex: number, endIndex: number): Promise<Bik
 export async function loadAllBikeStations(): Promise<BikeStationRow[]> {
   try {
     console.log('[서울API] 따릉이 전체 데이터 로드 시작...');
-    
+
     // 1000개씩 두 번 호출
     const [batch1, batch2] = await Promise.all([
       fetchBikeBatch(1, 1000),
-      fetchBikeBatch(1001, 2000)
+      fetchBikeBatch(1001, 2000),
     ]);
-    
+
     const allStations = [...batch1, ...batch2];
-    console.log(`[서울API] 따릉이 데이터 로드 완료: ${allStations.length}개 대여소 (batch1: ${batch1.length}, batch2: ${batch2.length})`);
-    
+    console.log(
+      `[서울API] 따릉이 데이터 로드 완료: ${allStations.length}개 대여소 (batch1: ${batch1.length}, batch2: ${batch2.length})`
+    );
+
     return allStations;
   } catch (error) {
     console.error('[서울API] 따릉이 데이터 로드 실패:', error);

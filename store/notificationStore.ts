@@ -1,5 +1,9 @@
 import { create } from 'zustand';
-import { getUnreadNotificationCount, getNotificationHistory, markNotificationAsRead } from '@/services/notifications';
+import {
+  getUnreadNotificationCount,
+  getNotificationHistory,
+  markNotificationAsRead,
+} from '@/services/notifications';
 import { NotificationHistoryResult, NotificationPage } from '@/lib/types';
 
 interface NotificationState {
@@ -37,10 +41,10 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     set({ isLoadingHistory: true });
     try {
       const result = await getNotificationHistory(userId, accessToken, page, 10);
-      set({ 
+      set({
         notifications: result.content,
         notificationPage: result,
-        isLoadingHistory: false 
+        isLoadingHistory: false,
       });
     } catch (error) {
       console.error('알림 히스토리 조회 실패:', error);
@@ -51,17 +55,17 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   markAsRead: async (notificationId: number, userId: number, accessToken: string) => {
     try {
       await markNotificationAsRead(notificationId, userId, accessToken);
-      
+
       // 로컬 상태 업데이트
       const currentNotifications = get().notifications;
       const updatedNotifications = currentNotifications.map(notification =>
-        notification.id === notificationId 
+        notification.id === notificationId
           ? { ...notification, status: 'READ' as const, readAt: new Date().toISOString() }
           : notification
       );
-      
+
       set({ notifications: updatedNotifications });
-      
+
       // 읽지 않은 개수 감소
       get().decrementUnreadCount();
     } catch (error) {

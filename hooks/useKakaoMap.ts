@@ -18,7 +18,7 @@ export const useKakaoMap = ({ containerId, center, level = 3 }: UseKakaoMapOptio
   const [mapStatus, setMapStatus] = useState({
     loading: true,
     success: false,
-    error: null as string | null
+    error: null as string | null,
   });
 
   const initializeMap = useCallback(async () => {
@@ -38,7 +38,7 @@ export const useKakaoMap = ({ containerId, center, level = 3 }: UseKakaoMapOptio
       const script = document.createElement('script');
       script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY}&autoload=false`;
       script.async = true;
-      
+
       script.onload = () => {
         const windowWithKakao = window as WindowWithKakao;
         if (windowWithKakao.kakao?.maps) {
@@ -47,18 +47,17 @@ export const useKakaoMap = ({ containerId, center, level = 3 }: UseKakaoMapOptio
           });
         }
       };
-      
+
       script.onerror = () => {
         setMapStatus({ loading: false, success: false, error: '카카오맵 로드 실패' });
       };
-      
-      document.head.appendChild(script);
 
+      document.head.appendChild(script);
     } catch (error) {
-      setMapStatus({ 
-        loading: false, 
-        success: false, 
-        error: error instanceof Error ? error.message : '지도 초기화 실패' 
+      setMapStatus({
+        loading: false,
+        success: false,
+        error: error instanceof Error ? error.message : '지도 초기화 실패',
       });
     }
   }, [containerId]);
@@ -83,7 +82,7 @@ export const useKakaoMap = ({ containerId, center, level = 3 }: UseKakaoMapOptio
         level: level,
         scrollwheel: true,
         disableDoubleClick: false,
-        disableDoubleClickZoom: false
+        disableDoubleClickZoom: false,
       });
 
       // 부드러운 줌 애니메이션 설정
@@ -92,10 +91,10 @@ export const useKakaoMap = ({ containerId, center, level = 3 }: UseKakaoMapOptio
       setMapInstance(map);
       setMapStatus({ loading: false, success: true, error: null });
     } catch (error) {
-      setMapStatus({ 
-        loading: false, 
-        success: false, 
-        error: error instanceof Error ? error.message : '지도 생성 실패' 
+      setMapStatus({
+        loading: false,
+        success: false,
+        error: error instanceof Error ? error.message : '지도 생성 실패',
       });
     }
   };
@@ -104,26 +103,32 @@ export const useKakaoMap = ({ containerId, center, level = 3 }: UseKakaoMapOptio
     initializeMap();
   }, []);
 
-  const setCenter = useCallback((position: MapPosition) => {
-    if (mapInstance && typeof window !== 'undefined') {
-      const windowWithKakao = window as WindowWithKakao;
-      if (windowWithKakao.kakao?.maps) {
-        const newCenter = new windowWithKakao.kakao.maps.LatLng(position.lat, position.lng);
-        mapInstance.setCenter(newCenter);
+  const setCenter = useCallback(
+    (position: MapPosition) => {
+      if (mapInstance && typeof window !== 'undefined') {
+        const windowWithKakao = window as WindowWithKakao;
+        if (windowWithKakao.kakao?.maps) {
+          const newCenter = new windowWithKakao.kakao.maps.LatLng(position.lat, position.lng);
+          mapInstance.setCenter(newCenter);
+        }
       }
-    }
-  }, [mapInstance]);
+    },
+    [mapInstance]
+  );
 
-  const setLevel = useCallback((newLevel: number) => {
-    if (mapInstance) {
-      mapInstance.setLevel(newLevel);
-    }
-  }, [mapInstance]);
+  const setLevel = useCallback(
+    (newLevel: number) => {
+      if (mapInstance) {
+        mapInstance.setLevel(newLevel);
+      }
+    },
+    [mapInstance]
+  );
 
   return {
     mapInstance,
     mapStatus,
     setCenter,
-    setLevel
+    setLevel,
   };
 };

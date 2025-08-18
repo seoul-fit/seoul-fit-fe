@@ -19,7 +19,7 @@ export async function evaluateLocationTriggers(
     const response = await fetch(`${BASE_URL}/api/triggers/evaluate/location`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(request),

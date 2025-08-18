@@ -6,7 +6,7 @@ import type { FacilityCategory } from '@/lib/types';
 // 카카오맵 열거형 타입들
 export const enum KakaoMapTypeId {
   ROADMAP = 'ROADMAP',
-  SKYVIEW = 'SKYVIEW', 
+  SKYVIEW = 'SKYVIEW',
   HYBRID = 'HYBRID',
   ROADVIEW = 'ROADVIEW',
   OVERLAY = 'OVERLAY',
@@ -14,7 +14,7 @@ export const enum KakaoMapTypeId {
   TERRAIN = 'TERRAIN',
   BICYCLE = 'BICYCLE',
   BICYCLE_HYBRID = 'BICYCLE_HYBRID',
-  USE_DISTRICT = 'USE_DISTRICT'
+  USE_DISTRICT = 'USE_DISTRICT',
 }
 
 export const enum KakaoControlPosition {
@@ -25,13 +25,13 @@ export const enum KakaoControlPosition {
   RIGHT = 'RIGHT',
   BOTTOMLEFT = 'BOTTOMLEFT',
   BOTTOM = 'BOTTOM',
-  BOTTOMRIGHT = 'BOTTOMRIGHT'
+  BOTTOMRIGHT = 'BOTTOMRIGHT',
 }
 
 export const enum KakaoStatus {
   OK = 'OK',
   ZERO_RESULT = 'ZERO_RESULT',
-  ERROR = 'ERROR'
+  ERROR = 'ERROR',
 }
 
 // 기본 클래스들
@@ -190,18 +190,18 @@ export interface KakaoCustomOverlayOptions {
 // 이벤트 관리
 export interface KakaoEventManager {
   addListener<T = unknown>(
-    target: KakaoMap | KakaoMarker | KakaoCustomOverlay, 
-    type: MapEventType | MarkerEventType, 
+    target: KakaoMap | KakaoMarker | KakaoCustomOverlay,
+    type: MapEventType | MarkerEventType,
     handler: (event: T) => void
   ): void;
   removeListener<T = unknown>(
-    target: KakaoMap | KakaoMarker | KakaoCustomOverlay, 
-    type: MapEventType | MarkerEventType, 
+    target: KakaoMap | KakaoMarker | KakaoCustomOverlay,
+    type: MapEventType | MarkerEventType,
     handler: (event: T) => void
   ): void;
   trigger<T = unknown>(
-    target: KakaoMap | KakaoMarker | KakaoCustomOverlay, 
-    type: MapEventType | MarkerEventType, 
+    target: KakaoMap | KakaoMarker | KakaoCustomOverlay,
+    type: MapEventType | MarkerEventType,
     data?: T
   ): void;
 }
@@ -224,7 +224,7 @@ export interface KakaoAddressResult {
 
 export interface KakaoGeocoder {
   addressSearch(
-    address: string, 
+    address: string,
     callback: (result: KakaoAddressResult[], status: KakaoStatus) => void,
     options?: {
       page?: number;
@@ -233,16 +233,16 @@ export interface KakaoGeocoder {
     }
   ): void;
   coord2Address(
-    lng: number, 
-    lat: number, 
+    lng: number,
+    lat: number,
     callback: (result: KakaoAddressResult[], status: KakaoStatus) => void,
     options?: {
       input_coord?: 'WGS84' | 'WCONGNAMUL' | 'CONGNAMUL' | 'WTM' | 'TM';
     }
   ): void;
   coord2RegionCode(
-    lng: number, 
-    lat: number, 
+    lng: number,
+    lat: number,
     callback: (result: KakaoAddressResult[], status: KakaoStatus) => void
   ): void;
 }
@@ -251,7 +251,11 @@ export interface KakaoGeocoder {
 export interface KakaoPlaces {
   keywordSearch(
     keyword: string,
-    callback: (result: KakaoAddressResult[], status: KakaoStatus, pagination: KakaoPagination) => void,
+    callback: (
+      result: KakaoAddressResult[],
+      status: KakaoStatus,
+      pagination: KakaoPagination
+    ) => void,
     options?: {
       category_group_code?: string;
       location?: KakaoLatLng;
@@ -267,7 +271,11 @@ export interface KakaoPlaces {
   ): void;
   categorySearch(
     code: string,
-    callback: (result: KakaoAddressResult[], status: KakaoStatus, pagination: KakaoPagination) => void,
+    callback: (
+      result: KakaoAddressResult[],
+      status: KakaoStatus,
+      pagination: KakaoPagination
+    ) => void,
     options?: {
       location?: KakaoLatLng;
       x?: number;
@@ -302,7 +310,11 @@ export interface KakaoMapConstructors {
   LatLng: new (lat: number, lng: number) => KakaoLatLng;
   Marker: new (options: KakaoMarkerOptions) => KakaoMarker;
   CustomOverlay: new (options: KakaoCustomOverlayOptions) => KakaoCustomOverlay;
-  MarkerImage: new (src: string, size: KakaoSize, options?: KakaoMarkerImageOptions) => KakaoMarkerImage;
+  MarkerImage: new (
+    src: string,
+    size: KakaoSize,
+    options?: KakaoMarkerImageOptions
+  ) => KakaoMarkerImage;
   Size: new (width: number, height: number) => KakaoSize;
   Point: new (x: number, y: number) => KakaoPoint;
   Bounds: new () => KakaoBounds;
@@ -353,12 +365,12 @@ export interface ExtendedKakaoCustomOverlay extends KakaoCustomOverlay {
 }
 
 // 이벤트 타입 정의
-export type MapEventType = 
-  | 'click' 
-  | 'dblclick' 
-  | 'rightclick' 
-  | 'mousemove' 
-  | 'mousedown' 
+export type MapEventType =
+  | 'click'
+  | 'dblclick'
+  | 'rightclick'
+  | 'mousemove'
+  | 'mousedown'
   | 'mouseup'
   | 'dragstart'
   | 'drag'
@@ -371,13 +383,7 @@ export type MapEventType =
   | 'bounds_changed'
   | 'maptypeid_changed';
 
-export type MarkerEventType =
-  | 'click'
-  | 'mouseover'
-  | 'mouseout'
-  | 'dragstart'
-  | 'drag'
-  | 'dragend';
+export type MarkerEventType = 'click' | 'mouseover' | 'mouseout' | 'dragstart' | 'drag' | 'dragend';
 
 // 유틸리티 타입
 export type MapPosition = {

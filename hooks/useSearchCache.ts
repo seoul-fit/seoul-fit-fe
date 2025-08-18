@@ -9,8 +9,28 @@ interface SearchItemWithScore extends SearchItem {
 const searchUtils = {
   // 한글 → 초성 변환
   getChosung: (str: string): string => {
-    const chosung = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
-    return str.replace(/[가-힣]/g, (char) => {
+    const chosung = [
+      'ㄱ',
+      'ㄲ',
+      'ㄴ',
+      'ㄷ',
+      'ㄸ',
+      'ㄹ',
+      'ㅁ',
+      'ㅂ',
+      'ㅃ',
+      'ㅅ',
+      'ㅆ',
+      'ㅇ',
+      'ㅈ',
+      'ㅉ',
+      'ㅊ',
+      'ㅋ',
+      'ㅌ',
+      'ㅍ',
+      'ㅎ',
+    ];
+    return str.replace(/[가-힣]/g, char => {
       const code = char.charCodeAt(0) - 44032;
       if (code >= 0 && code <= 11171) {
         return chosung[Math.floor(code / 588)];
@@ -33,45 +53,45 @@ const searchUtils = {
 
     // 1. 완전일치 (100점)
     if (normalizedText === normalizedQuery) return 100;
-    
+
     // 2. 시작매치 (90점)
     if (normalizedText.startsWith(normalizedQuery)) return 90;
-    
+
     // 3. 포함매치 (70점)
     if (normalizedText.includes(normalizedQuery)) return 70;
-    
+
     // 4. 초성 완전매치 (60점)
     if (chosungText === chosungQuery) return 60;
-    
+
     // 5. 초성 시작매치 (50점)
     if (chosungText.startsWith(chosungQuery)) return 50;
-    
+
     // 6. 초성 포함매치 (40점)
     if (chosungText.includes(chosungQuery)) return 40;
-    
+
     // 7. 부분 단어 매치 (30점)
     const words = normalizedText.split(/[\s\-_]/);
     for (const word of words) {
       if (word.startsWith(normalizedQuery)) return 30;
     }
-    
+
     return 0;
   },
 
   // 카테고리 우선순위
   getCategoryPriority: (category: SearchItem['category']): number => {
     const priorities = {
-      'subway': 1,
-      'bike': 2,
-      'library': 3,
-      'park': 4,
-      'cultural_event': 5,
-      'cultural_reservation': 6,
-      'cooling_center': 7,
-      'restaurant': 8
+      subway: 1,
+      bike: 2,
+      library: 3,
+      park: 4,
+      cultural_event: 5,
+      cultural_reservation: 6,
+      cooling_center: 7,
+      restaurant: 8,
     };
     return priorities[category] || 9;
-  }
+  },
 };
 
 // 통합 검색 아이템 타입
@@ -81,7 +101,15 @@ export interface SearchItem {
   address?: string;
   remark?: string;
   aliases?: string;
-  category: 'subway' | 'bike' | 'library' | 'park' | 'cultural_event' | 'cultural_reservation' | 'cooling_center' | 'restaurant';
+  category:
+    | 'subway'
+    | 'bike'
+    | 'library'
+    | 'park'
+    | 'cultural_event'
+    | 'cultural_reservation'
+    | 'cooling_center'
+    | 'restaurant';
   ref_table?: string;
   ref_id?: number;
 }
@@ -116,15 +144,16 @@ const searchHistoryUtils = {
     try {
       const stored = localStorage.getItem(SEARCH_HISTORY_KEY);
       if (!stored) return [];
-      
+
       const parsed = JSON.parse(stored);
       if (!Array.isArray(parsed)) return [];
-      
-      return parsed.filter(item => 
-        item && 
-        typeof item.id === 'string' && 
-        typeof item.query === 'string' && 
-        typeof item.timestamp === 'number'
+
+      return parsed.filter(
+        item =>
+          item &&
+          typeof item.id === 'string' &&
+          typeof item.query === 'string' &&
+          typeof item.timestamp === 'number'
       );
     } catch (error) {
       console.warn('검색 히스토리 로드 실패:', error);
@@ -146,13 +175,13 @@ const searchHistoryUtils = {
     id: `history_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     query: query.trim(),
     timestamp: Date.now(),
-    selectedItem
+    selectedItem,
   }),
 
   // 중복 제거 및 최대 개수 제한
   deduplicateAndLimit: (history: SearchHistoryItem[]): SearchHistoryItem[] => {
     const uniqueQueries = new Map<string, SearchHistoryItem>();
-    
+
     // 최신 항목이 우선되도록 역순으로 처리
     [...history].reverse().forEach(item => {
       const normalizedQuery = item.query.toLowerCase().trim();
@@ -160,11 +189,11 @@ const searchHistoryUtils = {
         uniqueQueries.set(normalizedQuery, item);
       }
     });
-    
+
     return Array.from(uniqueQueries.values())
       .sort((a, b) => b.timestamp - a.timestamp) // 최신순 정렬
       .slice(0, MAX_HISTORY_ITEMS); // 최대 개수 제한
-  }
+  },
 };
 
 export const useSearchCache = () => {
@@ -176,13 +205,20 @@ export const useSearchCache = () => {
   // 카테고리 매핑 함수
   const getCategoryFromRefTable = (refTable: string): SearchItem['category'] => {
     switch (refTable) {
-      case 'libraries': return 'library';
-      case 'park': return 'park';
-      case 'cultural_events': return 'cultural_event';
-      case 'cultural_reservation': return 'cultural_reservation';
-      case 'cooling_centers': return 'cooling_center';
-      case 'restaurants': return 'restaurant';
-      default: return 'library'; // fallback
+      case 'libraries':
+        return 'library';
+      case 'park':
+        return 'park';
+      case 'cultural_events':
+        return 'cultural_event';
+      case 'cultural_reservation':
+        return 'cultural_reservation';
+      case 'cooling_centers':
+        return 'cooling_center';
+      case 'restaurants':
+        return 'restaurant';
+      default:
+        return 'library'; // fallback
     }
   };
 
@@ -198,7 +234,7 @@ export const useSearchCache = () => {
       const [subwayRes, bikeRes, poiRes] = await Promise.allSettled([
         fetch('/api/subway?lat=37.5665&lng=126.9780'),
         fetch('/api/bike-stations?lat=37.5665&lng=126.9780&radius=30'),
-        fetch('/api/search/index?page=0&size=20000')
+        fetch('/api/search/index?page=0&size=20000'),
       ]);
 
       const combinedData: SearchItem[] = [];
@@ -208,7 +244,7 @@ export const useSearchCache = () => {
         try {
           const subwayData = await subwayRes.value.json();
           console.log('지하철 API 응답 구조:', subwayData);
-          
+
           if (subwayData.success && subwayData.data?.stations) {
             interface SubwayStation {
               code?: string;
@@ -217,13 +253,15 @@ export const useSearchCache = () => {
               route?: string;
               line?: string;
             }
-            
-            const subwayItems: SearchItem[] = subwayData.data.stations.map((station: SubwayStation) => ({
-              id: station.code || `subway_${station.stationId}`,
-              name: station.name,
-              category: 'subway' as const,
-              remark: station.route || station.line
-            }));
+
+            const subwayItems: SearchItem[] = subwayData.data.stations.map(
+              (station: SubwayStation) => ({
+                id: station.code || `subway_${station.stationId}`,
+                name: station.name,
+                category: 'subway' as const,
+                remark: station.route || station.line,
+              })
+            );
             combinedData.push(...subwayItems);
             console.log(`지하철 데이터 로드 성공: ${subwayItems.length}개`);
             console.log('지하철 샘플 데이터:', subwayItems.slice(0, 3));
@@ -234,7 +272,9 @@ export const useSearchCache = () => {
           console.error('지하철 데이터 JSON 파싱 실패:', parseError);
         }
       } else if (subwayRes.status === 'fulfilled') {
-        console.warn(`지하철 API 호출 실패: ${subwayRes.value.status} ${subwayRes.value.statusText}`);
+        console.warn(
+          `지하철 API 호출 실패: ${subwayRes.value.status} ${subwayRes.value.statusText}`
+        );
       } else {
         console.warn('지하철 API 호출 rejected:', subwayRes.reason);
       }
@@ -248,11 +288,11 @@ export const useSearchCache = () => {
             stationId?: string;
             name: string;
           }
-          
+
           const bikeItems: SearchItem[] = bikeData.data.stations.map((station: BikeStation) => ({
             id: station.code || `bike_${station.stationId}`,
             name: station.name,
-            category: 'bike' as const
+            category: 'bike' as const,
           }));
           combinedData.push(...bikeItems);
           console.log(`따릉이 데이터 로드: ${bikeItems.length}개`);
@@ -265,8 +305,12 @@ export const useSearchCache = () => {
       if (poiRes.status === 'fulfilled' && poiRes.value.ok) {
         try {
           const poiData = await poiRes.value.json();
-          console.log('POI API 응답 형태:', typeof poiData, Array.isArray(poiData) ? `배열 길이: ${poiData.length}` : '배열 아님');
-          
+          console.log(
+            'POI API 응답 형태:',
+            typeof poiData,
+            Array.isArray(poiData) ? `배열 길이: ${poiData.length}` : '배열 아님'
+          );
+
           if (Array.isArray(poiData)) {
             const poiItems: SearchItem[] = poiData.map((item: POIItem) => ({
               id: `poi_${item.id}`,
@@ -276,7 +320,7 @@ export const useSearchCache = () => {
               aliases: item.aliases,
               category: getCategoryFromRefTable(item.ref_table),
               ref_table: item.ref_table,
-              ref_id: item.ref_id
+              ref_id: item.ref_id,
             }));
             combinedData.push(...poiItems);
             console.log(`POI 데이터 로드 성공: ${poiItems.length}개`);
@@ -294,7 +338,6 @@ export const useSearchCache = () => {
 
       setSearchCache(combinedData);
       console.log(`총 검색 데이터: ${combinedData.length}개`);
-
     } catch (err) {
       console.error('검색 데이터 로드 중 오류:', err);
       setError('검색 데이터 로드에 실패했습니다.');
@@ -307,104 +350,117 @@ export const useSearchCache = () => {
   const preprocessedCache = useMemo(() => {
     return searchCache.map(item => {
       const searchFields: string[] = [item.name];
-      
+
       if (item.address) {
         searchFields.push(...item.address.split(',').map(addr => addr.trim()));
       }
-      
+
       if (item.remark) {
         searchFields.push(...item.remark.split(',').map(remark => remark.trim()));
       }
-      
+
       if (item.aliases) {
         searchFields.push(...item.aliases.split(',').map(alias => alias.trim()));
       }
-      
+
       return {
         ...item,
-        searchFields
+        searchFields,
       };
     });
   }, [searchCache]);
 
   // 고급 검색 함수 (최적화됨)
-  const search = useCallback((query: string, limit: number = 10): SearchItem[] => {
-    if (!query.trim() || query.length < 1) return [];
+  const search = useCallback(
+    (query: string, limit: number = 10): SearchItem[] => {
+      if (!query.trim() || query.length < 1) return [];
 
-    const trimmedQuery = query.trim();
-    
-    // 전처리된 캐시를 사용하여 성능 향상
-    const itemsWithScores: SearchItemWithScore[] = preprocessedCache
-      .map(item => {
-        let maxScore = 0;
-        for (const field of item.searchFields) {
-          const score = searchUtils.getMatchScore(field, trimmedQuery);
-          maxScore = Math.max(maxScore, score);
-        }
-        
-        return {
-          id: item.id,
-          name: item.name,
-          address: item.address,
-          remark: item.remark,
-          aliases: item.aliases,
-          category: item.category,
-          ref_table: item.ref_table,
-          ref_id: item.ref_id,
-          score: maxScore
-        };
-      })
-      .filter(item => item.score > 0)
-      .sort((a, b) => {
-        if (b.score !== a.score) {
-          return b.score - a.score;
-        }
-        const aPriority = searchUtils.getCategoryPriority(a.category);
-        const bPriority = searchUtils.getCategoryPriority(b.category);
-        if (aPriority !== bPriority) {
-          return aPriority - bPriority;
-        }
-        return a.name.length - b.name.length;
-      });
+      const trimmedQuery = query.trim();
 
-    if (process.env.NODE_ENV === 'development' && itemsWithScores.length > 0) {
-      console.log(`검색어 "${trimmedQuery}" 결과 (상위 5개):`, 
-        itemsWithScores.slice(0, 5).map(item => ({
-          name: item.name,
-          score: item.score,
-          category: item.category
-        }))
-      );
-    }
+      // 전처리된 캐시를 사용하여 성능 향상
+      const itemsWithScores: SearchItemWithScore[] = preprocessedCache
+        .map(item => {
+          let maxScore = 0;
+          for (const field of item.searchFields) {
+            const score = searchUtils.getMatchScore(field, trimmedQuery);
+            maxScore = Math.max(maxScore, score);
+          }
 
-    return itemsWithScores.slice(0, limit).map(({ score, ...item }) => item);
-  }, [preprocessedCache]);
+          return {
+            id: item.id,
+            name: item.name,
+            address: item.address,
+            remark: item.remark,
+            aliases: item.aliases,
+            category: item.category,
+            ref_table: item.ref_table,
+            ref_id: item.ref_id,
+            score: maxScore,
+          };
+        })
+        .filter(item => item.score > 0)
+        .sort((a, b) => {
+          if (b.score !== a.score) {
+            return b.score - a.score;
+          }
+          const aPriority = searchUtils.getCategoryPriority(a.category);
+          const bPriority = searchUtils.getCategoryPriority(b.category);
+          if (aPriority !== bPriority) {
+            return aPriority - bPriority;
+          }
+          return a.name.length - b.name.length;
+        });
+
+      if (process.env.NODE_ENV === 'development' && itemsWithScores.length > 0) {
+        console.log(
+          `검색어 "${trimmedQuery}" 결과 (상위 5개):`,
+          itemsWithScores.slice(0, 5).map(item => ({
+            name: item.name,
+            score: item.score,
+            category: item.category,
+          }))
+        );
+      }
+
+      return itemsWithScores.slice(0, limit).map(({ score, ...item }) => item);
+    },
+    [preprocessedCache]
+  );
 
   // 카테고리별 검색
-  const searchByCategory = useCallback((query: string, categories: SearchItem['category'][], limit: number = 10): SearchItem[] => {
-    if (!query.trim() || query.length < 1) return [];
+  const searchByCategory = useCallback(
+    (query: string, categories: SearchItem['category'][], limit: number = 10): SearchItem[] => {
+      if (!query.trim() || query.length < 1) return [];
 
-    return search(query, searchCache.length)
-      .filter(item => categories.includes(item.category))
-      .slice(0, limit);
-  }, [search, searchCache]);
+      return search(query, searchCache.length)
+        .filter(item => categories.includes(item.category))
+        .slice(0, limit);
+    },
+    [search, searchCache]
+  );
 
   // 검색 히스토리 관리 함수들
-  const addToHistory = useCallback((query: string, selectedItem?: SearchItem) => {
-    if (!query.trim() || query.trim().length < 1) return;
-    
-    const newItem = searchHistoryUtils.createHistoryItem(query, selectedItem);
-    const updatedHistory = searchHistoryUtils.deduplicateAndLimit([newItem, ...searchHistory]);
-    
-    setSearchHistory(updatedHistory);
-    searchHistoryUtils.saveHistory(updatedHistory);
-  }, [searchHistory]);
+  const addToHistory = useCallback(
+    (query: string, selectedItem?: SearchItem) => {
+      if (!query.trim() || query.trim().length < 1) return;
 
-  const removeFromHistory = useCallback((historyId: string) => {
-    const updatedHistory = searchHistory.filter(item => item.id !== historyId);
-    setSearchHistory(updatedHistory);
-    searchHistoryUtils.saveHistory(updatedHistory);
-  }, [searchHistory]);
+      const newItem = searchHistoryUtils.createHistoryItem(query, selectedItem);
+      const updatedHistory = searchHistoryUtils.deduplicateAndLimit([newItem, ...searchHistory]);
+
+      setSearchHistory(updatedHistory);
+      searchHistoryUtils.saveHistory(updatedHistory);
+    },
+    [searchHistory]
+  );
+
+  const removeFromHistory = useCallback(
+    (historyId: string) => {
+      const updatedHistory = searchHistory.filter(item => item.id !== historyId);
+      setSearchHistory(updatedHistory);
+      searchHistoryUtils.saveHistory(updatedHistory);
+    },
+    [searchHistory]
+  );
 
   const clearHistory = useCallback(() => {
     setSearchHistory([]);
@@ -412,20 +468,24 @@ export const useSearchCache = () => {
   }, []);
 
   // 검색 히스토리 필터링 (현재 검색어와 매치되는 항목들)
-  const getRelevantHistory = useCallback((query: string): SearchHistoryItem[] => {
-    if (!query.trim()) return searchHistory;
-    
-    const normalizedQuery = query.toLowerCase().trim();
-    return searchHistory.filter(item => 
-      item.query.toLowerCase().includes(normalizedQuery) ||
-      normalizedQuery.includes(item.query.toLowerCase())
-    );
-  }, [searchHistory]);
+  const getRelevantHistory = useCallback(
+    (query: string): SearchHistoryItem[] => {
+      if (!query.trim()) return searchHistory;
+
+      const normalizedQuery = query.toLowerCase().trim();
+      return searchHistory.filter(
+        item =>
+          item.query.toLowerCase().includes(normalizedQuery) ||
+          normalizedQuery.includes(item.query.toLowerCase())
+      );
+    },
+    [searchHistory]
+  );
 
   // 컴포넌트 마운트 시 데이터 로드 및 검색 히스토리 초기화
   useEffect(() => {
     loadSearchData();
-    
+
     // 검색 히스토리 로드
     const savedHistory = searchHistoryUtils.loadHistory();
     setSearchHistory(savedHistory);
@@ -439,12 +499,12 @@ export const useSearchCache = () => {
     searchByCategory,
     reloadData: loadSearchData,
     totalCount: searchCache.length,
-    
+
     // 검색 히스토리 관련
     searchHistory,
     addToHistory,
     removeFromHistory,
     clearHistory,
-    getRelevantHistory
+    getRelevantHistory,
   };
 };

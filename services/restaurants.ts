@@ -10,7 +10,7 @@ export async function getLatestRestaurants(accessToken: string): Promise<Tourist
   const response = await fetch(`${BASE_URL}/api/v1/tourist-restaurants/latest`, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
   });
@@ -26,13 +26,13 @@ export async function getLatestRestaurants(accessToken: string): Promise<Tourist
  * 특정 날짜 음식점 정보 조회
  */
 export async function getRestaurantsByDate(
-  dataDate: string, 
+  dataDate: string,
   accessToken: string
 ): Promise<TouristRestaurant[]> {
   const response = await fetch(`${BASE_URL}/api/v1/tourist-restaurants/date/${dataDate}`, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
   });
@@ -48,20 +48,23 @@ export async function getRestaurantsByDate(
  * 언어별 음식점 정보 조회
  */
 export async function getRestaurantsByLanguage(
-  langCodeId: string, 
-  dataDate?: string, 
+  langCodeId: string,
+  dataDate?: string,
   accessToken?: string
 ): Promise<TouristRestaurant[]> {
   const params = new URLSearchParams();
   if (dataDate) params.append('dataDate', dataDate);
 
-  const response = await fetch(`${BASE_URL}/api/v1/tourist-restaurants/language/${langCodeId}?${params}`, {
-    method: 'GET',
-    headers: {
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
-      'Content-Type': 'application/json',
-    },
-  });
+  const response = await fetch(
+    `${BASE_URL}/api/v1/tourist-restaurants/language/${langCodeId}?${params}`,
+    {
+      method: 'GET',
+      headers: {
+        ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
+        'Content-Type': 'application/json',
+      },
+    }
+  );
 
   if (!response.ok) {
     throw new Error(`언어별 음식점 정보 조회 실패: ${response.status}`);
@@ -74,8 +77,8 @@ export async function getRestaurantsByLanguage(
  * 음식점명 검색
  */
 export async function searchRestaurantsByName(
-  name: string, 
-  dataDate?: string, 
+  name: string,
+  dataDate?: string,
   accessToken?: string
 ): Promise<TouristRestaurant[]> {
   const params = new URLSearchParams({ name });
@@ -84,7 +87,7 @@ export async function searchRestaurantsByName(
   const response = await fetch(`${BASE_URL}/api/v1/tourist-restaurants/search/name?${params}`, {
     method: 'GET',
     headers: {
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       'Content-Type': 'application/json',
     },
   });
@@ -100,8 +103,8 @@ export async function searchRestaurantsByName(
  * 주소 검색
  */
 export async function searchRestaurantsByAddress(
-  address: string, 
-  dataDate?: string, 
+  address: string,
+  dataDate?: string,
   accessToken?: string
 ): Promise<TouristRestaurant[]> {
   const params = new URLSearchParams({ address });
@@ -110,7 +113,7 @@ export async function searchRestaurantsByAddress(
   const response = await fetch(`${BASE_URL}/api/v1/tourist-restaurants/search/address?${params}`, {
     method: 'GET',
     headers: {
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       'Content-Type': 'application/json',
     },
   });
@@ -126,13 +129,13 @@ export async function searchRestaurantsByAddress(
  * 음식점 상세 정보 조회
  */
 export async function getRestaurantDetail(
-  id: number, 
+  id: number,
   accessToken?: string
 ): Promise<TouristRestaurant> {
   const response = await fetch(`${BASE_URL}/api/v1/tourist-restaurants/${id}`, {
     method: 'GET',
     headers: {
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       'Content-Type': 'application/json',
     },
   });
@@ -154,7 +157,7 @@ export async function getAvailableRestaurantDates(accessToken?: string): Promise
   const response = await fetch(`${BASE_URL}/api/v1/tourist-restaurants/available-dates`, {
     method: 'GET',
     headers: {
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       'Content-Type': 'application/json',
     },
   });
@@ -170,7 +173,7 @@ export async function getAvailableRestaurantDates(accessToken?: string): Promise
  * 음식점 데이터 통계
  */
 export async function getRestaurantStatistics(
-  dataDate?: string, 
+  dataDate?: string,
   accessToken?: string
 ): Promise<RestaurantDataStatistics> {
   const params = new URLSearchParams();
@@ -179,7 +182,7 @@ export async function getRestaurantStatistics(
   const response = await fetch(`${BASE_URL}/api/v1/tourist-restaurants/statistics?${params}`, {
     method: 'GET',
     headers: {
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       'Content-Type': 'application/json',
     },
   });
@@ -195,7 +198,7 @@ export async function getRestaurantStatistics(
  * 수동 배치 실행 (관리자용)
  */
 export async function executeRestaurantBatch(
-  dataDate?: string, 
+  dataDate?: string,
   accessToken?: string
 ): Promise<any> {
   const params = new URLSearchParams();
@@ -204,7 +207,7 @@ export async function executeRestaurantBatch(
   const response = await fetch(`${BASE_URL}/api/v1/tourist-restaurants/batch/manual?${params}`, {
     method: 'POST',
     headers: {
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       'Content-Type': 'application/json',
     },
   });

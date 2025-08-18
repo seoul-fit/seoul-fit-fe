@@ -15,7 +15,7 @@ export const useWeather = () => {
     showWeather: false,
     weatherData: null,
     weatherLoading: false,
-    weatherError: null
+    weatherError: null,
   });
 
   const fetchWeatherData = useCallback(async (lat: number, lng: number) => {
@@ -23,56 +23,62 @@ export const useWeather = () => {
 
     try {
       const data = await getNearestWeatherData(lat, lng);
-      
+
       if (data) {
-        setState(prev => ({ 
-          ...prev, 
-          weatherData: data, 
+        setState(prev => ({
+          ...prev,
+          weatherData: data,
           weatherError: null,
-          weatherLoading: false 
+          weatherLoading: false,
         }));
       } else {
-        setState(prev => ({ 
-          ...prev, 
+        setState(prev => ({
+          ...prev,
           weatherError: '현재 위치 주변의 날씨 정보를 찾을 수 없습니다.',
           weatherData: null,
-          weatherLoading: false 
+          weatherLoading: false,
         }));
       }
     } catch (error) {
       console.error('날씨 데이터 조회 실패:', error);
-      setState(prev => ({ 
-        ...prev, 
+      setState(prev => ({
+        ...prev,
         weatherError: '날씨 정보를 불러오는데 실패했습니다.',
         weatherData: null,
-        weatherLoading: false 
+        weatherLoading: false,
       }));
     }
   }, []);
 
-  const toggleWeatherDisplay = useCallback(async (currentLocation?: { lat: number; lng: number }) => {
-    setState(prev => {
-      const newShowState = !prev.showWeather;
-      
-      // 비동기로 데이터 로드
-      if (newShowState && currentLocation && !prev.weatherData) {
-        fetchWeatherData(currentLocation.lat, currentLocation.lng);
-      }
-      
-      return { ...prev, showWeather: newShowState };
-    });
-  }, [fetchWeatherData]);
+  const toggleWeatherDisplay = useCallback(
+    async (currentLocation?: { lat: number; lng: number }) => {
+      setState(prev => {
+        const newShowState = !prev.showWeather;
 
-  const refreshWeatherData = useCallback(async (currentLocation?: { lat: number; lng: number }) => {
-    if (currentLocation) {
-      await fetchWeatherData(currentLocation.lat, currentLocation.lng);
-    }
-  }, [fetchWeatherData]);
+        // 비동기로 데이터 로드
+        if (newShowState && currentLocation && !prev.weatherData) {
+          fetchWeatherData(currentLocation.lat, currentLocation.lng);
+        }
+
+        return { ...prev, showWeather: newShowState };
+      });
+    },
+    [fetchWeatherData]
+  );
+
+  const refreshWeatherData = useCallback(
+    async (currentLocation?: { lat: number; lng: number }) => {
+      if (currentLocation) {
+        await fetchWeatherData(currentLocation.lat, currentLocation.lng);
+      }
+    },
+    [fetchWeatherData]
+  );
 
   return {
     ...state,
     fetchWeatherData,
     toggleWeatherDisplay,
-    refreshWeatherData
+    refreshWeatherData,
   };
 };

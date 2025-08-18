@@ -15,7 +15,7 @@ export const useCongestion = () => {
     showCongestion: false,
     congestionData: null,
     congestionLoading: false,
-    congestionError: null
+    congestionError: null,
   });
 
   const fetchCongestionData = useCallback(async (lat: number, lng: number) => {
@@ -23,56 +23,62 @@ export const useCongestion = () => {
 
     try {
       const data = await getNearestCongestionData(lat, lng);
-      
+
       if (data) {
-        setState(prev => ({ 
-          ...prev, 
-          congestionData: data, 
+        setState(prev => ({
+          ...prev,
+          congestionData: data,
           congestionError: null,
-          congestionLoading: false 
+          congestionLoading: false,
         }));
       } else {
-        setState(prev => ({ 
-          ...prev, 
+        setState(prev => ({
+          ...prev,
           congestionError: '현재 위치 주변의 혼잡도 정보를 찾을 수 없습니다.',
           congestionData: null,
-          congestionLoading: false 
+          congestionLoading: false,
         }));
       }
     } catch (error) {
       console.error('혼잡도 데이터 조회 실패:', error);
-      setState(prev => ({ 
-        ...prev, 
+      setState(prev => ({
+        ...prev,
         congestionError: '혼잡도 정보를 불러오는데 실패했습니다.',
         congestionData: null,
-        congestionLoading: false 
+        congestionLoading: false,
       }));
     }
   }, []);
 
-  const toggleCongestionDisplay = useCallback(async (currentLocation?: { lat: number; lng: number }) => {
-    setState(prev => {
-      const newShowState = !prev.showCongestion;
-      
-      // 비동기로 데이터 로드
-      if (newShowState && currentLocation && !prev.congestionData) {
-        fetchCongestionData(currentLocation.lat, currentLocation.lng);
-      }
-      
-      return { ...prev, showCongestion: newShowState };
-    });
-  }, [fetchCongestionData]);
+  const toggleCongestionDisplay = useCallback(
+    async (currentLocation?: { lat: number; lng: number }) => {
+      setState(prev => {
+        const newShowState = !prev.showCongestion;
 
-  const refreshCongestionData = useCallback(async (currentLocation?: { lat: number; lng: number }) => {
-    if (currentLocation) {
-      await fetchCongestionData(currentLocation.lat, currentLocation.lng);
-    }
-  }, [fetchCongestionData]);
+        // 비동기로 데이터 로드
+        if (newShowState && currentLocation && !prev.congestionData) {
+          fetchCongestionData(currentLocation.lat, currentLocation.lng);
+        }
+
+        return { ...prev, showCongestion: newShowState };
+      });
+    },
+    [fetchCongestionData]
+  );
+
+  const refreshCongestionData = useCallback(
+    async (currentLocation?: { lat: number; lng: number }) => {
+      if (currentLocation) {
+        await fetchCongestionData(currentLocation.lat, currentLocation.lng);
+      }
+    },
+    [fetchCongestionData]
+  );
 
   return {
     ...state,
     fetchCongestionData,
     toggleCongestionDisplay,
-    refreshCongestionData
+    refreshCongestionData,
   };
 };

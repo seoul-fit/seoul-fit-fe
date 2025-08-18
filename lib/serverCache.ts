@@ -35,7 +35,7 @@ class ServerCache {
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
-      isStatic: true
+      isStatic: true,
     });
     console.log(`[캐시] 정적 데이터 저장: ${key}`);
   }
@@ -45,7 +45,7 @@ class ServerCache {
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
-      isStatic: false
+      isStatic: false,
     });
     console.log(`[캐시] 동적 데이터 갱신: ${key}`);
   }
@@ -65,25 +65,25 @@ class ServerCache {
   getInfo(key: string): { timestamp: number; isStatic: boolean } | null {
     const item = this.cache.get(key);
     if (!item) return null;
-    
+
     return {
       timestamp: item.timestamp,
-      isStatic: item.isStatic || false
+      isStatic: item.isStatic || false,
     };
   }
 
   // 전체 캐시 상태 조회
   getStatus(): Record<string, { timestamp: number; isStatic: boolean; dataSize: number }> {
     const status: Record<string, { timestamp: number; isStatic: boolean; dataSize: number }> = {};
-    
+
     this.cache.forEach((item, key) => {
       status[key] = {
         timestamp: item.timestamp,
         isStatic: item.isStatic || false,
-        dataSize: Array.isArray(item.data) ? (item.data as unknown[]).length : 1
+        dataSize: Array.isArray(item.data) ? (item.data as unknown[]).length : 1,
       };
     });
-    
+
     return status;
   }
 }

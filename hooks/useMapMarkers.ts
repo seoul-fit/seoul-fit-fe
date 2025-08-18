@@ -12,17 +12,17 @@ const debounce = <T extends (...args: any[]) => any>(
   immediate = false
 ): ((...args: Parameters<T>) => void) => {
   let timeout: NodeJS.Timeout | null = null;
-  
+
   return (...args: Parameters<T>) => {
     const callNow = immediate && !timeout;
-    
+
     if (timeout) clearTimeout(timeout);
-    
+
     timeout = setTimeout(() => {
       timeout = null;
       if (!immediate) func(...args);
     }, wait);
-    
+
     if (callNow) func(...args);
   };
 };
@@ -40,7 +40,7 @@ export const useMapMarkers = ({
   mapStatus,
   visibleFacilities,
   onFacilitySelect,
-  onClusterSelect
+  onClusterSelect,
 }: UseMapMarkersProps) => {
   const customOverlaysRef = useRef<KakaoCustomOverlay[]>([]);
   const facilityDataRef = useRef<Map<string, Facility>>(new Map());
@@ -51,7 +51,7 @@ export const useMapMarkers = ({
   const { clusteredData, facilitiesMap } = useMemo(() => {
     const locationGroups = new Map<string, Facility[]>();
     const facilityMap = new Map<string, Facility>();
-    
+
     visibleFacilities.forEach(facility => {
       facilityMap.set(facility.id, facility);
       const key = `${facility.position.lat.toFixed(6)},${facility.position.lng.toFixed(6)}`;
@@ -68,14 +68,18 @@ export const useMapMarkers = ({
       if (facilities.length === 1) {
         singleFacilities.push(facilities[0]);
       } else {
-        const categoryCounts: Record<FacilityCategory, number> = {} as Record<FacilityCategory, number>;
+        const categoryCounts: Record<FacilityCategory, number> = {} as Record<
+          FacilityCategory,
+          number
+        >;
         facilities.forEach(facility => {
           categoryCounts[facility.category] = (categoryCounts[facility.category] || 0) + 1;
         });
-        
-        const primaryCategory = Object.entries(categoryCounts)
-          .sort(([,a], [,b]) => b - a)[0][0] as FacilityCategory;
-        
+
+        const primaryCategory = Object.entries(categoryCounts).sort(
+          ([, a], [, b]) => b - a
+        )[0][0] as FacilityCategory;
+
         clusters.push({
           id: `cluster-${locationKey}`,
           name: facilities[0].name || '시설 그룹',
@@ -83,7 +87,7 @@ export const useMapMarkers = ({
           facilities,
           categoryCounts,
           totalCount: facilities.length,
-          primaryCategory
+          primaryCategory,
         });
       }
     });
@@ -92,62 +96,64 @@ export const useMapMarkers = ({
   }, [visibleFacilities]);
 
   // 개선된 이벤트 바인딩 함수 (클러스터 지원)
-  const bindMarkerEvent = useCallback((item: Facility | ClusteredFacility, isCluster: boolean): void => {
-    const markerId = `marker-${item.id}`;
-    const markerElement = document.getElementById(markerId);
-    
-    if (!markerElement) return;
-    if (markerElement.dataset.eventBound === 'true') return;
-    
-    const handleClick = (e: Event) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (isCluster && onClusterSelect) {
-        onClusterSelect(item as ClusteredFacility);
-      } else {
-        onFacilitySelect(item as Facility);
-      }
-    };
+  const bindMarkerEvent = useCallback(
+    (item: Facility | ClusteredFacility, isCluster: boolean): void => {
+      const markerId = `marker-${item.id}`;
+      const markerElement = document.getElementById(markerId);
 
-    const handleMouseEnter = () => {
-      markerElement.style.transform = 'scale(1.1)';
-      markerElement.style.zIndex = '1001';
-      markerElement.style.transition = 'transform 0.2s ease-out';
-    };
+      if (!markerElement) return;
+      if (markerElement.dataset.eventBound === 'true') return;
 
-    const handleMouseLeave = () => {
-      markerElement.style.transform = 'scale(1)';
-      markerElement.style.zIndex = '1000';
-    };
+      const handleClick = (e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (isCluster && onClusterSelect) {
+          onClusterSelect(item as ClusteredFacility);
+        } else {
+          onFacilitySelect(item as Facility);
+        }
+      };
 
-    markerElement.addEventListener('click', handleClick);
-    markerElement.addEventListener('mouseenter', handleMouseEnter);
-    markerElement.addEventListener('mouseleave', handleMouseLeave);
-    
-    markerElement.dataset.eventBound = 'true';
-    markerElement.dataset.cleanup = 'pending';
-  }, [onFacilitySelect, onClusterSelect]);
+      const handleMouseEnter = () => {
+        markerElement.style.transform = 'scale(1.1)';
+        markerElement.style.zIndex = '1001';
+        markerElement.style.transition = 'transform 0.2s ease-out';
+      };
+
+      const handleMouseLeave = () => {
+        markerElement.style.transform = 'scale(1)';
+        markerElement.style.zIndex = '1000';
+      };
+
+      markerElement.addEventListener('click', handleClick);
+      markerElement.addEventListener('mouseenter', handleMouseEnter);
+      markerElement.addEventListener('mouseleave', handleMouseLeave);
+
+      markerElement.dataset.eventBound = 'true';
+      markerElement.dataset.cleanup = 'pending';
+    },
+    [onFacilitySelect, onClusterSelect]
+  );
 
   // 배치로 이벤트 바인딩 (클러스터 포함)
   const bindAllMarkerEvents = useCallback(() => {
-    clusteredData.singleFacilities.forEach((facility) => {
+    clusteredData.singleFacilities.forEach(facility => {
       bindMarkerEvent(facility, false);
     });
-    clusteredData.clusters.forEach((cluster) => {
+    clusteredData.clusters.forEach(cluster => {
       bindMarkerEvent(cluster, true);
     });
   }, [clusteredData, bindMarkerEvent]);
 
   // 최적화된 디바운싱 함수
-  const debouncedEventBinding = useCallback(
-    debounce(bindAllMarkerEvents, 150, false),
-    [bindAllMarkerEvents]
-  );
+  const debouncedEventBinding = useCallback(debounce(bindAllMarkerEvents, 150, false), [
+    bindAllMarkerEvents,
+  ]);
 
   // 모든 마커 제거 (메모리 누수 방지)
   const clearMarkers = useCallback(() => {
     // 기존 이벤트 리스너 정리
-    facilityDataRef.current.forEach((facility) => {
+    facilityDataRef.current.forEach(facility => {
       const markerElement = document.getElementById(`marker-${facility.id}`);
       if (markerElement && markerElement.dataset.cleanup === 'pending') {
         // 이벤트 리스너 제거는 overlay.setMap(null)에서 자동으로 처리됨
@@ -164,7 +170,7 @@ export const useMapMarkers = ({
         console.error('마커 제거 중 오류:', error);
       }
     });
-    
+
     customOverlaysRef.current = [];
     facilityDataRef.current.clear();
   }, []);
@@ -183,7 +189,7 @@ export const useMapMarkers = ({
 
     // 새 커스텀 오버레이 생성 (배치 처리)
     const newOverlays: KakaoCustomOverlay[] = [];
-    
+
     // 단일 시설 마커 생성
     clusteredData.singleFacilities.forEach(facility => {
       try {
@@ -203,7 +209,7 @@ export const useMapMarkers = ({
           content: markerContent,
           xAnchor: 0.5,
           yAnchor: 1,
-          zIndex: 1000
+          zIndex: 1000,
         });
 
         customOverlay.setMap(mapInstance);
@@ -218,10 +224,12 @@ export const useMapMarkers = ({
     clusteredData.clusters.forEach(cluster => {
       try {
         // 클러스터의 대표 시설 정보 가져오기 (지하철역인 경우 호선 정보 포함)
-        const representativeFacility = cluster.facilities.find(f => f.category === cluster.primaryCategory) || cluster.facilities[0];
+        const representativeFacility =
+          cluster.facilities.find(f => f.category === cluster.primaryCategory) ||
+          cluster.facilities[0];
         const primaryIcon = getFacilityIcon(cluster.primaryCategory, representativeFacility);
         const overlayPosition = new kakaoMaps.LatLng(cluster.position.lat, cluster.position.lng);
-        
+
         const clusterContent = `
           <div id="marker-${cluster.id}" style="
             width: 40px;
@@ -263,7 +271,7 @@ export const useMapMarkers = ({
           content: clusterContent,
           xAnchor: 0.5,
           yAnchor: 1,
-          zIndex: 1001
+          zIndex: 1001,
         });
 
         customOverlay.setMap(mapInstance);
@@ -280,7 +288,7 @@ export const useMapMarkers = ({
     if (eventBindingTimeoutRef.current) {
       clearTimeout(eventBindingTimeoutRef.current);
     }
-    
+
     eventBindingTimeoutRef.current = setTimeout(() => {
       bindAllMarkerEvents();
     }, 100);
@@ -339,14 +347,14 @@ export const useMapMarkers = ({
 
     // 지도 이벤트 리스너들 (디바운싱 적용)
     const zoomListener = windowWithKakao.kakao.maps.event.addListener(
-      mapInstance, 
-      'zoom_changed', 
+      mapInstance,
+      'zoom_changed',
       debouncedEventBinding
     );
 
     const dragEndListener = windowWithKakao.kakao.maps.event.addListener(
-      mapInstance, 
-      'dragend', 
+      mapInstance,
+      'dragend',
       debouncedEventBinding
     );
 
@@ -366,7 +374,7 @@ export const useMapMarkers = ({
       if (eventBindingTimeoutRef.current) {
         clearTimeout(eventBindingTimeoutRef.current);
       }
-      
+
       clearMarkers();
     };
   }, [clearMarkers]);
@@ -378,6 +386,6 @@ export const useMapMarkers = ({
     clearAllHighlights,
     toggleCategoryMarkers,
     rebindAllMarkerEvents: bindAllMarkerEvents,
-    markersCount: customOverlaysRef.current.length
+    markersCount: customOverlaysRef.current.length,
   };
 };

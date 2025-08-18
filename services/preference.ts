@@ -42,7 +42,7 @@ export const updateUserInterests = async (userId: number, interests: string[]): 
     },
     body: JSON.stringify({
       userId,
-      interests
+      interests,
     }),
   });
 

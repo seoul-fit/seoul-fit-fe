@@ -18,7 +18,7 @@ export async function getAllCoolingShelters(accessToken?: string): Promise<Cooli
     const response = await fetch(`${BASE_URL}/api/v1/cooling-shelters/all`, {
       method: 'GET',
       headers: {
-        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+        ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
         'Content-Type': 'application/json',
       },
     });
@@ -44,7 +44,7 @@ export async function getNearbyCoolingShelters(
   longitude: number
 ): Promise<CoolingCenter[]> {
   try {
-    const response = await fetch(`/api/cooling-shelter?lat=${latitude}&lng=${longitude}`, {
+    const response = await fetch(`/api/v1/cooling-shelters?lat=${latitude}&lng=${longitude}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -72,9 +72,9 @@ export function convertCoolingShelterToFacility(shelter: CoolingCenter): Facilit
     id: shelter.id.toString(),
     name: shelter.name,
     category: FACILITY_CATEGORIES.COOLING_SHELTER,
-    position: { 
-      lat: shelter.latitude || 0, 
-      lng: shelter.longitude || 0 
+    position: {
+      lat: shelter.latitude || 0,
+      lng: shelter.longitude || 0,
     },
     address: shelter.roadAddress || shelter.lotAddress || '',
     congestionLevel: 'low',
@@ -85,7 +85,7 @@ export function convertCoolingShelterToFacility(shelter: CoolingCenter): Facilit
       facilityType2: shelter.facilityType2,
       capacity: shelter.capacity,
       areaSize: shelter.areaSize,
-      remarks: shelter.remarks
-    }
+      remarks: shelter.remarks,
+    },
   };
 }

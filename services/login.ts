@@ -14,7 +14,7 @@ export const kakaoLogout = async () => {
   const response = await fetch('http://localhost:8080/api/auth/oauth/logout', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
   });

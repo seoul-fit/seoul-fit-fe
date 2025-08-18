@@ -9,7 +9,7 @@ export const useCulturalReservations = () => {
   const fetchCulturalReservations = useCallback(async (lat: number, lng: number) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const data = await getNearbyCulturalReservations(lat, lng);
       setCulturalReservations(data);
@@ -25,6 +25,6 @@ export const useCulturalReservations = () => {
     culturalReservations,
     isLoading,
     error,
-    fetchCulturalReservations
+    fetchCulturalReservations,
   };
 };

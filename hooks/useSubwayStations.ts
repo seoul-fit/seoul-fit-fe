@@ -36,14 +36,14 @@ export const useSubwayStations = () => {
       category: FACILITY_CATEGORIES.SUBWAY,
       position: {
         lat: station.lat,
-        lng: station.lng
+        lng: station.lng,
       },
       address: '',
       congestionLevel: 'medium' as const,
       subwayStation: {
         stationId: station.stationId,
-        route: station.route
-      }
+        route: station.route,
+      },
     };
   }, []);
 
@@ -51,7 +51,7 @@ export const useSubwayStations = () => {
 
   const fetchSubwayStations = useCallback(async () => {
     if (hasLoaded) return; // 이미 로드되었으면 스킵
-    
+
     setLoading(true);
     setError(null);
 
@@ -87,6 +87,6 @@ export const useSubwayStations = () => {
     subwayStations,
     loading,
     error,
-    refetch: fetchSubwayStations
+    refetch: fetchSubwayStations,
   };
 };
