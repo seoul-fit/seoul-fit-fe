@@ -296,7 +296,7 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
           <div className='flex items-center space-x-3 flex-1 min-w-0'>
             {facility.category === 'subway' ? (
               <SubwayStationIcon
-                route={facility.subwayStation?.route}
+                route={undefined} // 새 타입 시스템에서는 route 정보가 별도 처리 필요
                 size='lg'
                 className='flex-shrink-0'
               />
@@ -312,9 +312,7 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
                 {facility.name}
               </h3>
               <p className='text-sm text-gray-500 truncate'>
-                {facility.category === 'subway' && facility.subwayStation?.route
-                  ? facility.subwayStation.route
-                  : config.label}
+                {config.label}
               </p>
             </div>
           </div>
@@ -400,71 +398,16 @@ export const FacilityBottomSheet: React.FC<FacilityBottomSheetProps> = ({
                   <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600' />
                   <span className='ml-2 text-base text-gray-500'>도착 정보 조회 중...</span>
                 </div>
-              ) : subwayArrival && subwayArrival.arrivals.length > 0 ? (
-                <div className='grid grid-cols-2 gap-3'>
-                  {/* 상행 */}
-                  <div>
-                    <h5 className='text-sm font-medium text-gray-600 mb-2'>
-                      상행 -{' '}
-                      {subwayArrival.arrivals
-                        .find(a => a.updnLine === '상행')
-                        ?.trainLineNm.split(' - ')[1] || '방면'}
-                    </h5>
-                    <div className='space-y-2'>
-                      {subwayArrival.arrivals
-                        .filter(arrival => arrival.updnLine === '상행')
-                        .slice(0, 2)
-                        .map((arrival, index) => (
-                          <div key={`up-${index}`} className='p-2 bg-gray-50 rounded-lg'>
-                            <div className='text-sm font-medium text-gray-900 truncate'>
-                              {arrival.bstatnNm}행
-                            </div>
-                            <div className='text-sm font-bold text-blue-600 mt-1'>
-                              {arrival.barvlDt === '0' ? '0초' : arrival.barvlDt} (
-                              {arrival.arvlMsg2})
-                            </div>
-                          </div>
-                        ))}
-                      {subwayArrival.arrivals.filter(arrival => arrival.updnLine === '상행')
-                        .length === 0 && (
-                        <div className='p-2 bg-gray-50 rounded-lg'>
-                          <div className='text-sm text-gray-500'>도착 정보 없음</div>
-                        </div>
-                      )}
-                    </div>
+              ) : subwayArrival ? (
+                <div className='p-4 bg-blue-50 rounded-lg'>
+                  <div className='text-sm text-blue-800'>
+                    지하철 도착 정보: {subwayArrival.stationName} - {subwayArrival.lineName}
                   </div>
-
-                  {/* 하행 */}
-                  <div>
-                    <h5 className='text-sm font-medium text-gray-600 mb-2'>
-                      하행 -{' '}
-                      {subwayArrival.arrivals
-                        .find(a => a.updnLine === '하행')
-                        ?.trainLineNm.split(' - ')[1] || '방면'}
-                    </h5>
-                    <div className='space-y-2'>
-                      {subwayArrival.arrivals
-                        .filter(arrival => arrival.updnLine === '하행')
-                        .slice(0, 2)
-                        .map((arrival, index) => (
-                          <div key={`down-${index}`} className='p-2 bg-gray-50 rounded-lg'>
-                            <div className='text-sm font-medium text-gray-900 truncate'>
-                              {arrival.bstatnNm}행
-                            </div>
-                            <div className='text-sm font-bold text-blue-600 mt-1'>
-                              {arrival.barvlDt === '0' ? '0초' : arrival.barvlDt} (
-                              {arrival.arvlMsg2})
-                            </div>
-                          </div>
-                        ))}
-                      {subwayArrival.arrivals.filter(arrival => arrival.updnLine === '하행')
-                        .length === 0 && (
-                        <div className='p-2 bg-gray-50 rounded-lg'>
-                          <div className='text-sm text-gray-500'>도착 정보 없음</div>
-                        </div>
-                      )}
+                  {subwayArrival.arrivalTime && (
+                    <div className='text-xs text-blue-600 mt-1'>
+                      다음 열차: {subwayArrival.arrivalTime}분 후 도착
                     </div>
-                  </div>
+                  )}
                 </div>
               ) : (
                 <p className='text-base text-gray-500 py-2'>도착 정보가 없습니다.</p>

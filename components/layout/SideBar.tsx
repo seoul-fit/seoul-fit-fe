@@ -208,23 +208,24 @@ export default function SideBar({
             style={{ scrollbarWidth: 'thin' }}
           >
             <div className='space-y-3'>
-              {(Object.keys(preferences) as FacilityCategory[]).map((type, index) => {
-                const config = FACILITY_CONFIGS[type];
-                const isSelected = preferences[type];
+              {Object.keys(FACILITY_CONFIGS).map((type, index) => {
+                const facilityType = type as FacilityCategory;
+                const config = FACILITY_CONFIGS[facilityType];
+                const isSelected = preferences.preferredCategories?.includes(facilityType) ?? false;
 
                 return (
                   <div
-                    key={type}
+                    key={facilityType}
                     className={`group flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer transform hover:scale-[1.02] active:scale-[0.98] ${
                       isSelected
                         ? 'border-blue-200 bg-blue-50 hover:bg-blue-100 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 hover:shadow-sm'
                     }`}
-                    onClick={() => handleToggle(type)}
+                    onClick={() => handleToggle(facilityType)}
                     role='checkbox'
                     aria-checked={isSelected}
                     tabIndex={0}
-                    onKeyDown={e => handleKeyDown(e, type)}
+                    onKeyDown={e => handleKeyDown(e, facilityType)}
                     style={{
                       animationDelay: `${index * 50}ms`,
                       animation: isOpen ? 'slideInRight 0.3s ease-out forwards' : 'none',

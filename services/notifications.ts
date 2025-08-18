@@ -29,19 +29,26 @@ export async function getUnreadNotificationCount(
   userId: number,
   accessToken: string
 ): Promise<number> {
-  const response = await fetch(`${BASE_URL}/api/notifications/unread-count?userId=${userId}`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-  });
+  try {
+    const response = await fetch(`${BASE_URL}/api/notifications/unread-count?userId=${userId}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
-  if (!response.ok) {
-    throw new Error(`읽지 않은 알림 개수 조회 실패: ${response.status}`);
+    if (!response.ok) {
+      console.warn(`읽지 않은 알림 개수 조회 실패: ${response.status}`);
+      return 0; // 백엔드 연결 실패 시 기본값 반환
+    }
+
+    return response.json();
+  } catch (error) {
+    // CORS 또는 네트워크 에러 시 기본값 반환
+    console.warn('알림 서버 연결 실패:', error);
+    return 0;
   }
-
-  return response.json();
 }
 
 /**

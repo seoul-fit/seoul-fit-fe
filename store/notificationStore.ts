@@ -4,12 +4,12 @@ import {
   getNotificationHistory,
   markNotificationAsRead,
 } from '@/services/notifications';
-import { NotificationHistoryResult, NotificationPage } from '@/lib/types';
+import { Notification, NotificationHistoryResult, NotificationPage } from '@/lib/types';
 
 interface NotificationState {
   unreadCount: number;
   isLoading: boolean;
-  notifications: NotificationHistoryResult[];
+  notifications: Notification[];
   notificationPage: NotificationPage | null;
   isLoadingHistory: boolean;
   fetchUnreadCount: (userId: number, accessToken: string) => Promise<void>;

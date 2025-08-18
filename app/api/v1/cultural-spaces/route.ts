@@ -10,27 +10,31 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '위도와 경도가 필요합니다.' }, { status: 400 });
     }
 
-    const response = await fetch(
-      `http://localhost:8080/api/v1/cultural-spaces/nearby?latitude=${lat}&longitude=${lng}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: '문화공간 데이터를 가져올 수 없습니다.' },
-        { status: response.status }
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/v1/cultural-spaces/nearby?latitude=${lat}&longitude=${lng}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
       );
-    }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+      if (!response.ok) {
+        console.warn(`문화공간 API 호출 실패: ${response.status}`);
+        return NextResponse.json([]);
+      }
+
+      const data = await response.json();
+      return NextResponse.json(data);
+    } catch (backendError) {
+      // 백엔드 서버 연결 실패 시 빈 배열 반환 (프론트엔드 동작 유지)
+      console.warn('문화공간 백엔드 서버 연결 실패:', backendError);
+      return NextResponse.json([]);
+    }
   } catch (error) {
     console.error('문화공간 API 에러:', error);
-    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
+    return NextResponse.json([]);
   }
 }

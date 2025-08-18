@@ -496,7 +496,7 @@ const Header = React.forwardRef<HeaderRef, HeaderProps>(
                               </div>
                               <div className='flex items-center justify-between mt-2'>
                                 <span className='text-xs text-gray-400'>
-                                  {formatNotificationDate(notification.sentAt)}
+                                  {formatNotificationDate(notification.sentAt || notification.createdAt)}
                                 </span>
                                 {notification.status === 'SENT' && (
                                   <div className='w-2 h-2 bg-blue-500 rounded-full' />

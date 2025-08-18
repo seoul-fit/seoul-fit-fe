@@ -112,6 +112,7 @@ export default function SeoulFitMapApp() {
           onPreferenceToggle={togglePreference}
           onMapClick={handleMapClick}
           onLocationReset={() => setSearchQuery('')}
+          className="w-full h-full"
         />
       </div>
 

@@ -97,12 +97,12 @@ const ClusterBottomSheet = React.memo(function ClusterBottomSheet({
               )}
               <div>
                 <h2 className='text-lg font-semibold text-gray-900'>
-                  {viewMode === 'detail' && selectedFacility ? selectedFacility.name : cluster.name}
+                  {viewMode === 'detail' && selectedFacility ? selectedFacility.name : `${cluster.count}개 시설 그룹`}
                 </h2>
                 <p className='text-sm text-gray-500'>
                   {viewMode === 'detail' && selectedFacility
                     ? FACILITY_LABELS[selectedFacility.category as keyof typeof FACILITY_LABELS]
-                    : `총 ${cluster.totalCount}개 시설`}
+                    : `총 ${cluster.count}개 시설`}
                 </p>
               </div>
             </div>
@@ -150,11 +150,6 @@ const ClusterBottomSheet = React.memo(function ClusterBottomSheet({
                           {facility.address && (
                             <div className='text-sm text-gray-600'>{facility.address}</div>
                           )}
-                          {facility.culturalEvent?.eventDate && (
-                            <div className='text-sm text-blue-600 mt-1'>
-                              {facility.culturalEvent.eventDate}
-                            </div>
-                          )}
                         </button>
                       ))}
                     </div>
@@ -199,82 +194,7 @@ const ClusterBottomSheet = React.memo(function ClusterBottomSheet({
                     )}
                   </div>
 
-                  {/* 문화행사 전용 정보 */}
-                  {selectedFacility.category === 'cultural_event' &&
-                    selectedFacility.culturalEvent && (
-                      <div className='border-t pt-4'>
-                        <h4 className='font-medium text-gray-900 mb-3 flex items-center'>
-                          <Info className='w-4 h-4 mr-2' />
-                          행사 정보
-                        </h4>
-                        <div className='space-y-3 text-sm'>
-                          {selectedFacility.culturalEvent.codeName && (
-                            <div className='flex justify-between'>
-                              <span className='text-gray-500'>장르:</span>
-                              <span className='text-gray-900 font-medium'>
-                                {selectedFacility.culturalEvent.codeName}
-                              </span>
-                            </div>
-                          )}
-                          {selectedFacility.culturalEvent.eventDate && (
-                            <div className='flex justify-between'>
-                              <span className='text-gray-500'>기간:</span>
-                              <span className='text-gray-900 font-medium'>
-                                {selectedFacility.culturalEvent.eventDate}
-                              </span>
-                            </div>
-                          )}
-                          {selectedFacility.culturalEvent.useFee && (
-                            <div className='flex flex-col space-y-1'>
-                              <span className='text-gray-500'>요금:</span>
-                              <span className='text-gray-900 text-xs leading-relaxed'>
-                                {selectedFacility.culturalEvent.useFee}
-                              </span>
-                            </div>
-                          )}
-                          {selectedFacility.culturalEvent.useTarget && (
-                            <div className='flex flex-col space-y-1'>
-                              <span className='text-gray-500'>이용대상:</span>
-                              <span className='text-gray-900 text-xs'>
-                                {selectedFacility.culturalEvent.useTarget}
-                              </span>
-                            </div>
-                          )}
-                          {selectedFacility.culturalEvent.isFree && (
-                            <div className='flex justify-between'>
-                              <span className='text-gray-500'>구분:</span>
-                              <span
-                                className={`font-medium ${
-                                  selectedFacility.culturalEvent.isFree === '무료'
-                                    ? 'text-green-600'
-                                    : 'text-blue-600'
-                                }`}
-                              >
-                                {selectedFacility.culturalEvent.isFree}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        {selectedFacility.culturalEvent.mainImg && (
-                          <div className='mt-4 relative'>
-                            <Image
-                              src={selectedFacility.culturalEvent.mainImg}
-                              alt={selectedFacility.name}
-                              width={400}
-                              height={192}
-                              className='w-full max-h-48 object-contain rounded-lg bg-gray-50 cursor-pointer hover:opacity-80 transition-opacity'
-                              onClick={() => {
-                                setModalImageSrc(selectedFacility.culturalEvent?.mainImg || '');
-                                setImageModalOpen(true);
-                              }}
-                              onError={() => {
-                                // 이미지 로드 실패 시 처리
-                              }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
+                  {/* 문화행사 전용 정보는 새로운 타입 시스템에서 제거됨 */}
 
                   {/* 기타 시설 정보 */}
                   <div className='border-t pt-4'>

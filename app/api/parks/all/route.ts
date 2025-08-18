@@ -9,25 +9,23 @@ export async function GET(request: NextRequest) {
     const page = searchParams.get('page') || '0';
     const size = searchParams.get('size') || '100';
 
-    const response = await axios.get(`${BACKEND_BASE_URL}/api/parks/all`, {
-      params: {
-        page: parseInt(page),
-        size: parseInt(size),
-      },
-      timeout: 15000,
-    });
+    try {
+      const response = await axios.get(`${BACKEND_BASE_URL}/api/parks/all`, {
+        params: {
+          page: parseInt(page),
+          size: parseInt(size),
+        },
+        timeout: 15000,
+      });
 
-    return NextResponse.json(response.data);
+      return NextResponse.json(response.data);
+    } catch (backendError) {
+      // 백엔드 서버 연결 실패 시 빈 배열 반환 (프론트엔드 동작 유지)
+      console.warn('전체 공원 데이터 백엔드 서버 연결 실패:', backendError);
+      return NextResponse.json([]);
+    }
   } catch (error) {
     console.error('전체 공원 데이터 조회 실패:', error);
-
-    if (axios.isAxiosError(error)) {
-      return NextResponse.json(
-        { error: '공원 데이터를 가져오는데 실패했습니다.' },
-        { status: error.response?.status || 500 }
-      );
-    }
-
-    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
+    return NextResponse.json([]);
   }
 }

@@ -78,7 +78,7 @@ const CongestionContent: React.FC<{ data: CongestionData }> = ({ data }) => (
         <Users className='h-4 w-4 text-blue-600' />
       </div>
       <div className='flex-1 min-w-0'>
-        <div className='text-sm font-medium text-gray-900 truncate'>{data.AREA_NM}</div>
+        <div className='text-sm font-medium text-gray-900 truncate'>혼잡도 정보</div>
         <div className='text-xs text-gray-500 flex items-center gap-1'>
           <Clock className='h-3 w-3' />
           실시간 업데이트
@@ -90,19 +90,19 @@ const CongestionContent: React.FC<{ data: CongestionData }> = ({ data }) => (
     <div className='flex items-center justify-between p-2 bg-gradient-to-r from-gray-50 to-white rounded-lg border'>
       <span className='text-sm font-medium text-gray-700'>현재 상태</span>
       <Badge
-        className={`${getCongestionClass(data.AREA_CONGEST_LVL)} text-xs font-medium px-3 py-1`}
+        className={`${getCongestionClass(data.level)} text-xs font-medium px-3 py-1`}
       >
         <TrendingUp className='h-3 w-3 mr-1' />
-        {data.AREA_CONGEST_LVL}
+        {data.level}
       </Badge>
     </div>
 
     {/* 혼잡도 메시지 */}
-    {data.AREA_CONGEST_MSG && (
-      <div className='p-2 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg'>
-        <div className='text-xs text-blue-800 leading-relaxed'>💬 {data.AREA_CONGEST_MSG}</div>
+    <div className='p-2 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg'>
+      <div className='text-xs text-blue-800 leading-relaxed'>
+        💬 현재 {data.currentUsers}명이 이용 중입니다 (최대 {data.maxCapacity}명)
       </div>
-    )}
+    </div>
   </div>
 );
 
