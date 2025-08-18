@@ -1,117 +1,117 @@
-# Architecture Overview 🏗️
+# 아키텍처 개요 🏗️
 
-This document provides a comprehensive overview of the Seoul Fit Frontend architecture, including system design, component structure, data flow, and technical decisions.
+이 문서는 Seoul Fit Frontend의 포괄적인 아키텍처 개요를 제공하며, 시스템 설계, 컴포넌트 구조, 데이터 플로우, 기술적 결정사항을 포함합니다.
 
-## 📋 Table of Contents
+## 📋 목차
 
-- [System Overview](#system-overview)
-- [Project Structure](#project-structure)
-- [Architecture Layers](#architecture-layers)
-- [Component Architecture](#component-architecture)
-- [Data Flow](#data-flow)
-- [State Management](#state-management)
-- [API Integration](#api-integration)
-- [Performance Strategy](#performance-strategy)
-- [Security Considerations](#security-considerations)
-- [Deployment Architecture](#deployment-architecture)
-
----
-
-## 🎯 System Overview
-
-Seoul Fit Frontend is a **modern React-based web application** built with Next.js 15 that provides an interactive platform for discovering and navigating Seoul's public facilities. The application follows a **layered architecture** pattern with clear separation of concerns.
-
-### Key Architectural Principles
-
-- **Component-Based Architecture** - Modular, reusable UI components
-- **Hook-Based Logic** - Custom hooks for business logic separation
-- **API-First Design** - Clean integration with multiple data sources
-- **Performance-Optimized** - Lazy loading, caching, and optimization strategies
-- **Accessibility-First** - WCAG 2.1 AA compliance throughout
-- **Type-Safe** - Comprehensive TypeScript coverage
+- [시스템 개요](#시스템-개요)
+- [프로젝트 구조](#프로젝트-구조)
+- [아키텍처 레이어](#아키텍처-레이어)
+- [컴포넌트 아키텍처](#컴포넌트-아키텍처)
+- [데이터 플로우](#데이터-플로우)
+- [상태 관리](#상태-관리)
+- [API 통합](#api-통합)
+- [성능 전략](#성능-전략)
+- [보안 고려사항](#보안-고려사항)
+- [배포 아키텍처](#배포-아키텍처)
 
 ---
 
-## 📁 Project Structure
+## 🎯 시스템 개요
+
+Seoul Fit Frontend는 서울의 공공시설을 발견하고 탐색할 수 있는 인터랙티브 플랫폼을 제공하는 **Next.js 15 기반의 현대적인 React 웹 애플리케이션**입니다. 이 애플리케이션은 명확한 관심사 분리를 통한 **레이어드 아키텍처** 패턴을 따릅니다.
+
+### 핵심 아키텍처 원칙
+
+- **컴포넌트 기반 아키텍처** - 모듈화되고 재사용 가능한 UI 컴포넌트
+- **훅 기반 로직** - 비즈니스 로직 분리를 위한 커스텀 훅
+- **API 우선 설계** - 다중 데이터 소스와의 깔끔한 통합
+- **성능 최적화** - 지연 로딩, 캐싱, 최적화 전략
+- **접근성 우선** - 전반적인 WCAG 2.1 AA 준수
+- **타입 안전성** - 포괄적인 TypeScript 커버리지
+
+---
+
+## 📁 프로젝트 구조
 
 ```
 seoul-fit-fe/
 ├── 📱 app/                     # Next.js 15 App Router
-│   ├── api/                   # Server-side API routes
-│   ├── auth/                  # Authentication pages
-│   ├── globals.css            # Global styles and CSS variables
-│   ├── layout.tsx            # Root layout component
-│   └── page.tsx              # Home page component
+│   ├── api/                   # 서버사이드 API 라우트
+│   ├── auth/                  # 인증 페이지
+│   ├── globals.css            # 전역 스타일 및 CSS 변수
+│   ├── layout.tsx            # 루트 레이아웃 컴포넌트
+│   └── page.tsx              # 홈 페이지 컴포넌트
 │
-├── 🧩 components/             # React Components
-│   ├── auth/                 # Authentication components
-│   ├── layout/               # Layout and navigation components
-│   ├── map/                  # Map-related components
-│   └── ui/                   # Reusable UI primitives (Radix UI based)
+├── 🧩 components/             # React 컴포넌트
+│   ├── auth/                 # 인증 컴포넌트
+│   ├── layout/               # 레이아웃 및 네비게이션 컴포넌트
+│   ├── map/                  # 지도 관련 컴포넌트
+│   └── ui/                   # 재사용 가능한 UI 기본 요소 (Radix UI 기반)
 │
-├── 🔗 hooks/                  # Custom React Hooks
-│   ├── useAuth.ts            # Authentication logic
-│   ├── useKakaoMap.ts        # Map instance management
-│   ├── useFacilities.ts      # Facility data management
-│   └── ...                   # Feature-specific hooks
+├── 🔗 hooks/                  # 커스텀 React 훅
+│   ├── useAuth.ts            # 인증 로직
+│   ├── useKakaoMap.ts        # 지도 인스턴스 관리
+│   ├── useFacilities.ts      # 시설 데이터 관리
+│   └── ...                   # 기능별 훅들
 │
-├── 📚 lib/                    # Utility Libraries
-│   ├── types.ts              # TypeScript type definitions
-│   ├── utils.ts              # General utility functions
-│   ├── kakao-map.ts          # Kakao Map integration
-│   └── seoulApi.ts           # Seoul API client
+├── 📚 lib/                    # 유틸리티 라이브러리
+│   ├── types.ts              # TypeScript 타입 정의
+│   ├── utils.ts              # 일반 유틸리티 함수
+│   ├── kakao-map.ts          # 카카오맵 통합
+│   └── seoulApi.ts           # 서울 API 클라이언트
 │
-├── 🔌 services/               # API Services
-│   ├── auth.ts               # Authentication service
-│   ├── facilities.ts         # Facility data service
-│   ├── weather.ts            # Weather service
-│   └── ...                   # Domain-specific services
+├── 🔌 services/               # API 서비스
+│   ├── auth.ts               # 인증 서비스
+│   ├── facilities.ts         # 시설 데이터 서비스
+│   ├── weather.ts            # 날씨 서비스
+│   └── ...                   # 도메인별 서비스들
 │
-├── 🗄️ store/                  # State Management
-│   ├── authStore.ts          # Authentication state (Zustand)
-│   └── notificationStore.ts  # Notification state (Zustand)
+├── 🗄️ store/                  # 상태 관리
+│   ├── authStore.ts          # 인증 상태 (Zustand)
+│   └── notificationStore.ts  # 알림 상태 (Zustand)
 │
-└── 🎨 styles/                 # Styling Assets
-    └── marker-animations.css # Map marker animations
+└── 🎨 styles/                 # 스타일링 자산
+    └── marker-animations.css # 지도 마커 애니메이션
 ```
 
 ---
 
-## 🏛️ Architecture Layers
+## 🏛️ 아키텍처 레이어
 
-### 1. **Presentation Layer** (`components/`)
-- **UI Components** - Reusable, styled components using Radix UI
-- **Layout Components** - Application shell and navigation
-- **Feature Components** - Domain-specific UI components
+### 1. **프레젠테이션 레이어** (`components/`)
+- **UI 컴포넌트** - Radix UI를 사용한 재사용 가능하고 스타일링된 컴포넌트
+- **레이아웃 컴포넌트** - 애플리케이션 셸 및 네비게이션
+- **기능 컴포넌트** - 도메인별 UI 컴포넌트
 
-### 2. **Business Logic Layer** (`hooks/`)
-- **Custom Hooks** - Encapsulate business logic and state management
-- **Data Fetching** - API integration and caching logic
-- **Event Handling** - User interaction and application events
+### 2. **비즈니스 로직 레이어** (`hooks/`)
+- **커스텀 훅** - 비즈니스 로직과 상태 관리 캡슐화
+- **데이터 페칭** - API 통합 및 캐싱 로직
+- **이벤트 처리** - 사용자 상호작용 및 애플리케이션 이벤트
 
-### 3. **Service Layer** (`services/`)
-- **API Clients** - External service integration
-- **Data Transformation** - Convert API responses to application models
-- **Error Handling** - Centralized error management
+### 3. **서비스 레이어** (`services/`)
+- **API 클라이언트** - 외부 서비스 통합
+- **데이터 변환** - API 응답을 애플리케이션 모델로 변환
+- **에러 처리** - 중앙화된 에러 관리
 
-### 4. **Data Layer** (`store/`, `lib/`)
-- **State Management** - Application-wide state using Zustand
-- **Type Definitions** - Comprehensive TypeScript interfaces
-- **Utility Functions** - Shared helper functions
+### 4. **데이터 레이어** (`store/`, `lib/`)
+- **상태 관리** - Zustand를 사용한 애플리케이션 전역 상태
+- **타입 정의** - 포괄적인 TypeScript 인터페이스
+- **유틸리티 함수** - 공유 헬퍼 함수
 
-### 5. **Infrastructure Layer** (`app/api/`)
-- **API Routes** - Server-side endpoints for data aggregation
-- **Middleware** - Request/response processing
-- **External Integrations** - Third-party service connections
+### 5. **인프라 레이어** (`app/api/`)
+- **API 라우트** - 데이터 집계를 위한 서버사이드 엔드포인트
+- **미들웨어** - 요청/응답 처리
+- **외부 통합** - 서드파티 서비스 연결
 
 ---
 
-## 🧩 Component Architecture
+## 🧩 컴포넌트 아키텍처
 
-### Component Hierarchy
+### 컴포넌트 계층 구조
 
 ```
-EnhancedKakaoMap (Root)
+EnhancedKakaoMap (루트)
 ├── Header
 │   ├── SearchInput
 │   ├── UserMenu
@@ -133,11 +133,11 @@ EnhancedKakaoMap (Root)
     └── ClusterBottomSheet
 ```
 
-### Component Design Patterns
+### 컴포넌트 디자인 패턴
 
-#### **Compound Components**
+#### **복합 컴포넌트 (Compound Components)**
 ```typescript
-// MapContainer acts as a compound component
+// MapContainer가 복합 컴포넌트 역할
 <MapContainer>
   <MapView />
   <MapControls />
@@ -145,7 +145,7 @@ EnhancedKakaoMap (Root)
 </MapContainer>
 ```
 
-#### **Render Props Pattern**
+#### **렌더 프롭 패턴 (Render Props Pattern)**
 ```typescript
 <FacilityList
   render={({ facilities, loading }) => (
@@ -154,113 +154,113 @@ EnhancedKakaoMap (Root)
 />
 ```
 
-#### **Hook-Based Logic Separation**
+#### **훅 기반 로직 분리**
 ```typescript
 function MapContainer() {
-  // All business logic in custom hooks
+  // 모든 비즈니스 로직을 커스텀 훅에서 처리
   const { mapInstance, mapStatus } = useKakaoMap();
   const { facilities, isLoading } = useFacilities();
   const { currentLocation } = useLocation();
   
-  // Component only handles rendering
+  // 컴포넌트는 렌더링만 담당
   return <MapView {...props} />;
 }
 ```
 
 ---
 
-## 🔄 Data Flow
+## 🔄 데이터 플로우
 
-### Unidirectional Data Flow
+### 단방향 데이터 플로우
 
 ```mermaid
 graph TD
-    A[User Interaction] --> B[Event Handler]
-    B --> C[Custom Hook]
-    C --> D[Service Layer]
-    D --> E[API Call]
-    E --> F[State Update]
-    F --> G[Component Re-render]
-    G --> H[UI Update]
+    A[사용자 상호작용] --> B[이벤트 핸들러]
+    B --> C[커스텀 훅]
+    C --> D[서비스 레이어]
+    D --> E[API 호출]
+    E --> F[상태 업데이트]
+    F --> G[컴포넌트 리렌더링]
+    G --> H[UI 업데이트]
 ```
 
-### Real-Time Data Flow
+### 실시간 데이터 플로우
 
-1. **User Location Change** triggers data fetching
-2. **Multiple APIs** called in parallel for efficiency
-3. **State Updates** propagate through React context and Zustand stores
-4. **Components Re-render** with new data
-5. **UI Updates** reflect the latest information
+1. **사용자 위치 변경**이 데이터 페칭을 트리거
+2. **다중 API**를 효율성을 위해 병렬로 호출
+3. **상태 업데이트**가 React 컨텍스트와 Zustand 스토어를 통해 전파
+4. **컴포넌트 리렌더링**이 새로운 데이터로 수행
+5. **UI 업데이트**가 최신 정보를 반영
 
-### Example Data Flow: Facility Search
+### 예시 데이터 플로우: 시설 검색
 
 ```typescript
-// 1. User types in search input
+// 1. 사용자가 검색 입력에 타이핑
 const handleSearchChange = (query: string) => {
   
-  // 2. Hook processes the search
+  // 2. 훅이 검색을 처리
   const { searchResults } = useSearchCache(query);
   
-  // 3. Service layer makes API calls
+  // 3. 서비스 레��어가 API 호출
   const results = await searchService.searchFacilities(query);
   
-  // 4. State updates trigger re-renders
+  // 4. 상태 업데이트가 리렌더링 트리거
   setSearchResults(results);
   
-  // 5. UI displays updated results
+  // 5. UI가 업데이트된 결과 표시
 };
 ```
 
 ---
 
-## 🗄️ State Management
+## 🗄️ 상태 관리
 
-### State Architecture
+### 상태 아키텍처
 
 ```typescript
-// Global State (Zustand)
+// 전역 상태 (Zustand)
 interface AppState {
   auth: AuthState;
   notifications: NotificationState;
   preferences: UserPreferences;
 }
 
-// Local State (React Hooks)
+// 로컬 상태 (React Hooks)
 interface ComponentState {
-  ui: UIState;           // Loading, errors, modal states
-  form: FormState;       // Form inputs and validation
-  cache: CacheState;     // Temporary data and API cache
+  ui: UIState;           // 로딩, 에러, 모달 상태
+  form: FormState;       // 폼 입력 및 검증
+  cache: CacheState;     // 임시 데이터 및 API 캐시
 }
 ```
 
-### State Management Strategy
+### 상태 관리 전략
 
-#### **Global State** (Zustand)
-- **Authentication** - User login state, tokens
-- **User Preferences** - Facility filters, settings
-- **Notifications** - App-wide notifications and alerts
+#### **전역 상태** (Zustand)
+- **인증** - 사용자 로그인 상태, 토큰
+- **사용자 선호도** - 시설 필터, 설정
+- **알림** - 앱 전역 알림 및 경고
 
-#### **Server State** (Custom Hooks)
-- **API Data** - Facility data, weather, congestion
-- **Cache Management** - Request deduplication and caching
-- **Real-time Updates** - Live data synchronization
+#### **서버 상태** (커스텀 훅)
+- **API 데이터** - 시설 데이터, 날씨, 혼잡도
+- **캐시 관리** - 요청 중복 제거 및 캐싱
+- **실시간 업데이트** - 라이브 데이터 동기화
 
-#### **Local State** (useState/useReducer)
-- **UI State** - Modal visibility, loading states
-- **Form State** - Input values, validation errors
-- **Temporary Data** - Component-specific data
+#### **로컬 상태** (useState/useReducer)
+- **UI 상태** - 모달 가시성, 로딩 상태
+- **폼 상태** - 입력값, 검증 에러
+- **임시 데이터** - 컴포넌트별 데이터
 
-### Example State Management
+### 상태 관리 예시
 
 ```typescript
-// Global state (Zustand)
+// 전역 상태 (Zustand)
 const useAuthStore = create<AuthState>((set) => ({
   user: null,
   login: (user) => set({ user }),
   logout: () => set({ user: null }),
 }));
 
-// Server state (Custom hook)
+// 서버 상태 (커스텀 훅)
 const useFacilities = (location: Location) => {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
@@ -272,18 +272,18 @@ const useFacilities = (location: Location) => {
   return { facilities, loading };
 };
 
-// Local state (React useState)
+// 로컬 상태 (React useState)
 const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
 ```
 
 ---
 
-## 🔌 API Integration
+## 🔌 API 통합
 
-### API Architecture
+### API 아키텍처
 
 ```typescript
-// Service Layer Structure
+// 서비스 레이어 구조
 interface ServiceLayer {
   auth: AuthService;
   facilities: FacilityService;
@@ -291,7 +291,7 @@ interface ServiceLayer {
   maps: MapService;
 }
 
-// Example Service Implementation
+// 서비스 구현 예시
 class FacilityService {
   async getFacilities(location: Location): Promise<Facility[]> {
     const response = await apiClient.get('/facilities', { params: location });
@@ -300,27 +300,27 @@ class FacilityService {
 }
 ```
 
-### External APIs
+### 외부 API
 
-#### **Kakao Map API**
-- **Purpose**: Interactive maps, geocoding, place search
-- **Integration**: Direct JavaScript SDK integration
-- **Caching**: Map tiles cached by browser
+#### **카카오맵 API**
+- **목적**: 인터랙티브 지도, 지오코딩, 장소 검색
+- **통합**: 직접 JavaScript SDK 통합
+- **캐싱**: 브라우저에 의한 지도 타일 캐싱
 
-#### **Seoul Open Data Portal**
-- **Purpose**: Public facility information
-- **Integration**: RESTful API calls through Next.js API routes
-- **Caching**: Server-side caching with revalidation
+#### **서울 열린데이터 광장**
+- **목적**: 공공시설 정보
+- **통합**: Next.js API 라우트를 통한 RESTful API 호출
+- **캐싱**: 재검증이 포함된 서버사이드 캐싱
 
-#### **Weather API**
-- **Purpose**: Real-time weather conditions
-- **Integration**: Scheduled API calls with fallback
-- **Caching**: 30-minute cache with background refresh
+#### **날씨 API**
+- **목적**: 실시간 날씨 조건
+- **통합**: 폴백이 포함된 스케줄된 API 호출
+- **캐싱**: 백그라운드 새로고침이 포함된 30분 캐시
 
-### API Error Handling
+### API 에러 처리
 
 ```typescript
-// Centralized error handling
+// 중앙화된 에러 처리
 const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
   timeout: 10000,
@@ -329,10 +329,10 @@ const apiClient = axios.create({
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Log error
-    console.error('API Error:', error);
+    // 에러 로깅
+    console.error('API 에러:', error);
     
-    // Transform error for UI
+    // UI용 에러 변환
     throw new APIError(error.message, error.status);
   }
 );
@@ -340,73 +340,73 @@ apiClient.interceptors.response.use(
 
 ---
 
-## ⚡ Performance Strategy
+## ⚡ 성능 전략
 
-### Optimization Techniques
+### 최적화 기법
 
-#### **Code Splitting**
+#### **코드 분할**
 ```typescript
-// Route-based splitting
+// 라우트 기반 분할
 const MapContainer = lazy(() => import('./MapContainer'));
 const FacilityList = lazy(() => import('./FacilityList'));
 
-// Component-based splitting
+// 컴포넌트 기반 분할
 const HeavyComponent = dynamic(() => import('./HeavyComponent'), {
   loading: () => <Skeleton />,
   ssr: false
 });
 ```
 
-#### **Data Fetching Optimization**
-- **Parallel Requests** - Multiple APIs called simultaneously
-- **Request Deduplication** - Prevent duplicate API calls
-- **Background Refresh** - Update cache while serving stale data
-- **Infinite Scrolling** - Load data on demand
+#### **데이터 페칭 최적화**
+- **병렬 요청** - 다중 API 동시 호출
+- **요청 중복 제거** - 중복 API 호출 방지
+- **백그라운드 새로고침** - 오래된 데이터를 제공하면서 캐시 업데이트
+- **무한 스크롤** - 필요에 따른 데이터 로드
 
-#### **Rendering Optimization**
-- **React.memo** - Prevent unnecessary re-renders
-- **useCallback/useMemo** - Optimize expensive computations
-- **Virtual Scrolling** - Handle large facility lists
-- **Image Optimization** - Next.js Image component with optimization
+#### **렌더링 최적화**
+- **React.memo** - 불필요한 리렌더링 방지
+- **useCallback/useMemo** - 비용이 많이 드는 계산 최적화
+- **가상 스크롤링** - 대용량 시설 목록 처리
+- **이미지 최적화** - 최적화가 포함된 Next.js Image 컴포넌트
 
-#### **Bundle Optimization**
-- **Tree Shaking** - Remove unused code
-- **Dynamic Imports** - Load features on demand
-- **Vendor Chunking** - Separate vendor and app code
-- **Compression** - Gzip/Brotli compression
+#### **번들 최적화**
+- **트리 셰이킹** - 사용하지 않는 코드 제거
+- **동적 임포트** - 필요에 따른 기능 로드
+- **벤더 청킹** - 벤더와 앱 코드 분리
+- **압축** - Gzip/Brotli 압축
 
-### Performance Metrics
+### 성능 지표
 
-- **First Contentful Paint (FCP)** < 1.5s
-- **Largest Contentful Paint (LCP)** < 2.5s
+- **First Contentful Paint (FCP)** < 1.5초
+- **Largest Contentful Paint (LCP)** < 2.5초
 - **First Input Delay (FID)** < 100ms
 - **Cumulative Layout Shift (CLS)** < 0.1
 
 ---
 
-## 🔒 Security Considerations
+## 🔒 보안 고려사항
 
-### Security Measures
+### 보안 조치
 
-#### **API Security**
-- **API Key Management** - Environment variables, never in client code
-- **Request Validation** - Input sanitization and validation
-- **Rate Limiting** - Prevent API abuse
-- **CORS Configuration** - Restricted to allowed origins
+#### **API 보안**
+- **API 키 관리** - 환경 변수, 클라이언트 코드에 절대 포함 안 함
+- **요청 검증** - 입력 살균 및 검증
+- **속도 제한** - API 남용 방지
+- **CORS 설정** - 허용된 출처로 제한
 
-#### **Authentication Security**
-- **OAuth 2.0** - Secure Kakao Login integration
-- **Token Management** - Secure storage and refresh patterns
-- **Session Security** - HttpOnly cookies, secure flags
-- **CSRF Protection** - Anti-CSRF tokens
+#### **인증 보안**
+- **OAuth 2.0** - 안전한 카카오 로그인 통합
+- **토큰 관리** - 안전한 저장 및 새로고침 패턴
+- **세션 보안** - HttpOnly 쿠키, 보안 플래그
+- **CSRF 보호** - Anti-CSRF 토큰
 
-#### **Client-Side Security**
-- **XSS Prevention** - React's built-in protection + CSP headers
-- **Data Validation** - Client and server-side validation
-- **Secure Headers** - Security headers via Next.js config
-- **Dependency Scanning** - Regular security audits
+#### **클라이언트사이드 보안**
+- **XSS 방지** - React의 내장 보호 + CSP 헤더
+- **데이터 검증** - 클라이언트 및 서버사이드 검증
+- **보안 헤더** - Next.js 설정을 통한 보안 헤더
+- **의존성 스캔** - 정기적인 보안 감사
 
-### Security Headers
+### 보안 헤더
 
 ```typescript
 // next.config.ts
@@ -436,121 +436,132 @@ const securityHeaders = [
 
 ---
 
-## 🚀 Deployment Architecture
+## 🚀 배포 아키텍처
 
-### Deployment Strategy
+### 배포 전략
 
 ```mermaid
 graph TD
-    A[GitHub Repository] --> B[Vercel Build]
-    B --> C[Static Generation]
-    C --> D[CDN Distribution]
-    D --> E[Edge Functions]
-    E --> F[User Requests]
+    A[GitHub 저장소] --> B[Vercel 빌드]
+    B --> C[정적 생성]
+    C --> D[CDN 배포]
+    D --> E[엣지 함수]
+    E --> F[사용자 요청]
 ```
 
-### Environment Configuration
+### 환경 설정
 
-#### **Development**
-- **Local Development** - `npm run dev` with hot reload
-- **API Mocking** - Mock APIs for offline development
-- **Debug Tools** - React DevTools, performance profiling
+#### **개발 환경**
+- **로컬 개발** - 핫 리로드가 포함된 `npm run dev`
+- **API 모킹** - 오프라인 개발을 위한 모의 API
+- **디버그 도구** - React DevTools, 성능 프로파일링
 
-#### **Staging**
-- **Preview Deployments** - Automatic Vercel preview builds
-- **Integration Testing** - Full API integration testing
-- **Performance Testing** - Lighthouse CI integration
+#### **스테이징 환경**
+- **프리뷰 배포** - 자동 Vercel 프리뷰 빌드
+- **통합 테스트** - 전체 API 통합 테스트
+- **성능 테스트** - Lighthouse CI 통합
 
-#### **Production**
-- **Static Generation** - Pre-built pages for optimal performance
-- **Edge Optimization** - Global CDN distribution
-- **Monitoring** - Real-time performance and error monitoring
+#### **프로덕션 환경**
+- **정적 생성** - 최적 성능을 위한 사전 빌드 페이지
+- **엣지 최적화** - 글로벌 CDN 배포
+- **모니터링** - 실시간 성능 및 에러 모니터링
 
-### Infrastructure
+### 인프라
 
-- **Hosting**: Vercel (Next.js optimized)
+- **호스팅**: Vercel (Next.js 최적화)
 - **CDN**: Vercel Edge Network
-- **Analytics**: Vercel Analytics + Google Analytics
-- **Monitoring**: Sentry for error tracking
-- **Performance**: Vercel Speed Insights
+- **분석**: Vercel Analytics + Google Analytics
+- **모니터링**: 에러 추적을 위한 Sentry
+- **성능**: Vercel Speed Insights
 
 ---
 
-## 🔄 Development Workflow
+## 🔄 개발 워크플로우
 
-### Git Workflow
+### Git 워크플로우
 
 ```mermaid
 graph TD
-    A[Feature Branch] --> B[Development]
-    B --> C[Code Review]
-    C --> D[Automated Testing]
-    D --> E[Staging Deployment]
-    E --> F[Production Deployment]
+    A[기능 브랜치] --> B[개발]
+    B --> C[코드 리뷰]
+    C --> D[자동화된 테스트]
+    D --> E[스테이징 배포]
+    E --> F[프로덕션 배포]
 ```
 
-### Quality Gates
+### 품질 게이트
 
-1. **Code Quality** - ESLint, Prettier, TypeScript
-2. **Testing** - Unit tests, integration tests
-3. **Performance** - Bundle analysis, Lighthouse
-4. **Security** - Dependency audit, security scan
-5. **Accessibility** - axe-core testing, manual review
+1. **코드 품질** - ESLint, Prettier, TypeScript
+2. **테스트** - 단위 테스트, 통합 테스트
+3. **성능** - 번들 분석, Lighthouse
+4. **보안** - 의존성 감사, 보안 스캔
+5. **접근성** - axe-core 테스트, 수동 검토
 
 ---
 
-## 📊 Monitoring and Analytics
+## 📊 모니터링 및 분석
 
-### Performance Monitoring
+### 성능 모니터링
 
-- **Core Web Vitals** - LCP, FID, CLS tracking
-- **Custom Metrics** - API response times, user interactions
-- **Error Tracking** - JavaScript errors, API failures
-- **User Analytics** - Usage patterns, feature adoption
+- **Core Web Vitals** - LCP, FID, CLS 추적
+- **커스텀 지표** - API 응답 시간, 사용자 상호작용
+- **에러 추적** - JavaScript 에러, API 실패
+- **사용자 분석** - 사용 패턴, 기능 채택
 
-### Logging Strategy
+### 로깅 전략
 
 ```typescript
-// Structured logging
+// 구조화된 로깅
 const logger = {
   info: (message: string, context?: object) => {
-    console.log(JSON.stringify({ level: 'info', message, context, timestamp: new Date().toISOString() }));
+    console.log(JSON.stringify({ 
+      level: 'info', 
+      message, 
+      context, 
+      timestamp: new Date().toISOString() 
+    }));
   },
   error: (message: string, error?: Error, context?: object) => {
-    console.error(JSON.stringify({ level: 'error', message, error: error?.stack, context, timestamp: new Date().toISOString() }));
+    console.error(JSON.stringify({ 
+      level: 'error', 
+      message, 
+      error: error?.stack, 
+      context, 
+      timestamp: new Date().toISOString() 
+    }));
   }
 };
 ```
 
 ---
 
-## 🚧 Future Architecture Considerations
+## 🚧 향후 아키텍처 고려사항
 
-### Scalability Plans
+### 확장성 계획
 
-- **Micro-Frontend Architecture** - Split into domain-specific applications
-- **GraphQL Integration** - Unified data layer for complex queries
-- **Service Workers** - Offline functionality and background sync
-- **WebAssembly** - Performance-critical computations
+- **마이크로 프론트엔드 아키텍처** - 도메인별 애플리케이션으로 분할
+- **GraphQL 통합** - 복잡한 쿼리를 위한 통합 데이터 레이어
+- **서비스 워커** - 오프라인 기능 및 백그라운드 동기화
+- **WebAssembly** - 성능이 중요한 계산
 
-### Technical Debt Management
+### 기술 부채 관리
 
-- **Refactoring Roadmap** - Systematic improvement of legacy code
-- **Dependency Updates** - Regular updates with compatibility testing
-- **Architecture Reviews** - Quarterly architecture assessment
-- **Performance Budgets** - Automated performance regression prevention
-
----
-
-## 📚 Additional Resources
-
-- **[API Documentation](docs/api/)** - Detailed API reference
-- **[Component Storybook](https://storybook.seoul-fit.com)** - UI component library
-- **[Performance Metrics](https://performance.seoul-fit.com)** - Real-time performance dashboard
-- **[Architecture Decision Records](docs/architecture/adr/)** - Architectural decisions history
+- **리팩토링 로드맵** - 레거시 코드의 체계적 개선
+- **의존성 업데이트** - 호환성 테스트가 포함된 정기 업데이트
+- **아키텍처 검토** - 분기별 아키텍처 평가
+- **성능 예산** - 자동화된 성능 회귀 방지
 
 ---
 
-This architecture is designed to be **scalable**, **maintainable**, and **performant** while providing an excellent user experience for discovering Seoul's public facilities. The modular design allows for easy feature additions and modifications as the application evolves.
+## 📚 추가 리소스
 
-For questions about the architecture or suggestions for improvements, please see our [Contributing Guide](CONTRIBUTING.md).
+- **[API 문서](docs/api/)** - 상세한 API 참조
+- **[컴포넌트 스토리북](https://storybook.seoul-fit.com)** - UI 컴포넌트 라이브러리
+- **[성능 지표](https://performance.seoul-fit.com)** - 실시간 성능 대시보드
+- **[아키텍처 결정 기록](docs/architecture/adr/)** - 아키텍처 결정 히스토리
+
+---
+
+이 아키텍처는 서울의 공공시설을 발견하는 뛰어난 사용자 경험을 제공하면서 **확장 가능하고**, **유지보수 가능하며**, **성능이 우수하도록** 설계되었습니다. 모듈러 설계는 애플리케이션이 발전함에 따라 쉬운 기능 추가와 수정을 가능하게 합니다.
+
+아키텍처에 대한 질문이나 개선 제안이 있으시면 [기여 가이드](CONTRIBUTING.md)를 참조해 주세요.

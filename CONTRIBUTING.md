@@ -1,157 +1,157 @@
-# Contributing to Seoul Fit Frontend 🤝
+# Seoul Fit Frontend 기여하기 🤝
 
-Welcome to the Seoul Fit Frontend project! We're excited that you want to contribute. This document will guide you through the contribution process and help you get started.
+Seoul Fit Frontend 프로젝트에 오신 것을 환영합니다! 여러분의 기여에 대해 매우 기쁘게 생각합니다. 이 문서는 기여 과정을 안내하고 시작하는 데 도움을 드릴 것입니다.
 
-## 📋 Table of Contents
+## 📋 목차
 
-- [Code of Conduct](#code-of-conduct)
-- [Getting Started](#getting-started)
-- [Development Setup](#development-setup)
-- [Development Workflow](#development-workflow)
-- [Coding Guidelines](#coding-guidelines)
-- [Commit Convention](#commit-convention)
-- [Pull Request Process](#pull-request-process)
-- [Issue Guidelines](#issue-guidelines)
-- [Community](#community)
-
----
-
-## 📜 Code of Conduct
-
-This project adheres to a code of conduct that we expect all contributors to follow. Please read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before contributing.
-
-**TL;DR**: Be respectful, inclusive, and professional in all interactions.
+- [행동 강령](#행동-강령)
+- [시작하기](#시작하기)
+- [개발 환경 설정](#개발-환경-설정)
+- [개발 워크플로우](#개발-워크플로우)
+- [코딩 가이드라인](#코딩-가이드라인)
+- [커밋 컨벤션](#커밋-컨벤션)
+- [Pull Request 프로세스](#pull-request-프로세스)
+- [이슈 가이드라인](#이슈-가이드라인)
+- [커뮤니티](#커뮤니티)
 
 ---
 
-## 🚀 Getting Started
+## 📜 행동 강령
 
-### Ways to Contribute
+이 프로젝트는 모든 기여자가 따라야 할 행동 강령을 준수합니다. 기여하기 전에 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)를 읽어주세요.
 
-- **🐛 Bug Reports** - Help us identify and fix issues
-- **💡 Feature Requests** - Suggest new features or improvements
-- **📝 Documentation** - Improve docs, add examples, fix typos
-- **🔧 Code** - Fix bugs, implement features, optimize performance
-- **🎨 Design** - UI/UX improvements, accessibility enhancements
-- **🧪 Testing** - Write tests, improve test coverage
-- **🌍 Translation** - Help make the app multilingual
-
-### Before You Start
-
-1. **Search existing issues** to avoid duplicates
-2. **Check the roadmap** in [docs/community/roadmap.md](docs/community/roadmap.md)
-3. **Join our discussions** on GitHub Discussions
-4. **Ask questions** if you're unsure about anything
+**요약**: 모든 상호작용에서 존중하고, 포용적이며, 전문적으로 행동해 주세요.
 
 ---
 
-## 💻 Development Setup
+## 🚀 시작하기
 
-### Prerequisites
+### 기여 방법
 
-- **Node.js** 18.0 or higher
-- **npm** 9.0 or higher
-- **Git** with proper configuration
-- **VSCode** (recommended) with our extension pack
+- **🐛 버그 리포트** - 문제를 식별하고 수정하는 데 도움
+- **💡 기능 요청** - 새로운 기능이나 개선사항 제안
+- **📝 문서화** - 문서 개선, 예시 추가, 오타 수정
+- **🔧 코드** - 버그 수정, 기능 구현, 성능 최적화
+- **🎨 디자인** - UI/UX 개선, 접근성 향상
+- **🧪 테스트** - 테스트 작성, 테스트 커버리지 개선
+- **🌍 번역** - 앱을 다국어로 만드는 데 도움
 
-### Environment Setup
+### 시작하기 전에
 
-1. **Fork and clone** the repository:
+1. **기존 이슈를 검색**하여 중복을 피하세요
+2. [docs/community/roadmap.md](docs/community/roadmap.md)에서 **로드맵을 확인**하세요
+3. GitHub Discussions에서 **토론에 참여**하세요
+4. 확실하지 않은 것이 있으면 **질문**하세요
+
+---
+
+## 💻 개발 환경 설정
+
+### 사전 요구사항
+
+- **Node.js** 18.0 이상
+- **npm** 9.0 이상
+- **Git** 적절한 설정 포함
+- **VSCode** (권장) 및 확장 팩
+
+### 환경 설정
+
+1. **저장소 포크 및 클론**:
    ```bash
    git clone https://github.com/YOUR_USERNAME/seoul-fit-fe.git
    cd seoul-fit-fe
    ```
 
-2. **Install dependencies**:
+2. **의존성 설치**:
    ```bash
    npm install
    ```
 
-3. **Set up environment variables**:
+3. **환경 변수 설정**:
    ```bash
    cp .env.example .env.local
-   # Fill in your API keys (see README.md for details)
+   # API 키를 입력하세요 (자세한 내용은 README.md 참조)
    ```
 
-4. **Install recommended VSCode extensions**:
+4. **권장 VSCode 확장 설치**:
    ```bash
-   # VSCode will prompt you to install recommended extensions
-   # Or manually install from .vscode/extensions.json
+   # VSCode가 권장 확장을 설치하라고 안내할 것입니다
+   # 또는 .vscode/extensions.json에서 수동으로 설치
    ```
 
-5. **Verify setup**:
+5. **설정 확인**:
    ```bash
-   npm run validate  # Runs linting, type checking, and formatting checks
-   npm run dev       # Starts development server
+   npm run validate  # 린팅, 타입 검사, 포맷팅 검사 실행
+   npm run dev       # 개발 서버 시작
    ```
 
 ---
 
-## 🔄 Development Workflow
+## 🔄 개발 워크플로우
 
-### 1. Create a Branch
+### 1. 브랜치 생성
 
-Always create a new branch for your work:
+항상 작업을 위한 새 브랜치를 생성하세요:
 
 ```bash
-# For features
+# 기능용
 git checkout -b feature/your-feature-name
 
-# For bug fixes
+# 버그 수정용
 git checkout -b fix/issue-description
 
-# For documentation
+# 문서용
 git checkout -b docs/improvement-description
 ```
 
-### 2. Make Changes
+### 2. 변경사항 작성
 
-- **Write clean, readable code** following our style guide
-- **Add comments** for complex logic
-- **Update documentation** if needed
-- **Write or update tests** for your changes
+- 스타일 가이드를 따라 **깔끔하고 읽기 쉬운 코드** 작성
+- 복잡한 로직에 **주석 추가**
+- 필요시 **문서 업데이트**
+- 변경사항에 대한 **테스트 작성 또는 업데이트**
 
-### 3. Test Your Changes
+### 3. 변경사항 테스트
 
 ```bash
-# Run all quality checks
+# 모든 품질 검사 실행
 npm run validate
 
-# Test the application
+# 애플리케이션 테스트
 npm run dev
-npm run build  # Ensure production build works
+npm run build  # 프로덕션 빌드가 작동하는지 확인
 ```
 
-### 4. Commit Changes
+### 4. 변경사항 커밋
 
-Follow our [commit convention](#commit-convention):
+[커밋 컨벤션](#커밋-컨벤션)을 따르세요:
 
 ```bash
 git add .
 git commit -m "feat: add facility filtering by distance"
 ```
 
-### 5. Push and Create PR
+### 5. 푸시 및 PR 생성
 
 ```bash
 git push origin feature/your-feature-name
 ```
 
-Then create a Pull Request on GitHub.
+그런 다음 GitHub에서 Pull Request를 생성하세요.
 
 ---
 
-## 📋 Coding Guidelines
+## 📋 코딩 가이드라인
 
-### TypeScript Guidelines
+### TypeScript 가이드라인
 
-- **Use strict TypeScript** - No `any` types unless absolutely necessary
-- **Define proper interfaces** for all data structures
-- **Use type guards** for runtime type checking
-- **Prefer `const` assertions** over type annotations when possible
+- **엄격한 TypeScript 사용** - 절대적으로 필요한 경우가 아니면 `any` 타입 사용 금지
+- 모든 데이터 구조에 대해 **적절한 인터페이스 정의**
+- 런타임 타입 검사를 위한 **타입 가드 사용**
+- 가능한 경우 타입 주석보다 **`const` 어설션 선호**
 
 ```typescript
-// ✅ Good
+// ✅ 좋음
 interface FacilityData {
   id: string;
   name: string;
@@ -161,69 +161,69 @@ interface FacilityData {
   };
 }
 
-// ❌ Avoid
+// ❌ 피하세요
 const facilityData: any = getFacilityData();
 ```
 
-### React Guidelines
+### React 가이드라인
 
-- **Use functional components** with hooks
-- **Prefer custom hooks** for logic reuse
-- **Use TypeScript with props** and state
-- **Follow component composition** patterns
+- 훅과 함께 **함수형 컴포넌트 사용**
+- 로직 재사용을 위해 **커스텀 훅 선호**
+- props와 state에 **TypeScript 사용**
+- **컴포넌트 합성** 패턴 따르기
 
 ```typescript
-// ✅ Good
+// ✅ 좋음
 interface MapViewProps {
   facilities: Facility[];
   onFacilitySelect: (facility: Facility) => void;
 }
 
 export function MapView({ facilities, onFacilitySelect }: MapViewProps) {
-  // Component implementation
+  // 컴포넌트 구현
 }
 ```
 
-### CSS Guidelines
+### CSS 가이드라인
 
-- **Use TailwindCSS** for styling
-- **Create reusable components** with Radix UI
-- **Follow mobile-first** responsive design
-- **Ensure accessibility** (WCAG 2.1 AA)
+- 스타일링에 **TailwindCSS 사용**
+- Radix UI로 **재사용 가능한 컴포넌트 생성**
+- **모바일 우선** 반응형 디자인 따르기
+- **접근성 보장** (WCAG 2.1 AA)
 
 ```typescript
-// ✅ Good - Using TailwindCSS classes
+// ✅ 좋음 - TailwindCSS 클래스 사용
 <button className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md">
-  Click me
+  클릭하세요
 </button>
 
-// ❌ Avoid - Inline styles
+// ❌ 피하세요 - 인라인 스타일
 <button style={{ backgroundColor: 'blue', color: 'white' }}>
-  Click me
+  클릭하세요
 </button>
 ```
 
-### Performance Guidelines
+### 성능 가이드라인
 
-- **Use React.memo** for expensive components
-- **Implement virtualization** for large lists
-- **Optimize images** and assets
-- **Minimize bundle size**
+- 비용이 많이 드는 컴포넌트에 **React.memo 사용**
+- 대용량 목록에 **가상화 구현**
+- **이미지와 자산 최적화**
+- **번들 크기 최소화**
 
 ```typescript
-// ✅ Good - Memoized expensive component
+// ✅ 좋음 - 메모화된 비용이 많이 드는 컴포넌트
 export const FacilityList = React.memo(({ facilities }: Props) => {
-  // Component implementation
+  // 컴포넌트 구현
 });
 ```
 
 ---
 
-## 📝 Commit Convention
+## 📝 커밋 컨벤션
 
-We use [Conventional Commits](https://www.conventionalcommits.org/) specification:
+[Conventional Commits](https://www.conventionalcommits.org/) 명세를 사용합니다:
 
-### Format
+### 형식
 ```
 <type>[optional scope]: <description>
 
@@ -232,30 +232,30 @@ We use [Conventional Commits](https://www.conventionalcommits.org/) specificatio
 [optional footer(s)]
 ```
 
-### Types
+### 타입
 
-- **feat**: A new feature
-- **fix**: A bug fix
-- **docs**: Documentation only changes
-- **style**: Changes that don't affect code meaning (white-space, formatting)
-- **refactor**: Code change that neither fixes a bug nor adds a feature
-- **perf**: Performance improvements
-- **test**: Adding missing tests or correcting existing tests
-- **chore**: Changes to build process or auxiliary tools
+- **feat**: 새로운 기능
+- **fix**: 버그 수정
+- **docs**: 문서만 변경
+- **style**: 코드 의미에 영향을 주지 않는 변경 (공백, 포맷팅)
+- **refactor**: 버그를 수정하거나 기능을 추가하지 않는 코드 변경
+- **perf**: 성능 개선
+- **test**: 누락된 테스트 추가 또는 기존 테스트 수정
+- **chore**: 빌드 프로세스나 보조 도구 변경
 
-### Examples
+### 예시
 
 ```bash
-# Feature
+# 기능
 git commit -m "feat(map): add facility clustering for better performance"
 
-# Bug fix
+# 버그 수정
 git commit -m "fix(auth): resolve kakao login redirect issue"
 
-# Documentation
+# 문서
 git commit -m "docs: add API key setup instructions to README"
 
-# Breaking change
+# 중대한 변경
 git commit -m "feat(api): change facility data structure
 
 BREAKING CHANGE: facility.location is now facility.coordinates"
@@ -263,121 +263,121 @@ BREAKING CHANGE: facility.location is now facility.coordinates"
 
 ---
 
-## 🔍 Pull Request Process
+## 🔍 Pull Request 프로세스
 
-### Before Submitting
+### 제출 전
 
-- [ ] **All tests pass** (`npm run validate`)
-- [ ] **Code follows style guidelines**
-- [ ] **Documentation is updated** if needed
-- [ ] **Commit messages follow convention**
-- [ ] **Branch is up to date** with main
+- [ ] **모든 테스트 통과** (`npm run validate`)
+- [ ] **코드가 스타일 가이드라인을 따름**
+- [ ] **필요시 문서 업데이트**
+- [ ] **커밋 메시지가 컨벤션을 따름**
+- [ ] **브랜치가 main과 최신 상태**
 
-### PR Template
+### PR 템플릿
 
-Use our PR template to provide necessary information:
+필요한 정보를 제공하기 위해 PR 템플릿을 사용하세요:
 
 ```markdown
-## 📝 Description
-Brief description of the changes
+## 📝 설명
+변경사항에 대한 간단한 설명
 
-## 🎯 Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Documentation update
-- [ ] Refactoring
-- [ ] Performance improvement
+## 🎯 변경 타입
+- [ ] 버그 수정
+- [ ] 새로운 기능
+- [ ] 문서 업데이트
+- [ ] 리팩토링
+- [ ] 성능 개선
 
-## 🧪 Testing
-How has this been tested?
+## 🧪 테스트
+어떻게 테스트되었나요?
 
-## 📋 Checklist
-- [ ] Code follows style guidelines
-- [ ] Self-review completed
-- [ ] Comments added for complex code
-- [ ] Documentation updated
-- [ ] No new warnings introduced
+## 📋 체크리스트
+- [ ] 코드가 스타일 가이드라인을 따름
+- [ ] 자체 검토 완료
+- [ ] 복잡한 코드에 주석 추가
+- [ ] 문서 업데이트
+- [ ] 새로운 경고 없음
 ```
 
-### Review Process
+### 검토 프로세스
 
-1. **Automated checks** must pass (ESLint, TypeScript, build)
-2. **At least one reviewer** approval required
-3. **Address all feedback** before merging
-4. **Squash and merge** for clean history
-
----
-
-## 🐛 Issue Guidelines
-
-### Bug Reports
-
-Use the bug report template and include:
-
-- **Clear description** of the issue
-- **Steps to reproduce** the bug
-- **Expected vs actual behavior**
-- **Screenshots** if applicable
-- **Environment details** (OS, browser, version)
-- **Console errors** if any
-
-### Feature Requests
-
-Use the feature request template and include:
-
-- **Problem description** you're trying to solve
-- **Proposed solution** with details
-- **Alternative solutions** considered
-- **Additional context** or mockups
-
-### Questions
-
-- Use **GitHub Discussions** for questions
-- Search existing discussions first
-- Provide context and what you've tried
+1. **자동화된 검사**가 통과해야 함 (ESLint, TypeScript, 빌드)
+2. **최소 한 명의 검토자** 승인 필요
+3. 병합 전 **모든 피드백 해결**
+4. 깔끔한 히스토리를 위한 **스쿼시 및 병합**
 
 ---
 
-## 🎨 Design Guidelines
+## 🐛 이슈 가이드라인
 
-### UI/UX Principles
+### 버그 리포트
 
-- **Accessibility first** - WCAG 2.1 AA compliance
-- **Mobile-first** responsive design
-- **Consistent design system** using Radix UI
-- **Intuitive navigation** and user flows
+버그 리포트 템플릿을 사용하고 다음을 포함하세요:
 
-### Visual Guidelines
+- 이슈에 대한 **명확한 설명**
+- 버그를 **재현하는 단계**
+- **예상 vs 실제 동작**
+- 해당되는 경우 **스크린샷**
+- **환경 세부사항** (OS, 브라우저, 버전)
+- 있는 경우 **콘솔 에러**
 
-- **Use semantic colors** from our design tokens
-- **Maintain consistent spacing** using Tailwind spacing scale
-- **Follow typography hierarchy**
-- **Ensure sufficient color contrast**
+### 기능 요청
+
+기능 요청 템플릿을 사용하고 다음을 포함하세요:
+
+- 해결하려는 **문제 설명**
+- 세부사항이 포함된 **제안된 솔루션**
+- 고려된 **대안 솔루션**
+- **추가 컨텍스트**나 목업
+
+### 질문
+
+- 질문에는 **GitHub Discussions** 사용
+- 먼저 기존 토론 검색
+- 컨텍스트와 시도한 것 제공
 
 ---
 
-## 🧪 Testing Guidelines
+## 🎨 디자인 가이드라인
 
-### Testing Strategy
+### UI/UX 원칙
 
-- **Unit tests** for utility functions
-- **Component tests** for UI components
-- **Integration tests** for API interactions
-- **E2E tests** for critical user flows
+- **접근성 우선** - WCAG 2.1 AA 준수
+- **모바일 우선** 반응형 디자인
+- Radix UI를 사용한 **일관된 디자인 시스템**
+- **직관적인 네비게이션**과 사용자 플로우
 
-### Test Structure
+### 시각적 가이드라인
+
+- 디자인 토큰에서 **시맨틱 색상 사용**
+- Tailwind 간격 스케일을 사용한 **일관된 간격 유지**
+- **타이포그래피 계층 구조 따르기**
+- **충분한 색상 대비 보장**
+
+---
+
+## 🧪 테스트 가이드라인
+
+### 테스트 전략
+
+- 유틸리티 함수에 대한 **단위 테스트**
+- UI 컴포넌트에 대한 **컴포넌트 테스트**
+- API 상호작용에 대한 **통합 테스트**
+- 중요한 사용자 플로우에 대한 **E2E 테스트**
+
+### 테스트 구조
 
 ```typescript
-// ✅ Good test structure
+// ✅ 좋은 테스트 구조
 describe('FacilityFilter', () => {
   it('should filter facilities by category', () => {
-    // Arrange
+    // 준비
     const facilities = createMockFacilities();
     
-    // Act
+    // 실행
     const result = filterFacilitiesByCategory(facilities, 'park');
     
-    // Assert
+    // 검증
     expect(result).toHaveLength(2);
     expect(result.every(f => f.category === 'park')).toBe(true);
   });
@@ -386,74 +386,74 @@ describe('FacilityFilter', () => {
 
 ---
 
-## 📚 Documentation
+## 📚 문서화
 
-### Documentation Types
+### 문서 타입
 
-- **API docs** - Document all public APIs
-- **Component docs** - Storybook stories for UI components  
-- **Architecture docs** - High-level system design
-- **User guides** - How-to guides for users
+- **API 문서** - 모든 공개 API 문서화
+- **컴포넌트 문서** - UI 컴포넌트를 위한 Storybook 스토리
+- **아키텍처 문서** - 고수준 시스템 설계
+- **사용자 가이드** - 사용자를 위한 사용법 가이드
 
-### Writing Guidelines
+### 작성 가이드라인
 
-- **Clear and concise** language
-- **Code examples** for all APIs
-- **Step-by-step instructions** for complex tasks
-- **Keep documentation updated** with code changes
-
----
-
-## 🌍 Internationalization
-
-### Adding Translations
-
-1. **Extract text** to translation files
-2. **Use i18n keys** instead of hardcoded text
-3. **Test with different languages**
-4. **Consider text expansion** in layouts
-
-### Supported Languages
-
-- **Korean** (primary)
-- **English** (secondary)
-- **Japanese** (planned)
+- **명확하고 간결한** 언어
+- 모든 API에 대한 **코드 예시**
+- 복잡한 작업에 대한 **단계별 지침**
+- 코드 변경과 함께 **문서 최신 상태 유지**
 
 ---
 
-## 🆘 Getting Help
+## 🌍 국제화
 
-### Where to Ask
+### 번역 추가
 
-- **GitHub Issues** - Bug reports and feature requests
-- **GitHub Discussions** - General questions and discussions
-- **Discord** - Real-time chat (coming soon)
+1. 번역 파일로 **텍스트 추출**
+2. 하드코딩된 텍스트 대신 **i18n 키 사용**
+3. **다른 언어로 테스트**
+4. 레이아웃에서 **텍스트 확장 고려**
 
-### Response Time
+### 지원 언어
 
-- **Bug reports** - Within 48 hours
-- **Feature requests** - Within 1 week
-- **Questions** - Within 24 hours
-
----
-
-## 🏆 Recognition
-
-We value all contributions and recognize contributors through:
-
-- **All Contributors** specification
-- **Contributor spotlight** in releases
-- **Special thanks** in documentation
-- **Maintainer invitation** for significant contributors
+- **한국어** (주요)
+- **영어** (보조)
+- **일본어** (계획됨)
 
 ---
 
-## 📞 Contact
+## 🆘 도움 받기
 
-- **Maintainers**: [List of maintainers]
-- **Email**: project@example.com
-- **Twitter**: @SeoulFitApp
+### 질문할 곳
+
+- **GitHub Issues** - 버그 리포트 및 기능 요청
+- **GitHub Discussions** - 일반적인 질문 및 토론
+- **Discord** - 실시간 채팅 (곧 제공 예정)
+
+### 응답 시간
+
+- **버그 리포트** - 48시간 이내
+- **기능 요청** - 1주일 이내
+- **질문** - 24시간 이내
 
 ---
 
-Thank you for contributing to Seoul Fit Frontend! Your contributions help make Seoul more accessible and enjoyable for everyone. 🏙️❤️
+## 🏆 인정
+
+우리는 모든 기여를 소중히 여기며 다음을 통해 기여자를 인정합니다:
+
+- **All Contributors** 명세
+- 릴리스에서 **기여자 스포트라이트**
+- 문서에서 **특별 감사**
+- 중요한 기여자에 대한 **메인테이너 초대**
+
+---
+
+## 📞 연락처
+
+- **메인테이너**: [메인테이너 목록]
+- **이메일**: project@example.com
+- **트위터**: @SeoulFitApp
+
+---
+
+Seoul Fit Frontend에 기여해 주셔서 감사합니다! 여러분의 기여는 서울을 모든 사람에게 더 접근 가능하고 즐거운 곳으로 만드는 데 도움이 됩니다. 🏙️❤️
