@@ -122,16 +122,7 @@ export interface SearchHistoryItem {
   selectedItem?: SearchItem;
 }
 
-// POI API 응답 타입
-interface POIItem {
-  id: number;
-  name: string;
-  address?: string;
-  remark?: string;
-  aliases?: string;
-  ref_table: string;
-  ref_id: number;
-}
+// POI 데이터는 FacilityProvider에서 처리하므로 여기서는 제거됨
 
 // 검색 히스토리 관리 상수
 const SEARCH_HISTORY_KEY = 'seoul-fit-search-history';
@@ -230,11 +221,10 @@ export const useSearchCache = () => {
 
       console.log('검색 데이터 로딩 시작...');
 
-      // 3개 API 병렬 호출
-      const [subwayRes, bikeRes, poiRes] = await Promise.allSettled([
+      // 2개 API 병렬 호출 (POI는 FacilityProvider에서 처리)
+      const [subwayRes, bikeRes] = await Promise.allSettled([
         fetch('/api/subway?lat=37.5665&lng=126.9780'),
         fetch('/api/bike-stations?lat=37.5665&lng=126.9780&radius=30'),
-        fetch('/api/search/index?page=0&size=20000'),
       ]);
 
       const combinedData: SearchItem[] = [];
@@ -301,40 +291,8 @@ export const useSearchCache = () => {
         console.warn('따릉이 데이터 로드 실패');
       }
 
-      // POI 데이터 처리
-      if (poiRes.status === 'fulfilled' && poiRes.value.ok) {
-        try {
-          const poiData = await poiRes.value.json();
-          console.log(
-            'POI API 응답 형태:',
-            typeof poiData,
-            Array.isArray(poiData) ? `배열 길이: ${poiData.length}` : '배열 아님'
-          );
-
-          if (Array.isArray(poiData)) {
-            const poiItems: SearchItem[] = poiData.map((item: POIItem) => ({
-              id: `poi_${item.id}`,
-              name: item.name,
-              address: item.address,
-              remark: item.remark,
-              aliases: item.aliases,
-              category: getCategoryFromRefTable(item.ref_table),
-              ref_table: item.ref_table,
-              ref_id: item.ref_id,
-            }));
-            combinedData.push(...poiItems);
-            console.log(`POI 데이터 로드 성공: ${poiItems.length}개`);
-          } else {
-            console.warn('POI 데이터가 배열 형태가 아님:', poiData);
-          }
-        } catch (parseError) {
-          console.error('POI 데이터 JSON 파싱 실패:', parseError);
-        }
-      } else if (poiRes.status === 'fulfilled') {
-        console.warn(`POI API 호출 실패: ${poiRes.value.status} ${poiRes.value.statusText}`);
-      } else {
-        console.warn('POI API 호출 rejected:', poiRes.reason);
-      }
+      // POI 데이터는 FacilityProvider에서 처리하므로 여기서는 제외
+      console.log('POI 데이터는 FacilityProvider에서 별도 처리됩니다.');
 
       setSearchCache(combinedData);
       console.log(`총 검색 데이터: ${combinedData.length}개`);

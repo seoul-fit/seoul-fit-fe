@@ -1,7 +1,7 @@
 // components/map/MapView.tsx
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
@@ -13,6 +13,8 @@ import { MapControls } from './MapControls';
 import { MapStatusIndicator } from './MapStatusIndicator';
 // import { FacilityBottomSheet } from './FacilityBottomSheet'; // 사용하지 않음
 import { useMapMarkers } from '@/hooks/useMapMarkers';
+import { useCongestion } from '@/hooks/useCongestion';
+import { useWeather } from '@/hooks/useWeather';
 import { FACILITY_CATEGORIES } from '@/lib/types';
 import { useMapContext } from './providers/MapProvider';
 import { useFacilityContext } from './providers/FacilityProvider';
@@ -48,21 +50,12 @@ interface MapViewProps {
 
 export const MapView: React.FC<MapViewProps> = ({
   loading = false,
-  showCongestion = false,
-  congestionData = null,
-  congestionLoading = false,
-  congestionError = null,
-  showWeather = false,
-  weatherData = null,
-  weatherLoading = false,
-  weatherError = null,
-  onRefreshCongestion,
-  onRefreshWeather,
-  onToggleCongestion,
-  onToggleWeather,
   onMoveToCurrentLocation,
   onMapClick,
 }) => {
+  // 렌더링 확인용 로그
+  console.log('[MapView] 컴포넌트 렌더링됨');
+  
   // Provider에서 데이터 가져오기
   const { mapInstance: contextMapInstance, mapStatus: contextMapStatus } = useMapContext();
   const { 
@@ -70,14 +63,58 @@ export const MapView: React.FC<MapViewProps> = ({
     getFilteredFacilities,
     activeCategories,
     toggleCategory,
-    selectFacility 
+    selectFacility,
+    updateLocation,
+    currentLocation
   } = useFacilityContext();
+  
+  console.log('[MapView] Provider 데이터 확인:', {
+    mapInstance: !!contextMapInstance,
+    mapStatus: contextMapStatus,
+    facilitiesLength: facilities?.length || 0,
+    currentLocation
+  });
+
+  // 실시간 혼잡도 데이터 훅
+  const {
+    showCongestion,
+    congestionData,
+    congestionLoading,
+    congestionError,
+    toggleCongestionDisplay,
+    refreshCongestionData,
+    fetchCongestionData
+  } = useCongestion();
+
+  // 실시간 날씨 데이터 훅
+  const {
+    showWeather,
+    weatherData,
+    weatherLoading,
+    weatherError,
+    toggleWeatherDisplay,
+    refreshWeatherData,
+    fetchWeatherData
+  } = useWeather();
+
+  // Debug logs
+  console.log('[MapView] 혼잡도 상태:', { showCongestion, congestionData: !!congestionData, congestionLoading, congestionError });
+  console.log('[MapView] 날씨 상태:', { showWeather, weatherData: !!weatherData, weatherLoading, weatherError });
 
   // Provider의 데이터 사용
   const effectiveMapInstance = contextMapInstance;
   const effectiveMapStatus = contextMapStatus;
   const effectiveFacilities = facilities;
   const filteredFacilities = getFilteredFacilities();
+
+  // 디버깅 로그 추가
+  console.log(`[MapView] 시설 데이터 상태:`, {
+    totalFacilities: facilities.length,
+    filteredFacilities: filteredFacilities.length,
+    activeCategories: activeCategories,
+    mapStatus: effectiveMapStatus,
+    mapInstance: !!effectiveMapInstance
+  });
 
   const handleToggleCategory = toggleCategory;
 
@@ -96,7 +133,7 @@ export const MapView: React.FC<MapViewProps> = ({
     []
   );
 
-  // 지도 클릭 처리를 위한 이벤트
+  // 지도 이벤트 처리 (클릭 및 이동)
   React.useEffect(() => {
     if (!effectiveMapInstance || !effectiveMapStatus?.success) return;
 
@@ -130,23 +167,93 @@ export const MapView: React.FC<MapViewProps> = ({
       onMapClick?.();
     };
 
+    // 디바운싱을 위한 타이머 참조
+    let debounceTimer: NodeJS.Timeout | null = null;
+
+    // 지도 이동/드래그 종료 시 위치 기반 데이터 업데이트
+    const handleMapDragEnd = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      
+      debounceTimer = setTimeout(async () => {
+        try {
+          const center = effectiveMapInstance.getCenter();
+          const lat = center.getLat();
+          const lng = center.getLng();
+          
+          console.log(`지도 이동: (${lat}, ${lng})`);
+          
+          // 병렬로 데이터 로딩 (이전 버전과 동일한 패턴)
+          const promises = [
+            updateLocation(lat, lng),
+            fetchCongestionData(lat, lng),
+            fetchWeatherData(lat, lng)
+          ];
+          
+          await Promise.allSettled(promises);
+          console.log('위치 기반 데이터 업데이트 완료');
+        } catch (error) {
+          console.error('지도 이동 시 데이터 업데이트 실패:', error);
+        }
+      }, 500); // 500ms 디바운싱
+    };
+
     const clickListener = windowWithKakao.kakao.maps.event.addListener(
       effectiveMapInstance,
       'click',
       handleMapClick
     );
 
+    const dragEndListener = windowWithKakao.kakao.maps.event.addListener(
+      effectiveMapInstance,
+      'dragend',
+      handleMapDragEnd
+    );
+
+    const zoomChangedListener = windowWithKakao.kakao.maps.event.addListener(
+      effectiveMapInstance,
+      'zoom_changed',
+      handleMapDragEnd
+    );
+
     return () => {
       try {
         const cleanupWindow = window as WindowWithKakao;
-        if (cleanupWindow.kakao?.maps?.event && clickListener) {
+        if (cleanupWindow.kakao?.maps?.event) {
           // cleanupWindow.kakao.maps.event.removeListener(clickListener);
+          // cleanupWindow.kakao.maps.event.removeListener(dragEndListener);  
+          // cleanupWindow.kakao.maps.event.removeListener(zoomChangedListener);
         }
+        if (debounceTimer) clearTimeout(debounceTimer);
       } catch {
         // 조용히 처리
       }
     };
-  }, [effectiveMapInstance, effectiveMapStatus?.success, effectiveFacilities, handleFacilitySelect, onMapClick]);
+  }, [effectiveMapInstance, effectiveMapStatus?.success, effectiveFacilities, handleFacilitySelect, onMapClick, updateLocation, fetchCongestionData, fetchWeatherData]);
+
+  // 초기 데이터 로딩
+  React.useEffect(() => {
+    if (!effectiveMapInstance || !effectiveMapStatus?.success) return;
+    
+    const loadInitialData = async () => {
+      try {
+        console.log('[MapView] 초기 위치 기반 데이터 로딩 시작...', currentLocation);
+        console.log('[MapView] fetchCongestionData:', typeof fetchCongestionData);
+        console.log('[MapView] fetchWeatherData:', typeof fetchWeatherData);
+        
+        const promises = [
+          fetchCongestionData(currentLocation.lat, currentLocation.lng),
+          fetchWeatherData(currentLocation.lat, currentLocation.lng)
+        ];
+        
+        await Promise.allSettled(promises);
+        console.log('[MapView] 초기 위치 기반 데이터 로딩 완료');
+      } catch (error) {
+        console.error('[MapView] 초기 위치 기반 데이터 로딩 실패:', error);
+      }
+    };
+
+    loadInitialData();
+  }, [effectiveMapInstance, effectiveMapStatus?.success, currentLocation, fetchCongestionData, fetchWeatherData]);
 
   // POI 선택 핸들러 제거 - 이제 Facility로 통합됨
 
@@ -191,16 +298,16 @@ export const MapView: React.FC<MapViewProps> = ({
         showCongestion={showCongestion}
         congestionData={congestionData}
         congestionLoading={congestionLoading}
-        onToggleCongestion={onToggleCongestion || (() => {})}
+        onToggleCongestion={toggleCongestionDisplay}
         showWeather={showWeather}
         weatherData={weatherData}
         weatherLoading={weatherLoading}
-        onToggleWeather={onToggleWeather || (() => {})}
+        onToggleWeather={toggleWeatherDisplay}
         onMoveToCurrentLocation={onMoveToCurrentLocation || (() => {})}
       />
 
       {/* 혼잡도 패널 오버레이 */}
-      {showCongestion && <div className='fixed inset-0 z-24' onClick={onToggleCongestion} />}
+      {showCongestion && <div className='fixed inset-0 z-24' onClick={toggleCongestionDisplay} />}
 
       {/* 혼잡도 패널 (아이콘 우측에 위치) */}
       {showCongestion && (
@@ -214,14 +321,14 @@ export const MapView: React.FC<MapViewProps> = ({
               congestionData={congestionData}
               congestionLoading={congestionLoading}
               congestionError={congestionError}
-              onRefresh={onRefreshCongestion || (() => {})}
+              onRefresh={refreshCongestionData}
             />
           </div>
         </div>
       )}
 
       {/* 날씨 패널 오버레이 */}
-      {showWeather && <div className='fixed inset-0 z-24' onClick={onToggleWeather} />}
+      {showWeather && <div className='fixed inset-0 z-24' onClick={toggleWeatherDisplay} />}
 
       {/* 날씨 패널 (아이콘 우측에 위치) */}
       {showWeather && (
@@ -235,7 +342,7 @@ export const MapView: React.FC<MapViewProps> = ({
               weatherData={weatherData}
               weatherLoading={weatherLoading}
               weatherError={weatherError}
-              onRefresh={onRefreshWeather || (() => {})}
+              onRefresh={refreshWeatherData}
             />
           </div>
         </div>

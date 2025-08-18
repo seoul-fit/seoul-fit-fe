@@ -8,7 +8,7 @@ interface LocationInfo {
   type: 'current' | 'searched';
 }
 
-export const useLocation = (mapInstance: KakaoMap | null) => {
+export const useLocation = (mapInstance: any) => {
   const [currentLocation, setCurrentLocation] = useState<LocationInfo | null>(null);
   const watchIdRef = useRef<number | null>(null);
   const { handleLocationChange } = useLocationTrigger();

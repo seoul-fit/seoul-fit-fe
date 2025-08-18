@@ -290,23 +290,23 @@ export async function GET(request: NextRequest) {
 
     const weatherData = weatherArray[0];
 
+    // UI와 호환되는 원시 API 형식으로 반환
     const responseData = {
-      areaCode: nearestAreaCode,
-      areaName: cityData.AREA_NM,
-      weatherStts: weatherData.WEATHER_STTS,
-      temp: weatherData.TEMP,
-      sensibleTemp: weatherData.SENSIBLE_TEMP,
-      maxTemp: weatherData.MAX_TEMP,
-      minTemp: weatherData.MIN_TEMP,
-      humidity: weatherData.HUMIDITY,
-      precipitation: weatherData.PRECIPITATION,
-      pcpMsg: weatherData.PCP_MSG,
-      uvIndexLvl: weatherData.UV_INDEX_LVL,
-      uvMsg: weatherData.UV_MSG,
-      pm25Index: weatherData.PM25_INDEX,
-      pm10Index: weatherData.PM10_INDEX,
+      AREA_CD: nearestAreaCode,
+      AREA_NM: cityData.AREA_NM,
+      WEATHER_STTS: weatherData.WEATHER_STTS,
+      TEMP: weatherData.TEMP,
+      SENSIBLE_TEMP: weatherData.SENSIBLE_TEMP,
+      MAX_TEMP: weatherData.MAX_TEMP,
+      MIN_TEMP: weatherData.MIN_TEMP,
+      HUMIDITY: weatherData.HUMIDITY,
+      PRECIPITATION: weatherData.PRECIPITATION,
+      PCP_MSG: weatherData.PCP_MSG,
+      UV_INDEX_LVL: weatherData.UV_INDEX_LVL,
+      UV_MSG: weatherData.UV_MSG,
+      PM25_INDEX: weatherData.PM25_INDEX,
+      PM10_INDEX: weatherData.PM10_INDEX,
       timestamp: fetchTime,
-      rawData: weatherData,
       cached: false,
     };
 

@@ -18,6 +18,7 @@ interface MapStatus {
   success: boolean;
 }
 export default function SeoulFitMapApp() {
+  console.log('[SeoulFitMapApp] 메인 앱 컴포넌트 렌더링 시작');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showLogoutSuccess, setShowLogoutSuccess] = useState(false);

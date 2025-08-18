@@ -41,14 +41,22 @@ export interface CongestionData {
   timestamp: string;
 }
 
-// 날씨 데이터
+// 날씨 데이터 - UI와 호환되는 원시 API 형식 사용
 export interface WeatherData {
-  temperature: number;
-  humidity: number;
-  windSpeed: number;
-  condition: string;
-  description: string;
-  timestamp: string;
+  AREA_NM: string;         // 장소명
+  AREA_CD: string;         // 장소코드  
+  WEATHER_STTS: string;    // 날씨 현황
+  TEMP: string;            // 기온
+  SENSIBLE_TEMP: string;   // 체감온도
+  MAX_TEMP: string;        // 일 최고온도
+  MIN_TEMP: string;        // 일 최저온도
+  HUMIDITY: string;        // 습도
+  PRECIPITATION: string;   // 강수량
+  PCP_MSG: string;         // 강수 관련 메시지
+  UV_INDEX_LVL: string;    // 자외선 지수 단계
+  UV_MSG: string;          // 자외선 메시지
+  PM25_INDEX: string;      // 초미세먼지 정도
+  PM10_INDEX: string;      // 미세먼지 정도
 }
 
 // 지하철 도착 정보

@@ -46,21 +46,22 @@ export async function getNearestWeatherData(lat: number, lng: number): Promise<W
       return null;
     }
 
+    // API는 이제 원시 API 형식으로 직접 반환
     return {
-      AREA_NM: result.data.areaName,
-      AREA_CD: result.data.areaCode,
-      WEATHER_STTS: result.data.weatherStts,
-      TEMP: result.data.temp,
-      SENSIBLE_TEMP: result.data.sensibleTemp,
-      MAX_TEMP: result.data.maxTemp,
-      MIN_TEMP: result.data.minTemp,
-      HUMIDITY: result.data.humidity,
-      PRECIPITATION: result.data.precipitation,
-      PCP_MSG: result.data.pcpMsg,
-      UV_INDEX_LVL: result.data.uvIndexLvl,
-      UV_MSG: result.data.uvMsg,
-      PM25_INDEX: result.data.pm25Index,
-      PM10_INDEX: result.data.pm10Index,
+      AREA_NM: result.data.AREA_NM,
+      AREA_CD: result.data.AREA_CD,
+      WEATHER_STTS: result.data.WEATHER_STTS,
+      TEMP: result.data.TEMP,
+      SENSIBLE_TEMP: result.data.SENSIBLE_TEMP,
+      MAX_TEMP: result.data.MAX_TEMP,
+      MIN_TEMP: result.data.MIN_TEMP,
+      HUMIDITY: result.data.HUMIDITY,
+      PRECIPITATION: result.data.PRECIPITATION,
+      PCP_MSG: result.data.PCP_MSG,
+      UV_INDEX_LVL: result.data.UV_INDEX_LVL,
+      UV_MSG: result.data.UV_MSG,
+      PM25_INDEX: result.data.PM25_INDEX,
+      PM10_INDEX: result.data.PM10_INDEX,
     };
   } catch (error) {
     console.error('날씨 데이터 조회 실패 : ', error);

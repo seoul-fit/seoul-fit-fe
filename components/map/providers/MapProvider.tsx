@@ -16,7 +16,7 @@ import type { Position, MapStatus } from '@/lib/types';
 // 지도 컨텍스트 타입 정의
 interface MapContextValue {
   // 지도 인스턴스
-  mapInstance: kakao.maps.Map | null;
+  mapInstance: any | null; // KakaoMap 타입 대신 any 사용
   mapStatus: MapStatus;
   
   // 위치 관련
@@ -73,6 +73,7 @@ export function MapProvider({
   onMapClick,
   onMapIdle,
 }: MapProviderProps) {
+  console.log('[MapProvider] 렌더링 시작', { initialCenter, initialZoom, containerId });
   // 지도 인스턴스 생성
   const { mapInstance, mapStatus } = useKakaoMap({
     containerId,
@@ -91,9 +92,12 @@ export function MapProvider({
 
   // 지도 조작 메서드들
   const panTo = useCallback((position: Position) => {
-    if (mapInstance) {
-      const kakaoLatLng = new kakao.maps.LatLng(position.lat, position.lng);
-      mapInstance.panTo(kakaoLatLng);
+    if (mapInstance && typeof window !== 'undefined') {
+      const windowWithKakao = window as any;
+      if (windowWithKakao.kakao?.maps) {
+        const kakaoLatLng = new windowWithKakao.kakao.maps.LatLng(position.lat, position.lng);
+        mapInstance.panTo(kakaoLatLng);
+      }
     }
   }, [mapInstance]);
 

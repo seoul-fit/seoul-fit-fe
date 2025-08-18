@@ -291,13 +291,13 @@ export async function GET(request: NextRequest) {
 
     const congestionData = congestionArray[0];
 
+    // UI와 호환되는 원시 API 형식으로 반환
     const responseData = {
-      areaCode: nearestAreaCode,
-      areaName: congestionData.AREA_NM,
-      areaCongestLevel: congestionData.AREA_CONGEST_LVL,
-      areaCongestMessage: congestionData.AREA_CONGEST_MSG,
+      AREA_CD: nearestAreaCode,
+      AREA_NM: congestionData.AREA_NM,
+      AREA_CONGEST_LVL: congestionData.AREA_CONGEST_LVL,
+      AREA_CONGEST_MSG: congestionData.AREA_CONGEST_MSG,
       timestamp: fetchTime,
-      rawData: congestionData,
       cached: false,
     };
 

@@ -15,11 +15,16 @@ export const usePOI = () => {
     error: null,
   });
 
+  // Debug log
+  console.log('[usePOI] 훅 초기화됨');
+
   const fetchNearbyPOIs = useCallback(async (lat: number, lng: number, radius: number = 1.5) => {
+    console.log(`[usePOI] fetchNearbyPOIs 호출됨: (${lat}, ${lng}), radius: ${radius}`);
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
       const pois = await getNearbyPOIs(lat, lng, radius);
+      console.log(`[usePOI] POI 데이터 조회 완료: ${pois.length}개`);
 
       setState(prev => ({
         ...prev,

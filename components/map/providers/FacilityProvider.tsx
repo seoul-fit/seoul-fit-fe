@@ -15,6 +15,8 @@ import { useCulturalSpaces } from '@/hooks/useCulturalSpaces';
 import { useRestaurants } from '@/hooks/useRestaurants';
 import { useCoolingShelter } from '@/hooks/useCoolingShelter';
 import { useSubwayStations } from '@/hooks/useSubwayStations';
+import { usePOI } from '@/hooks/usePOI';
+import { convertPOIToFacility } from '@/services/poi';
 import { useMapContext } from './MapProvider';
 import type { 
   Facility, 
@@ -42,12 +44,16 @@ interface FacilityContextValue {
   activeCategories: FacilityCategory[];
   userPreferences: UserPreferences | null;
   
+  // 위치 관련
+  currentLocation: { lat: number; lng: number };
+  
   // 액션 메서드
   selectFacility: (facility: Facility | null) => void;
   selectCluster: (cluster: ClusteredFacility | null) => void;
   toggleCategory: (category: FacilityCategory) => void;
   refreshFacilities: () => Promise<void>;
   searchFacilities: (query: string) => Promise<Facility[]>;
+  updateLocation: (lat: number, lng: number) => Promise<void>;
   
   // 필터링된 데이터
   getFilteredFacilities: () => Facility[];
@@ -96,64 +102,115 @@ export function FacilityProvider({
   const { restaurants, isLoading: restaurantsLoading, fetchRestaurants } = useRestaurants();
   const { facilities: coolingShelters, isLoading: coolingSheltersLoading, fetchCoolingShelters } = useCoolingShelter();
   const { subwayStations, loading: subwayLoading } = useSubwayStations();
+  const { pois, loading: poisLoading, error: poisError, fetchNearbyPOIs } = usePOI();
 
-  // 컴포넌트 마운트 시 모든 데이터 자동 로딩
+  // Debug POI hook
+  console.log('[FacilityProvider] POI hook state:', { 
+    poisCount: pois?.length || 0, 
+    poisLoading, 
+    poisError,
+    hasFetchFunction: !!fetchNearbyPOIs 
+  });
+
+  // 위치 기반 실시간 데이터 로딩 상태
+  const [currentLocation, setCurrentLocation] = React.useState<{ lat: number; lng: number }>({
+    lat: 37.5665,
+    lng: 126.9780
+  });
+  const lastLoadedLocationRef = React.useRef<{ lat: number; lng: number } | null>(null);
+
+  // 위치 기반 데이터 로딩 함수
+  const loadLocationBasedData = React.useCallback(async (lat: number, lng: number) => {
+    try {
+      console.log(`위치 기반 데이터 로딩: (${lat}, ${lng})`);
+      
+      // 위치 기반 데이터만 업데이트 (전체 데이터는 한번만 로딩)
+      const promises = [];
+      
+      // POI 데이터 로딩 (서울 120장소) - 최우선 실행
+      if (fetchNearbyPOIs) {
+        console.log(`[FacilityProvider] POI 데이터 로딩 시작: (${lat}, ${lng})`);
+        promises.push(
+          fetchNearbyPOIs(lat, lng, 1.5).catch(err => {
+            console.error('POI 데이터 로딩 실패:', err);
+            return [];
+          })
+        );
+      } else {
+        console.warn('[FacilityProvider] fetchNearbyPOIs 함수가 없습니다!');
+      }
+      
+      if (fetchCulturalSpaces) {
+        promises.push(fetchCulturalSpaces(lat, lng).catch(err => console.error('문화공간 데이터 로딩 실패:', err)));
+      }
+      
+      if (fetchRestaurants) {
+        promises.push(fetchRestaurants(lat, lng).catch(err => console.error('맛집 데이터 로딩 실패:', err)));
+      }
+      
+      if (fetchCoolingShelters) {
+        promises.push(fetchCoolingShelters(lat, lng).catch(err => console.error('무더위쉼터 데이터 로딩 실패:', err)));
+      }
+      
+      await Promise.all(promises);
+      
+      lastLoadedLocationRef.current = { lat, lng };
+      console.log('위치 기반 데이터 로딩 완료 (POI 포함)');
+    } catch (error) {
+      console.error('위치 기반 데이터 로딩 실패:', error);
+    }
+  }, [fetchCulturalSpaces, fetchRestaurants, fetchCoolingShelters, fetchNearbyPOIs]);
+
+  // 컴포넌트 마운트 시 초기 데이터 로딩
   useEffect(() => {
-    const loadAllData = async () => {
+    console.log('[FacilityProvider] useEffect 트리거됨');
+    const loadInitialData = async () => {
       try {
-        console.log('시설 데이터 로딩 시작...');
+        console.log('초기 시설 데이터 로딩 시작...');
         
-        // 서울 중심 좌표 (기본값)
-        const defaultLat = 37.5665;
-        const defaultLng = 126.9780;
-        
-        // 병렬로 모든 데이터 로드 (존재하는 함수들만 호출)
-        const promises = [];
+        // 전체 데이터 로딩 (한번만)
+        const globalPromises = [];
         
         if (fetchAllParksData) {
-          promises.push(fetchAllParksData(0, 1000).catch(err => console.error('공원 데이터 로딩 실패:', err)));
+          console.log('[FacilityProvider] 공원 데이터 로딩 시작');
+          globalPromises.push(fetchAllParksData(0, 1000).catch(err => console.error('공원 데이터 로딩 실패:', err)));
         }
         
         if (fetchAllLibrariesData) {
-          promises.push(fetchAllLibrariesData(0, 1000).catch(err => console.error('도서관 데이터 로딩 실패:', err)));
+          console.log('[FacilityProvider] 도서관 데이터 로딩 시작');
+          globalPromises.push(fetchAllLibrariesData(0, 1000).catch(err => console.error('도서관 데이터 로딩 실패:', err)));
         }
         
-        if (fetchCulturalSpaces) {
-          promises.push(fetchCulturalSpaces(defaultLat, defaultLng).catch(err => console.error('문화공간 데이터 로딩 실패:', err)));
-        }
+        await Promise.all(globalPromises);
+        console.log('[FacilityProvider] 전체 데이터 로딩 완료');
         
-        if (fetchRestaurants) {
-          promises.push(fetchRestaurants(defaultLat, defaultLng).catch(err => console.error('맛집 데이터 로딩 실패:', err)));
-        }
+        // 초기 위치 기반 데이터 로딩
+        console.log('[FacilityProvider] 위치 기반 데이터 로딩 시작...');
+        await loadLocationBasedData(currentLocation.lat, currentLocation.lng);
         
-        if (fetchCoolingShelters) {
-          promises.push(fetchCoolingShelters(defaultLat, defaultLng).catch(err => console.error('무더위쉼터 데이터 로딩 실패:', err)));
-        }
-        
-        await Promise.all(promises);
-        
-        console.log('모든 시설 데이터 로딩 완료');
+        console.log('모든 초기 시설 데이터 로딩 완료');
       } catch (error) {
-        console.error('시설 데이터 로딩 실패:', error);
+        console.error('초기 시설 데이터 로딩 실패:', error);
       }
     };
 
-    loadAllData();
+    loadInitialData();
   }, [
     fetchAllParksData,
-    fetchAllLibrariesData, 
-    fetchCulturalSpaces,
-    fetchRestaurants,
-    fetchCoolingShelters
-  ]); // 함수 의존성 추가
+    fetchAllLibrariesData,
+    loadLocationBasedData
+  ]);
 
   // 선택 상태 관리
   const [selectedFacility, setSelectedFacility] = React.useState<Facility | null>(null);
   const [selectedCluster, setSelectedCluster] = React.useState<ClusteredFacility | null>(null);
 
-  // 활성 카테고리 계산
+  // 활성 카테고리 계산 (기본적으로 모든 카테고리 활성화)
   const activeCategories = useMemo(() => {
-    if (!userPreferences) return [];
+    if (!userPreferences) {
+      // 사용자 설정이 없으면 모든 카테고리를 기본 활성화
+      return ['sports', 'culture', 'restaurant', 'library', 'park', 'subway', 'bike', 'cooling_shelter', 'cultural_event', 'cultural_reservation'] as FacilityCategory[];
+    }
     return userPreferences.preferredCategories || [];
   }, [userPreferences]);
 
@@ -163,6 +220,16 @@ export function FacilityProvider({
     
     // 기본 시설들
     combined.push(...allFacilities);
+    
+    // POI 데이터를 Facility로 변환하여 추가 (서울 120장소)
+    if (pois && pois.length > 0) {
+      const convertedPOIs = pois
+        .map(poi => convertPOIToFacility(poi))
+        .filter((facility): facility is Facility => facility !== null);
+      
+      combined.push(...convertedPOIs);
+      console.log(`[FacilityProvider] POI 마커 추가: ${convertedPOIs.length}개`);
+    }
     
     // 각 카테고리별 시설들 추가
     if (parks) combined.push(...parks);
@@ -175,6 +242,7 @@ export function FacilityProvider({
     return combined;
   }, [
     allFacilities,
+    pois, // POI 데이터 의존성 추가
     parks,
     libraries,
     culturalSpaces,
@@ -197,7 +265,8 @@ export function FacilityProvider({
            culturalLoading || 
            restaurantsLoading || 
            coolingSheltersLoading || 
-           subwayLoading;
+           subwayLoading ||
+           poisLoading; // POI 로딩 상태 추가
   }, [
     facilitiesLoading,
     parksLoading,
@@ -206,6 +275,7 @@ export function FacilityProvider({
     restaurantsLoading,
     coolingSheltersLoading,
     subwayLoading,
+    poisLoading, // POI 로딩 상태 의존성 추가
   ]);
 
   // 시설 선택 핸들러
@@ -247,11 +317,20 @@ export function FacilityProvider({
 
   // 필터링된 시설 가져오기
   const getFilteredFacilities = useCallback(() => {
-    if (activeCategories.length === 0) return facilities;
+    // 디버깅 로그 추가
+    console.log(`[FacilityProvider] 필터링: 전체 시설 ${facilities.length}개, 활성 카테고리:`, activeCategories);
     
-    return facilities.filter(facility => 
+    if (activeCategories.length === 0) {
+      console.log(`[FacilityProvider] 모든 시설 반환: ${facilities.length}개`);
+      return facilities;
+    }
+    
+    const filtered = facilities.filter(facility => 
       activeCategories.includes(facility.category)
     );
+    
+    console.log(`[FacilityProvider] 필터링된 시설: ${filtered.length}개`);
+    return filtered;
   }, [facilities, activeCategories]);
 
   // 카테고리별 시설 가져오기
@@ -266,6 +345,24 @@ export function FacilityProvider({
       return distance <= radius;
     });
   }, [facilities]);
+
+  // 위치 업데이트 함수 (실시간 데이터 로딩)
+  const updateLocation = useCallback(async (lat: number, lng: number) => {
+    // 이전 위치와 너무 가까우면 업데이트하지 않음 (성능 최적화)
+    const lastLocation = lastLoadedLocationRef.current;
+    if (lastLocation) {
+      const distance = calculateDistance(
+        { lat, lng }, 
+        { lat: lastLocation.lat, lng: lastLocation.lng }
+      );
+      if (distance < 0.5) { // 0.5km 이내면 스킵
+        return;
+      }
+    }
+
+    setCurrentLocation({ lat, lng });
+    await loadLocationBasedData(lat, lng);
+  }, [loadLocationBasedData]);
 
   // 컨텍스트 값 메모이제이션
   const contextValue = useMemo<FacilityContextValue>(() => ({
@@ -285,12 +382,16 @@ export function FacilityProvider({
     activeCategories,
     userPreferences: userPreferences || null,
     
+    // 위치 관련
+    currentLocation,
+    
     // 액션 메서드
     selectFacility,
     selectCluster,
     toggleCategory,
     refreshFacilities,
     searchFacilities,
+    updateLocation,
     
     // 필터링된 데이터
     getFilteredFacilities,
@@ -305,11 +406,13 @@ export function FacilityProvider({
     selectedCluster,
     activeCategories,
     userPreferences,
+    currentLocation,
     selectFacility,
     selectCluster,
     toggleCategory,
     refreshFacilities,
     searchFacilities,
+    updateLocation,
     getFilteredFacilities,
     getFacilitiesByCategory,
     getNearbyFacilities,

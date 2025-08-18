@@ -65,6 +65,8 @@ const MapContainer = React.forwardRef<MapContainerRef, MapContainerProps>(
     initialCenter = { lat: 37.5665, lng: 126.978 },
     initialZoom = 3,
   }, ref) => {
+    console.log('[MapContainer] 렌더링 시작');
+    console.log('[MapContainer] Props:', { preferences, initialCenter, initialZoom });
     
     // 지도 클릭 핸들러
     const handleMapClick = useCallback((position: Position) => {

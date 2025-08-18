@@ -9,7 +9,7 @@ export interface ZoomLevelInfo {
 }
 
 interface UseZoomLevelProps {
-  mapInstance: KakaoMap | null | undefined;
+  mapInstance: any;
   mapStatus?: { success: boolean; loading: boolean; error: string | null };
 }
 

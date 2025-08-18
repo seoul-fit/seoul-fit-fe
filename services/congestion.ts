@@ -49,11 +49,14 @@ export async function getNearestCongestionData(
       return null;
     }
 
+    // API는 이제 원시 API 형식으로 직접 반환
     return {
-      AREA_NM: result.data.areaName,
-      AREA_CD: result.data.areaCode,
-      AREA_CONGEST_LVL: result.data.areaCongestLevel,
-      AREA_CONGEST_MSG: result.data.areaCongestMessage,
+      AREA_NM: result.data.AREA_NM,
+      AREA_CD: result.data.AREA_CD,
+      AREA_CONGEST_LVL: result.data.AREA_CONGEST_LVL,
+      AREA_CONGEST_MSG: result.data.AREA_CONGEST_MSG,
+      timestamp: result.data.timestamp,
+      cached: result.data.cached,
     };
   } catch (error) {
     console.error('혼잡도 데이터 조회 실패 : ', error);
