@@ -88,11 +88,10 @@ export const createCluster = (
   
   return {
     id: clusterId,
-    name: facilities[0].name || '시설 그룹',
     position: centerPosition,
     facilities,
-    categoryCounts,
-    totalCount: facilities.length,
+    count: facilities.length,
+    radius: 0.1, // 기본 반경 설정
     primaryCategory,
   };
 };
@@ -298,7 +297,7 @@ export const mergeClusters = (
   clusters.forEach(cluster => {
     if (used.has(cluster.id)) return;
     
-    const nearbyClust ers = clusters.filter(other => {
+    const nearbyClusters = clusters.filter(other => {
       if (other.id === cluster.id || used.has(other.id)) return false;
       const distance = calculateDistance(cluster.position, other.position);
       return distance <= threshold;
@@ -351,7 +350,7 @@ export const measureClusteringPerformance = (
   const result = clusteringFn(facilities, options);
   const endTime = performance.now();
   
-  const clusterSizes = result.clusters.map(c => c.totalCount);
+  const clusterSizes = result.clusters.map(c => c.count);
   
   return {
     totalFacilities: facilities.length,
