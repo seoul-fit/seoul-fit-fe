@@ -4,12 +4,13 @@
  */
 
 import axios from 'axios';
+import { env } from '@/config/environment';
 import { loadAllParks } from '@/lib/seoulApi';
 import { Park, ParkSearchParams, ParkApiResponse } from '../model/types';
 import { convertParks, paginateParks } from '../lib/converter';
 
-const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_BASE_URL || 'http://localhost:8080';
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080';
+const BACKEND_BASE_URL = env.backendBaseUrl;
+const BACKEND_URL = env.backendBaseUrl;
 
 /**
  * 백엔드에서 전체 공원 데이터 조회

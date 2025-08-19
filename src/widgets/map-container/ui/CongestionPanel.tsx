@@ -23,7 +23,7 @@ export const CongestionPanel: React.FC<CongestionPanelProps> = ({
   if (!showCongestion) return null;
 
   return (
-    <div className='bg-white rounded-lg shadow-lg border border-gray-100 max-w-xs animate-in slide-in-from-right-2 duration-200'>
+    <div className='bg-white rounded-lg shadow-xl border border-gray-200 w-80 animate-in slide-in-from-right-5 duration-300'>
       {/* 헤더 */}
       <div className='flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white rounded-t-lg'>
         <div className='flex items-center gap-2'>

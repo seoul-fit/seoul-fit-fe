@@ -3,9 +3,10 @@
  * @description 문화공간 관련 비즈니스 로직 및 API 호출
  */
 
+import { env } from '@/config/environment';
 import { CulturalSpace, CulturalSpaceSearchParams } from '../model/types';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080';
+const BACKEND_URL = env.backendBaseUrl;
 
 /**
  * 위치 기반 문화공간 조회

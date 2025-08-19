@@ -1,7 +1,8 @@
 // services/user.ts - User management service implementation
+import { env } from '@/config/environment';
 import { UserResult, UserInterests } from '@/lib/types';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+const BASE_URL = env.backendBaseUrl;
 
 export interface UpdateUserRequest {
   nickname?: string;

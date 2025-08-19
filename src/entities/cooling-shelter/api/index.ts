@@ -3,9 +3,10 @@
  * @description 무더위 쉼터 관련 비즈니스 로직 및 API 호출
  */
 
+import { env } from '@/config/environment';
 import { CoolingShelter, CoolingShelterSearchParams } from '../model/types';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080';
+const BACKEND_URL = env.backendBaseUrl;
 
 /**
  * 위치 기반 무더위 쉼터 조회

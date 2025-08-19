@@ -1,4 +1,6 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+import { env } from '@/config/environment';
+
+const BASE_URL = env.backendBaseUrl;
 
 export interface LocationTriggerRequest {
   userId: string;

@@ -5,22 +5,48 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { MapContainer } from '@/widgets/map-container';
 import { Header } from '@/widgets/header';
 import { SideBar } from '@/widgets/sidebar';
 import type { UserPreferences, FacilityCategory } from '@/lib/types';
 
 interface HomePageProps {
-  preferences?: UserPreferences;
-  onPreferenceToggle?: (category: FacilityCategory) => void;
+  initialPreferences?: UserPreferences;
 }
 
 export const HomePage: React.FC<HomePageProps> = ({
-  preferences,
-  onPreferenceToggle
+  initialPreferences
 }) => {
-  const [showSidebar, setShowSidebar] = React.useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
+  
+  // 사용자 선호도 상태 관리
+  const [preferences, setPreferences] = useState<UserPreferences>(
+    initialPreferences || {
+      language: 'ko',
+      theme: 'light',
+      preferredCategories: ['sports', 'culture', 'restaurant', 'library', 'park'] as FacilityCategory[]
+    }
+  );
+  
+  // 카테고리 토글 핸들러
+  const handlePreferenceToggle = useCallback((category: FacilityCategory) => {
+    setPreferences(prev => {
+      const currentCategories = prev.preferredCategories || [];
+      const isSelected = currentCategories.includes(category);
+      
+      const newCategories = isSelected
+        ? currentCategories.filter(c => c !== category)
+        : [...currentCategories, category];
+      
+      console.log('카테고리 토글:', category, '새로운 카테고리:', newCategories);
+      
+      return {
+        ...prev,
+        preferredCategories: newCategories
+      };
+    });
+  }, []);
 
   return (
     <div className="h-screen flex flex-col">
@@ -31,16 +57,16 @@ export const HomePage: React.FC<HomePageProps> = ({
       />
       <div className="flex-1 relative">
         <MapContainer
-          preferences={preferences || { language: 'ko', theme: 'light' }}
-          onPreferenceToggle={onPreferenceToggle || (() => {})}
+          preferences={preferences}
+          onPreferenceToggle={handlePreferenceToggle}
           initialCenter={{ lat: 37.5665, lng: 126.978 }}
           initialZoom={3}
         />
         <SideBar 
           isOpen={showSidebar}
           onClose={() => setShowSidebar(false)}
-          preferences={preferences || { language: 'ko', theme: 'light' }}
-          onPreferenceToggle={onPreferenceToggle || (() => {})}
+          preferences={preferences}
+          onPreferenceToggle={handlePreferenceToggle}
         />
       </div>
     </div>

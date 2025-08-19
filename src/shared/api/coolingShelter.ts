@@ -1,6 +1,7 @@
 import { CoolingCenter, Facility, FACILITY_CATEGORIES } from '@/lib/types';
+import { env } from '@/config/environment';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+const BASE_URL = env.backendBaseUrl;
 
 export interface CoolingShelterResponse {
   status: 'success' | 'fail';

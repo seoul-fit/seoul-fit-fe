@@ -311,14 +311,16 @@ export const MapView: React.FC<MapViewProps> = ({
       />
 
       {/* 혼잡도 패널 오버레이 */}
-      {showCongestion && <div className='fixed inset-0 z-24' onClick={() => toggleCongestionDisplay()} />}
+      {showCongestion && (
+        <div className='fixed inset-0 z-40' onClick={() => toggleCongestionDisplay()} />
+      )}
 
       {/* 혼잡도 패널 (아이콘 우측에 위치) */}
       {showCongestion && (
-        <div className='absolute top-4 right-20 z-25'>
+        <div className='absolute top-16 right-4 z-50 transition-all duration-300 ease-out'>
           <div className='relative'>
             {/* 말풍선 꼬리 */}
-            <div className='absolute left-0 top-4 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px] border-r-white' />
+            <div className='absolute -left-2 top-6 w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[10px] border-r-white' />
 
             <CongestionPanel
               showCongestion={showCongestion}
@@ -332,14 +334,16 @@ export const MapView: React.FC<MapViewProps> = ({
       )}
 
       {/* 날씨 패널 오버레이 */}
-      {showWeather && <div className='fixed inset-0 z-24' onClick={() => toggleWeatherDisplay()} />}
+      {showWeather && (
+        <div className='fixed inset-0 z-40' onClick={() => toggleWeatherDisplay()} />
+      )}
 
       {/* 날씨 패널 (아이콘 우측에 위치) */}
       {showWeather && (
-        <div className='absolute bottom-36 left-20 z-25'>
+        <div className='absolute bottom-24 md:bottom-20 left-16 z-50 transition-all duration-300 ease-out'>
           <div className='relative'>
             {/* 말풍선 꼬리 */}
-            <div className='absolute right-0 top-4 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[8px] border-l-white' />
+            <div className='absolute -left-2 top-6 w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[10px] border-r-white' />
 
             <WeatherPanel
               showWeather={showWeather}

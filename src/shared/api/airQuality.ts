@@ -1,7 +1,8 @@
 // services/airQuality.ts - Air Quality service implementation
 import { AirQuality } from '@/lib/types';
+import { env } from '@/config/environment';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+const BASE_URL = env.backendBaseUrl;
 
 /**
  * 대기질 정보 전체 조회

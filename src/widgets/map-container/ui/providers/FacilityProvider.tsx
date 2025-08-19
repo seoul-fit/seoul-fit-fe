@@ -7,7 +7,7 @@
 
 'use client';
 
-import React, { createContext, useContext, useCallback, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useCallback, useMemo, useEffect, useState } from 'react';
 import { useFacilities } from '@/shared/lib/hooks/useFacilities';
 import { useParks } from '@/shared/lib/hooks/useParks';
 import { useLibraries } from '@/shared/lib/hooks/useLibraries';
@@ -121,7 +121,7 @@ export function FacilityProvider({
   const lastLoadedLocationRef = React.useRef<{ lat: number; lng: number } | null>(null);
 
   // 위치 기반 데이터 로딩 함수
-  const loadLocationBasedData = React.useCallback(async (lat: number, lng: number) => {
+  const loadLocationBasedData = useCallback(async (lat: number, lng: number) => {
     try {
       console.log(`위치 기반 데이터 로딩: (${lat}, ${lng})`);
       
@@ -162,13 +162,11 @@ export function FacilityProvider({
     }
   }, [fetchCulturalSpaces, fetchRestaurants, fetchCoolingShelters, fetchNearbyPOIs]);
 
-  // 컴포넌트 마운트 시 초기 데이터 로딩
+  // 컴포넌트 마운트 시 초기 데이터 로딩 (한번만 실행)
   useEffect(() => {
-    console.log('[FacilityProvider] useEffect 트리거됨');
+    console.log('[FacilityProvider] 초기 데이터 로딩 시작');
     const loadInitialData = async () => {
       try {
-        console.log('초기 시설 데이터 로딩 시작...');
-        
         // 전체 데이터 로딩 (한번만)
         const globalPromises = [];
         
@@ -187,7 +185,26 @@ export function FacilityProvider({
         
         // 초기 위치 기반 데이터 로딩
         console.log('[FacilityProvider] 위치 기반 데이터 로딩 시작...');
-        await loadLocationBasedData(currentLocation.lat, currentLocation.lng);
+        if (fetchNearbyPOIs) {
+          await fetchNearbyPOIs(currentLocation.lat, currentLocation.lng, 1.5).catch(err => {
+            console.error('POI 데이터 로딩 실패:', err);
+          });
+        }
+        if (fetchCulturalSpaces) {
+          await fetchCulturalSpaces(currentLocation.lat, currentLocation.lng).catch(err => 
+            console.error('문화공간 데이터 로딩 실패:', err)
+          );
+        }
+        if (fetchRestaurants) {
+          await fetchRestaurants().catch((err: Error) => 
+            console.error('맛집 데이터 로딩 실패:', err)
+          );
+        }
+        if (fetchCoolingShelters) {
+          await fetchCoolingShelters(currentLocation.lat, currentLocation.lng).catch(err => 
+            console.error('무더위쉬터 데이터 로딩 실패:', err)
+          );
+        }
         
         console.log('모든 초기 시설 데이터 로딩 완료');
       } catch (error) {
@@ -196,24 +213,28 @@ export function FacilityProvider({
     };
 
     loadInitialData();
-  }, [
-    fetchAllParksData,
-    fetchAllLibrariesData,
-    loadLocationBasedData
-  ]);
+  }, []); // 빈 의존성 배열로 한번만 실행
 
   // 선택 상태 관리
   const [selectedFacility, setSelectedFacility] = React.useState<Facility | null>(null);
   const [selectedCluster, setSelectedCluster] = React.useState<ClusteredFacility | null>(null);
 
-  // 활성 카테고리 계산 (기본적으로 모든 카테고리 활성화)
-  const activeCategories = useMemo(() => {
-    if (!userPreferences) {
-      // 사용자 설정이 없으면 모든 카테고리를 기본 활성화
-      return ['sports', 'culture', 'restaurant', 'library', 'park', 'subway', 'bike', 'cooling_shelter', 'cultural_event', 'cultural_reservation'] as FacilityCategory[];
+  // 활성 카테고리 상태 관리
+  const [activeCategories, setActiveCategories] = useState<FacilityCategory[]>(() => {
+    // userPreferences에서 초기값 설정
+    if (userPreferences?.preferredCategories) {
+      return userPreferences.preferredCategories;
     }
-    return userPreferences.preferredCategories || [];
-  }, [userPreferences]);
+    // 기본값: 주요 카테고리만 활성화
+    return ['sports', 'culture', 'restaurant', 'library', 'park'] as FacilityCategory[];
+  });
+  
+  // userPreferences가 변경될 때 activeCategories 업데이트
+  useEffect(() => {
+    if (userPreferences?.preferredCategories) {
+      setActiveCategories(userPreferences.preferredCategories);
+    }
+  }, [userPreferences?.preferredCategories]);
 
   // 모든 시설 데이터 통합
   const facilities = useMemo(() => {
@@ -304,6 +325,18 @@ export function FacilityProvider({
 
   // 카테고리 토글 핸들러
   const toggleCategory = useCallback((category: FacilityCategory) => {
+    // 로컬 상태 업데이트
+    setActiveCategories(prev => {
+      const isActive = prev.includes(category);
+      const newCategories = isActive 
+        ? prev.filter(c => c !== category)
+        : [...prev, category];
+      
+      console.log(`[카테고리 토글] ${category}: ${!isActive ? '활성화' : '비활성화'}`);
+      return newCategories;
+    });
+    
+    // 부모 컴포넌트에 알림
     onPreferenceChange?.(category);
   }, [onPreferenceChange]);
 

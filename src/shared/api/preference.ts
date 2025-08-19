@@ -1,3 +1,5 @@
+import { env } from '@/config/environment';
+
 export interface InterestCategory {
   id: number;
   interestCategory: string;
@@ -19,7 +21,7 @@ export interface UserInterestResponse {
 }
 
 export const getUserInterests = async (userId: number): Promise<UserInterestResponse> => {
-  const response = await fetch('http://localhost:8080/api/users/interests', {
+  const response = await fetch(`${env.backendBaseUrl}/api/users/interests`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -35,7 +37,7 @@ export const getUserInterests = async (userId: number): Promise<UserInterestResp
 };
 
 export const updateUserInterests = async (userId: number, interests: string[]): Promise<void> => {
-  const response = await fetch('http://localhost:8080/api/users/interests', {
+  const response = await fetch(`${env.backendBaseUrl}/api/users/interests`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',

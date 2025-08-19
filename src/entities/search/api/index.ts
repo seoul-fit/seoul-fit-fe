@@ -3,6 +3,7 @@
  * @description 검색 관련 비즈니스 로직 및 API 호출
  */
 
+import { env } from '@/config/environment';
 import { 
   POISearchItem, 
   SearchParams, 
@@ -11,7 +12,7 @@ import {
   SearchResult 
 } from '../model/types';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080';
+const BACKEND_URL = env.backendBaseUrl;
 const MAX_PAGE_SIZE = 20000;
 const DEFAULT_PAGE = 0;
 const DEFAULT_SIZE = 20;

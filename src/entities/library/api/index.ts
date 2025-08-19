@@ -4,11 +4,12 @@
  */
 
 import axios from 'axios';
+import { env } from '@/config/environment';
 import { loadAllLibraries } from '@/lib/seoulApi';
 import { Library, LibrarySearchParams, LibraryApiResponse } from '../model/types';
 import { convertLibraries, paginateLibraries } from '../lib/converter';
 
-const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_BASE_URL || 'http://localhost:8080';
+const BACKEND_BASE_URL = env.backendBaseUrl;
 
 /**
  * 백엔드에서 전체 도서관 데이터 조회

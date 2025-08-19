@@ -135,11 +135,15 @@ export const MainApp: React.FC<MainAppProps> = ({ className }) => {
             setShowLogoutSuccess(true);
             setTimeout(() => {
               window.location.href = '/';
-            }, 3000);
+            }, 2000);
           } catch (error) {
-            console.error('로그아웃 실패:', error);
+            console.error('로그아웃 처리 중 오류:', error);
+            // 오류가 발생해도 로그아웃 처리는 완료
             setShowLogoutModal(false);
-            setShowLogoutSuccess(false);
+            setShowLogoutSuccess(true);
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 2000);
           }
         }}
       />

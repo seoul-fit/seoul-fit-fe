@@ -1,6 +1,42 @@
 import { CongestionData } from '@/lib/types';
 
 /**
+ * 혼잡도 레벨에 따른 CSS 클래스 반환
+ */
+export function getCongestionClass(level: string): string {
+  switch (level) {
+    case '여유':
+      return 'bg-green-100 text-green-800 border-green-200';
+    case '보통':
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    case '약간 붐빔':
+      return 'bg-orange-100 text-orange-800 border-orange-200';
+    case '붐빔':
+      return 'bg-red-100 text-red-800 border-red-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+}
+
+/**
+ * 혼잡도 레벨에 따른 색상 반환 (HEX)
+ */
+export function getCongestionColor(level: string): string {
+  switch (level) {
+    case '여유':
+      return '#10b981'; // green-500
+    case '보통':
+      return '#f59e0b'; // yellow-500
+    case '약간 붐빔':
+      return '#f97316'; // orange-500
+    case '붐빔':
+      return '#ef4444'; // red-500
+    default:
+      return '#6b7280'; // gray-500
+  }
+}
+
+/**
  * 현재 위치에서 가장 가까운 장소의 혼잡도 정보 조회
  * (API Route를 통해 API 호출)
  * @param lat 현재 위치 위도
@@ -61,45 +97,5 @@ export async function getNearestCongestionData(
   } catch (error) {
     console.error('혼잡도 데이터 조회 실패 : ', error);
     return null;
-  }
-}
-
-/**
- * 혼잡도 레벨에 따른 CSS 클래스 반환
- * @param congestionLevel 혼잡도 레벨
- * @return CSS 클래스
- */
-export function getCongestionClass(congestionLevel: string): string {
-  switch (congestionLevel) {
-    case '여유':
-      return 'bg-green-500 text-white';
-    case '보통':
-      return 'bg-yellow-500 text-white';
-    case '약간 붐빔':
-      return 'bg-orange-500 text-white';
-    case '붐빔':
-      return 'bg-red-500 text-white';
-    default:
-      return 'bg-gray-500 text-white';
-  }
-}
-
-/**
- * 혼잡도 레벨에 따른 Hex 색상 반환
- * @param congestionLevel 혼잡도 레벨
- * @return Hex 색상 코드
- */
-export function getCongestionColor(congestionLevel: string): string {
-  switch (congestionLevel) {
-    case '여유':
-      return '#22c55e';
-    case '보통':
-      return '#eab308';
-    case '약간 붐빔':
-      return '#f97316';
-    case '붐빔':
-      return '#ef4444';
-    default:
-      return '#6b7280';
   }
 }

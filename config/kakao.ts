@@ -2,11 +2,13 @@
  * 카카오 API 설정
  */
 
+import { env } from '@/config/environment';
+
 // 카카오맵 API 키
-export const KAKAO_MAP_API_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY || '8bb6267aba6b69af4605b7fd2dd75c96';
+export const KAKAO_MAP_API_KEY = env.kakaoMapApiKey;
 
 // 카카오 로그인 API 키
-export const KAKAO_LOGIN_API_KEY = process.env.NEXT_PUBLIC_KAKAO_LOGIN_API_KEY || 'e088e86f98c03c2f1ce887c85aee1fa6';
+export const KAKAO_LOGIN_API_KEY = env.kakaoClientId;
 
 // 카카오 API 설정
 export const kakaoConfig = {
@@ -17,16 +19,16 @@ export const kakaoConfig = {
   },
   login: {
     apiKey: KAKAO_LOGIN_API_KEY,
-    redirectUri: process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI || 'http://localhost:3000/auth/callback',
+    redirectUri: env.kakaoRedirectUri,
   },
 };
 
-// 디버깅용 로그
-if (typeof window !== 'undefined') {
+// 디버깅용 로그 (개발 환경에서만)
+if (typeof window !== 'undefined' && env.isDevelopment) {
   console.log('[KakaoConfig] 환경 변수 상태:', {
-    mapApiKey: process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY,
-    loginApiKey: process.env.NEXT_PUBLIC_KAKAO_LOGIN_API_KEY,
-    redirectUri: process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI,
+    mapApiKey: env.kakaoMapApiKey,
+    loginApiKey: env.kakaoClientId,
+    redirectUri: env.kakaoRedirectUri,
   });
   console.log('[KakaoConfig] 최종 설정:', kakaoConfig);
 }

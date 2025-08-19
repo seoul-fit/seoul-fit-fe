@@ -8,7 +8,7 @@
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/shared/model/authStore';
-import { getBackendUrl } from '@/shared/config/env';
+import { env } from '@/config/environment';
 import type { 
   AuthStatus, 
   UserInfo, 
@@ -16,11 +16,9 @@ import type {
   AuthResponse 
 } from './types';
 
-const BACKEND_URL = getBackendUrl();
-const KAKAO_CLIENT_ID = '349f89103b32e7135ad6f15e0a73509b';
-const REDIRECT_URI = typeof window !== 'undefined' 
-  ? `${window.location.origin}/auth/callback`
-  : 'http://localhost:3000/auth/callback';
+const BACKEND_URL = env.backendBaseUrl;
+const KAKAO_CLIENT_ID = env.kakaoClientId;
+const REDIRECT_URI = env.kakaoRedirectUri;
 
 /**
  * OAuth 콜백 처리 훅

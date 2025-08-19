@@ -11,10 +11,13 @@ export function useKakaoLogin() {
 
   const logout = useCallback(async () => {
     try {
+      // 백엔드 로그아웃 처리 (실패해도 계속 진행)
       await kakaoLogout();
-      clearAuth();
     } catch (error) {
-      console.error('로그아웃 실패:', error);
+      console.error('백엔드 로그아웃 중 오류:', error);
+    } finally {
+      // 항상 로컬 인증 상태는 초기화
+      clearAuth();
     }
   }, [clearAuth]);
 
