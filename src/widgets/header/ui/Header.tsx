@@ -17,16 +17,16 @@ import {
   Snowflake,
   Clock,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useSearchCache, type SearchItem, type SearchHistoryItem } from '@/hooks/useSearchCache';
-import { useAuthStore } from '@/store/authStore';
-import { useNotificationStore } from '@/store/notificationStore';
+} from '@/shared/ui/dropdown-menu';
+import { useSearchCache, type SearchItem, type SearchHistoryItem } from '@/shared/lib/hooks/useSearchCache';
+import { useAuthStore } from '@/shared/model/authStore';
+import { useNotificationStore } from '@/shared/model/notificationStore';
 
 export interface HeaderRef {
   closeSearchSuggestions: () => void;

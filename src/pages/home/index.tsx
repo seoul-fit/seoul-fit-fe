@@ -24,19 +24,23 @@ export const HomePage: React.FC<HomePageProps> = ({
 
   return (
     <div className="h-screen flex flex-col">
-      <Header onMenuClick={() => setShowSidebar(!showSidebar)} />
+      <Header 
+        searchQuery="" 
+        onSearchChange={() => {}} 
+        onMenuClick={() => setShowSidebar(!showSidebar)} 
+      />
       <div className="flex-1 relative">
         <MapContainer
-          preferences={preferences}
-          onPreferenceToggle={onPreferenceToggle}
+          preferences={preferences || { language: 'ko', theme: 'light' }}
+          onPreferenceToggle={onPreferenceToggle || (() => {})}
           initialCenter={{ lat: 37.5665, lng: 126.978 }}
           initialZoom={3}
         />
         <SideBar 
           isOpen={showSidebar}
           onClose={() => setShowSidebar(false)}
-          preferences={preferences}
-          onPreferenceToggle={onPreferenceToggle}
+          preferences={preferences || { language: 'ko', theme: 'light' }}
+          onPreferenceToggle={onPreferenceToggle || (() => {})}
         />
       </div>
     </div>

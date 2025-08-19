@@ -4,8 +4,7 @@
  * @since 2.0.0
  */
 
-import type { FacilityCategory } from './facility';
-import type { Status } from './common';
+import type { FacilityCategory, Status } from '@/lib/types';
 
 // OAuth 제공자
 export type OAuthProvider = 'kakao' | 'google' | 'naver' | 'apple';
@@ -53,12 +52,24 @@ export interface User extends BaseUser {
 export interface UserPreferences {
   /** 사용자 ID */
   userId?: number;
-  /** 선호하는 시설 카테고리 */
-  preferredCategories: FacilityCategory[];
+  /** 선호하는 시설 카테고리 (기존 배열 형식) */
+  preferredCategories?: FacilityCategory[];
   /** 기본 검색 반경 (km) */
-  defaultRadius: number;
+  defaultRadius?: number;
+  
+  // 카테고리별 선호도 (UI에서 사용하는 형식)
+  sports?: boolean;
+  culture?: boolean;
+  restaurant?: boolean;
+  library?: boolean;
+  park?: boolean;
+  subway?: boolean;
+  bike?: boolean;
+  cooling_shelter?: boolean;
+  cultural_event?: boolean;
+  cultural_reservation?: boolean;
   /** 알림 설정 */
-  notifications: {
+  notifications?: {
     /** 새로운 시설 알림 */
     newFacilities: boolean;
     /** 혼잡도 알림 */
@@ -69,7 +80,7 @@ export interface UserPreferences {
     bookmarkUpdates: boolean;
   };
   /** 지도 설정 */
-  mapSettings: {
+  mapSettings?: {
     /** 기본 줌 레벨 */
     defaultZoom: number;
     /** 클러스터링 사용 여부 */
@@ -78,7 +89,7 @@ export interface UserPreferences {
     enableLocationTracking: boolean;
   };
   /** 접근성 설정 */
-  accessibility: {
+  accessibility?: {
     /** 고대비 모드 */
     highContrast: boolean;
     /** 큰 글씨 */

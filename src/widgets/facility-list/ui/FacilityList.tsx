@@ -2,10 +2,10 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
+import { Button } from '@/shared/ui/button';
+import { Badge } from '@/shared/ui/badge';
+import { ScrollArea } from '@/shared/ui/scroll-area';
 import { X, Star, Navigation, Clock, MapPin, Bookmark, ExternalLink } from 'lucide-react';
 
 import type { Facility } from '@/lib/types';

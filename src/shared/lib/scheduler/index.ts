@@ -1,7 +1,7 @@
 // lib/scheduler.ts - 데이터 갱신 스케줄러
 
-import { serverCache } from './serverCache';
-import { loadAllSubwayStations, loadAllBikeStations } from './seoulApi';
+import { serverCache } from '@/lib/serverCache';
+import { loadAllSubwayStations, loadAllBikeStations } from '@/lib/seoulApi';
 
 class DataScheduler {
   private static instance: DataScheduler;

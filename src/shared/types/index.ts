@@ -3,7 +3,7 @@
  * @description 공유 타입 정의
  */
 
-import type { SearchItem } from '@/hooks/useSearchCache';
+import type { SearchItem } from '@/shared/lib/hooks/useSearchCache';
 
 // Header Component Ref
 export interface HeaderRef {

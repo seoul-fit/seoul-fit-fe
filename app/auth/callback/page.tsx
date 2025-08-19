@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore } from '@/shared/model/authStore';
 import { FACILITY_CONFIGS } from '@/lib/facilityIcons';
 import { type FacilityCategory } from '@/lib/types';
 import { Check } from 'lucide-react';
@@ -87,8 +87,8 @@ function AuthContent() {
     const handleCallback = async () => {
       try {
         // Step 1 : 카카오 인가 코드 요청 결과 확인
-        const code = searchParams.get('code'); // 토큰 요청에 필요한 인가 코드
-        const error = searchParams.get('error'); // 인증 실패 시 에러 코드
+        const code = searchParams?.get('code'); // 토큰 요청에 필요한 인가 코드
+        const error = searchParams?.get('error'); // 인증 실패 시 에러 코드
 
         if (error) {
           handleError(`카카오 로그인 오류: ${error}`);

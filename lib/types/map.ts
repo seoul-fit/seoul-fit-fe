@@ -47,6 +47,8 @@ export interface MapStatus {
   initialized: boolean;
   /** 지도 인스턴스 준비 여부 */
   ready: boolean;
+  /** 성공 여부 */
+  success?: boolean;
 }
 
 // 줌 레벨 정보

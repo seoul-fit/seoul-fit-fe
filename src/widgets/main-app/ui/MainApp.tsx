@@ -2,14 +2,14 @@
 
 import React, { useState, useRef } from 'react';
 import { Alert, AlertDescription } from '@/shared/ui/alert';
-import { usePreferences } from '@/hooks/usePreferences';
+import { usePreferences } from '@/shared/lib/hooks/usePreferences';
 import { Info } from 'lucide-react';
 import { Header } from '@/widgets/header';
 import { SideBar } from '@/widgets/sidebar';
 import { MapContainer } from '@/widgets/map-container';
 import { LogoutModal } from '@/features/auth';
-import { useKakaoLogin } from '@/hooks/useKakaoLogin';
-import type { SearchItem } from '@/hooks/useSearchCache';
+import { useKakaoLogin } from '@/shared/lib/hooks/useKakaoLogin';
+import type { SearchItem } from '@/shared/lib/hooks/useSearchCache';
 import type { HeaderRef, MapContainerRef } from '@/shared/types';
 
 interface MapStatus {

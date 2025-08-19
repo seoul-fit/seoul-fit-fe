@@ -3,7 +3,7 @@ import { Button } from '@/shared/ui/button';
 import { Badge } from '@/shared/ui/badge';
 import { RefreshCw, Users, TrendingUp, Clock } from 'lucide-react';
 import { CongestionData } from '@/lib/types';
-import { getCongestionClass, getCongestionColor } from '@/services/congestion';
+import { getCongestionClass, getCongestionColor } from '@/shared/api/congestion';
 
 interface CongestionPanelProps {
   showCongestion: boolean;
@@ -90,10 +90,10 @@ const CongestionContent: React.FC<{ data: CongestionData }> = ({ data }) => (
     <div className='flex items-center justify-between p-2 bg-gradient-to-r from-gray-50 to-white rounded-lg border'>
       <span className='text-sm font-medium text-gray-700'>현재 상태</span>
       <Badge
-        className={`${getCongestionClass(data.level)} text-xs font-medium px-3 py-1`}
+        className={`${getCongestionClass(data.level || '보통')} text-xs font-medium px-3 py-1`}
       >
         <TrendingUp className='h-3 w-3 mr-1' />
-        {data.level}
+        {data.level || '보통'}
       </Badge>
     </div>
 

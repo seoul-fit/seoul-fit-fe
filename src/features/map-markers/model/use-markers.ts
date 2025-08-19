@@ -1,7 +1,7 @@
 // hooks/useMapMarkers.ts - Improved version with clustering
 import { useEffect, useRef, useCallback, useMemo } from 'react';
 import type { KakaoMap, KakaoCustomOverlay, WindowWithKakao } from '@/lib/kakao-map';
-import { createCustomMarkerContent } from '@/utils/marker';
+import { createCustomMarkerContent } from '@/shared/lib/utils/marker';
 import type { Facility, FacilityCategory, ClusteredFacility } from '@/lib/types';
 import { FACILITY_CONFIGS, getFacilityIcon } from '@/lib/facilityIcons';
 
@@ -27,7 +27,7 @@ const debounce = <T extends (...args: any[]) => any>(
   };
 };
 
-interface UseMapMarkersProps {
+export interface UseMapMarkersProps {
   mapInstance: KakaoMap | null | undefined;
   mapStatus: { success: boolean; loading: boolean; error: string | null } | undefined;
   visibleFacilities: Facility[];
@@ -371,10 +371,10 @@ export const useMapMarkers = ({
 
     return () => {
       // 이벤트 리스너 제거
-      const kakaoMaps = windowWithKakao.kakao.maps;
+      const kakaoMaps = windowWithKakao.kakao?.maps;
       mapListenersRef.current.forEach(listener => {
         try {
-          kakaoMaps.event.removeListener(listener);
+          if (kakaoMaps) kakaoMaps.event.removeListener(mapInstance, 'zoom_changed', listener);
         } catch (error) {
           console.error('이벤트 리스너 제거 실패:', error);
         }

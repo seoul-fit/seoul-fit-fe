@@ -34,11 +34,19 @@ export interface LegacyUserPreferences extends Record<FacilityCategory, boolean>
 
 // 혼잡도 데이터
 export interface CongestionData {
-  facilityId: string;
-  level: CongestionLevel;
-  currentUsers: number;
-  maxCapacity: number;
-  timestamp: string;
+  // 서울시 API 형식
+  AREA_CD?: string;           // 장소 코드
+  AREA_NM?: string;           // 장소명  
+  AREA_CONGEST_LVL?: string;  // 혼잡도 레벨 (여유, 보통, 약간 붐빔, 붐빔)
+  AREA_CONGEST_MSG?: string;  // 혼잡도 메시지
+  
+  // 기존 형식 (하위 호환성)
+  facilityId?: string;
+  level?: CongestionLevel;
+  currentUsers?: number;
+  maxCapacity?: number;
+  timestamp?: string;
+  cached?: boolean;
 }
 
 // 날씨 데이터 - UI와 호환되는 원시 API 형식 사용
@@ -76,12 +84,25 @@ export interface POIData {
   position: Position;
   address: string;
   phone?: string;
+  // 추가 속성 (하위 호환성)
+  code?: string;
+  lat?: number;
+  lng?: number;
+  distance?: number;
 }
 
 // 근처 POI 응답
 export interface NearbyPOIsResponse {
   pois: POIData[];
   totalCount: number;
+  // API 응답 호환성
+  success?: boolean;
+  data?: {
+    center: { lat: number; lng: number };
+    radius: number;
+    count: number;
+    pois: POIData[];
+  };
 }
 
 // 도서관 정보
@@ -114,6 +135,16 @@ export interface Restaurant {
   cuisineType: string;
   rating?: number;
   priceRange?: string;
+  // 서울시 API 호환 속성
+  latitude?: number;
+  longitude?: number;
+  newAddress?: string;
+  phone?: string;
+  website?: string;
+  operatingHours?: string;
+  representativeMenu?: string;
+  subwayInfo?: string;
+  postUrl?: string;
 }
 
 // 관광 맛집 정보
@@ -142,6 +173,13 @@ export interface CoolingCenter {
   address: string;
   operatingHours?: string;
   facilities?: string[];
+  // 서울시 API 호환 속성
+  latitude?: number;
+  longitude?: number;
+  roadAddress?: string;
+  lotAddress?: string;
+  facilityType1?: string;
+  facilityType2?: string;
 }
 
 // 문화 공간
@@ -203,6 +241,7 @@ export interface NotificationPage {
   notifications: Notification[];
   totalCount: number;
   hasMore: boolean;
+  content?: Notification[];  // 기존 코드 호환성
 }
 
 // 알림 히스토리 결과
@@ -218,19 +257,9 @@ export interface NotificationHistoryResult {
 
 // ===== 확장된 Facility 타입 (기존 코드 호환성) =====
 export interface ExtendedFacility extends Facility {
-  // 지하철역 정보
-  subwayStation?: {
-    line: string;
-    stationCode: string;
-    exits: string[];
-  };
+  // subwayStation은 Facility에 이미 정의되어 있으므로 제거
   
-  // 자전거 시설 정보
-  bikeFacility?: {
-    availableBikes: number;
-    totalSlots: number;
-    stationType: string;
-  };
+  // 자전거 시설 정보 (Facility에 이미 정의되어 있으므로 제거)
   
   // 도서관 정보
   library?: {
@@ -246,16 +275,7 @@ export interface ExtendedFacility extends Facility {
     playgrounds: number;
   };
   
-  // 문화 이벤트 정보
-  culturalEvent?: {
-    title: string;
-    description: string;
-    startDate: string;
-    endDate: string;
-    type: string;
-    reservationRequired: boolean;
-    reservationUrl?: string;
-  };
+  // 문화 이벤트 정보은 이미 Facility에 정의되어 있으므로 제거
   
   // 무더위 쉼터 정보
   coolingShelter?: {
@@ -311,7 +331,7 @@ export function convertToLegacyPreferences(preferences: NewUserPreferences): Leg
     cultural_reservation: false,
   };
 
-  preferences.preferredCategories.forEach(category => {
+  preferences.preferredCategories?.forEach(category => {
     legacy[category] = true;
   });
 
@@ -353,4 +373,17 @@ export function convertFromLegacyPreferences(legacy: LegacyUserPreferences): New
     language: 'ko',
     theme: 'system',
   };
+}
+
+// 따릉이 대여소 데이터 (서울시 API 형식)
+export interface BikeStationData {
+  code: string;
+  name: string;
+  lat: number;
+  lng: number;
+  distance?: number;
+  stationId: string;
+  rackTotCnt: string; // 거치대 총 개수
+  parkingBikeTotCnt: string; // 주차 자전거 총 건수
+  shared: string; // 거치율
 }

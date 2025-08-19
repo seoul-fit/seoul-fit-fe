@@ -8,9 +8,9 @@
 'use client';
 
 import React, { createContext, useContext, useCallback, useMemo } from 'react';
-import { useKakaoMap } from '@/hooks/useKakaoMap';
-import { useLocation } from '@/hooks/useLocation';
-import { useZoomLevel } from '@/hooks/useZoomLevel';
+import { useKakaoMap } from '@/shared/lib/hooks/useKakaoMap';
+import { useLocation } from '@/shared/lib/hooks/useLocation';
+import { useZoomLevel } from '@/shared/lib/hooks/useZoomLevel';
 import type { Position, MapStatus } from '@/lib/types';
 
 // 지도 컨텍스트 타입 정의
@@ -133,16 +133,26 @@ export function MapProvider({
   const contextValue = useMemo<MapContextValue>(() => ({
     // 지도 인스턴스
     mapInstance,
-    mapStatus,
+    mapStatus: {
+      ...mapStatus,
+      initialized: !!mapInstance,
+      ready: !!mapInstance && mapStatus.success,
+    },
     
     // 위치 관련
-    currentLocation,
-    moveToCurrentLocation,
-    setCurrentLocation,
+    currentLocation: currentLocation ? { lat: currentLocation.latitude || currentLocation.coords?.lat || 0, lng: currentLocation.longitude || currentLocation.coords?.lng || 0 } : null,
+    moveToCurrentLocation: async () => {
+      moveToCurrentLocation();
+    },
+    setCurrentLocation: (location: Position) => {
+      setCurrentLocation({ address: '', coords: { lat: location.lat, lng: location.lng }, type: 'current', latitude: location.lat, longitude: location.lng });
+    },
     
     // 줌 관련
     zoomInfo: {
-      ...zoomInfo,
+      level: zoomInfo.level,
+      minLevel: (zoomInfo.range as any).min || 1,
+      maxLevel: (zoomInfo.range as any).max || 14,
       isZooming,
     },
     searchRadius,

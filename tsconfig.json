@@ -25,7 +25,12 @@
       "@/widgets/*": ["./src/widgets/*"],
       "@/features/*": ["./src/features/*"],
       "@/entities/*": ["./src/entities/*"],
-      "@/shared/*": ["./src/shared/*"]
+      "@/shared/*": ["./src/shared/*"],
+      "@/components/*": ["./src/shared/ui/*"],
+      "@/hooks/*": ["./src/shared/lib/hooks/*"],
+      "@/services/*": ["./src/shared/api/*"],
+      "@/utils/*": ["./src/shared/lib/utils/*"],
+      "@/store/*": ["./src/shared/model/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

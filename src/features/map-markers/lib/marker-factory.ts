@@ -74,7 +74,8 @@ export const createCustomMarkerContent = (
   // 따릉이 마커의 경우 상태 뱃지 추가
   let statusBadge = '';
   if (facilityCategory === 'bike' && facility?.bikeFacility) {
-    const { availableBikes = 0 } = facility.bikeFacility;
+    const availableBikes = (facility.bikeFacility as any).availableBikes || 
+                          facility.bikeFacility.parkingBikeTotCnt || 0;
 
     // 이용 가능한 자전거 수에 따른 색상 결정
     let badgeColor = '#EF4444'; // 빨간색: 이용불가 (0대)

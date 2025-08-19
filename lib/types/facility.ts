@@ -115,6 +115,34 @@ export interface CulturalEvent {
   requiresReservation: boolean;
   /** 예약 URL */
   reservationUrl?: string;
+  
+  // 추가 속성 (서울시 API 호환)
+  /** 무료 여부 */
+  isFree?: boolean | string;
+  /** 대상 */
+  useTarget?: string;
+  /** 이용료 */
+  useFee?: string;
+  /** 티켓 정보 */
+  ticket?: string;
+  /** 메인 이미지 */
+  mainImg?: string;
+  /** 지역구 */
+  district?: string;
+  /** 장르명 */
+  codeName?: string;
+  /** 장소 */
+  place?: string;
+  /** 주최기관 */
+  orgName?: string;
+  /** 행사일시 */
+  eventDate?: string;
+  /** 테마코드 */
+  themeCode?: string;
+  /** 프로그램 */
+  program?: string;
+  /** 기타 설명 */
+  etcDesc?: string;
 }
 
 // 전시 정보
@@ -178,6 +206,23 @@ export interface Facility extends BaseFacility {
   culturalFacility?: CulturalFacilityInfo;
   /** 맛집 정보 */
   restaurantInfo?: RestaurantInfo;
+  
+  // 추가 속성들 (기존 코드 호환성)
+  /** 문화 이벤트 정보 */
+  culturalEvent?: CulturalEvent;
+  /** 지하철역 정보 */
+  subwayStation?: {
+    route?: string;
+    line?: string;
+    stationName?: string;
+  };
+  /** 따릉이 시설 정보 */
+  bikeFacility?: {
+    stationId?: string;
+    rackTotCnt?: number;
+    parkingBikeTotCnt?: number;
+    shared?: number;
+  };
 }
 
 // 클러스터된 시설 정보

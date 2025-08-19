@@ -11,8 +11,8 @@ import React, { useCallback } from 'react';
 import { MapProvider } from './providers/MapProvider';
 import { FacilityProvider } from './providers/FacilityProvider';
 import { MapView } from './MapView';
-import { ClusterBottomSheet } from './ClusterBottomSheet';
-import { FacilityBottomSheet } from './FacilityBottomSheet';
+import { ClusterBottomSheetWrapper } from './ClusterBottomSheetWrapper';
+import { FacilityBottomSheetWrapper } from './FacilityBottomSheetWrapper';
 import type { 
   UserPreferences, 
   FacilityCategory, 
@@ -20,7 +20,7 @@ import type {
   Facility,
   ClusteredFacility 
 } from '@/lib/types';
-import type { SearchItem } from '@/hooks/useSearchCache';
+import type { SearchItem } from '@/shared/lib/hooks/useSearchCache';
 
 // MapContainer Props
 interface MapContainerProps {
@@ -124,11 +124,11 @@ const MapContainer = React.forwardRef<MapContainerRef, MapContainerProps>(
             {/* 지도 뷰 컴포넌트 */}
             <MapView />
             
-            {/* 클러스터 바텀시트 */}
-            <ClusterBottomSheet />
+            {/* 클러스터 바텀시트 - Context에서 자동으로 값을 가져옴 */}
+            <ClusterBottomSheetWrapper />
             
-            {/* 시설 바텀시트 */}
-            <FacilityBottomSheet />
+            {/* 시설 바텀시트 - Context에서 자동으로 값을 가져옴 */}
+            <FacilityBottomSheetWrapper />
           </FacilityProvider>
         </MapProvider>
       </div>

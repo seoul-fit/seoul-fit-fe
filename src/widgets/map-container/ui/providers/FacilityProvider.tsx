@@ -8,15 +8,15 @@
 'use client';
 
 import React, { createContext, useContext, useCallback, useMemo, useEffect } from 'react';
-import { useFacilities } from '@/hooks/useFacilities';
-import { useParks } from '@/hooks/useParks';
-import { useLibraries } from '@/hooks/useLibraries';
-import { useCulturalSpaces } from '@/hooks/useCulturalSpaces';
-import { useRestaurants } from '@/hooks/useRestaurants';
-import { useCoolingShelter } from '@/hooks/useCoolingShelter';
-import { useSubwayStations } from '@/hooks/useSubwayStations';
-import { usePOI } from '@/hooks/usePOI';
-import { convertPOIToFacility } from '@/services/poi';
+import { useFacilities } from '@/shared/lib/hooks/useFacilities';
+import { useParks } from '@/shared/lib/hooks/useParks';
+import { useLibraries } from '@/shared/lib/hooks/useLibraries';
+import { useCulturalSpaces } from '@/shared/lib/hooks/useCulturalSpaces';
+import { useRestaurants } from '@/shared/lib/hooks/useRestaurants';
+import { useCoolingShelter } from '@/shared/lib/hooks/useCoolingShelter';
+import { useSubwayStations } from '@/shared/lib/hooks/useSubwayStations';
+import { usePOI } from '@/shared/lib/hooks/usePOI';
+import { convertPOIToFacility } from '@/shared/api/poi';
 import { useMapContext } from './MapProvider';
 import type { 
   Facility, 
@@ -232,10 +232,10 @@ export function FacilityProvider({
     }
     
     // 각 카테고리별 시설들 추가
-    if (parks) combined.push(...parks);
-    if (libraries) combined.push(...libraries);
+    if (parks) combined.push(...parks.map(p => ({ ...p, category: 'park' as const, congestionLevel: 'low' as const })));
+    if (libraries) combined.push(...libraries.map(l => ({ ...l, category: 'library' as const, congestionLevel: 'low' as const })));
     if (culturalSpaces) combined.push(...culturalSpaces);
-    if (restaurants) combined.push(...restaurants);
+    if (restaurants) combined.push(...restaurants.map(r => ({ ...r, category: 'restaurant' as const, congestionLevel: 'low' as const })));
     if (coolingShelters) combined.push(...coolingShelters);
     if (subwayStations) combined.push(...subwayStations);
     

@@ -4,8 +4,7 @@
  * @since 2.0.0
  */
 
-import type { Position } from './common';
-import type { Facility, ClusteredFacility } from './facility';
+import type { Position, Facility, ClusteredFacility } from '@/lib/types';
 
 // 카카오맵 관련 타입들 (기존 호환성 유지)
 export interface KakaoLatLng {
@@ -47,6 +46,8 @@ export interface MapStatus {
   initialized: boolean;
   /** 지도 인스턴스 준비 여부 */
   ready: boolean;
+  /** 성공 여부 */
+  success?: boolean;
 }
 
 // 줌 레벨 정보

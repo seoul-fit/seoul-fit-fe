@@ -12,9 +12,9 @@ import { WeatherPanel } from './WeatherPanel';
 import { MapControls } from './MapControls';
 import { MapStatusIndicator } from './MapStatusIndicator';
 // import { FacilityBottomSheet } from './FacilityBottomSheet'; // 사용하지 않음
-import { useMapMarkers } from '@/hooks/useMapMarkers';
-import { useCongestion } from '@/hooks/useCongestion';
-import { useWeather } from '@/hooks/useWeather';
+import { useMapMarkers } from '@/shared/lib/hooks/useMapMarkers';
+import { useCongestion } from '@/shared/lib/hooks/useCongestion';
+import { useWeather } from '@/shared/lib/hooks/useWeather';
 import { FACILITY_CATEGORIES } from '@/lib/types';
 import { useMapContext } from './providers/MapProvider';
 import { useFacilityContext } from './providers/FacilityProvider';
@@ -259,7 +259,11 @@ export const MapView: React.FC<MapViewProps> = ({
 
   const { markersCount } = useMapMarkers({
     mapInstance: effectiveMapInstance,
-    mapStatus: effectiveMapStatus,
+    mapStatus: {
+      success: effectiveMapStatus?.success ?? false,
+      loading: effectiveMapStatus?.loading ?? false,
+      error: effectiveMapStatus?.error ?? null,
+    },
     visibleFacilities: filteredFacilities,
     onFacilitySelect: handleFacilitySelect,
     onClusterSelect: handleClusterSelect,
@@ -307,7 +311,7 @@ export const MapView: React.FC<MapViewProps> = ({
       />
 
       {/* 혼잡도 패널 오버레이 */}
-      {showCongestion && <div className='fixed inset-0 z-24' onClick={toggleCongestionDisplay} />}
+      {showCongestion && <div className='fixed inset-0 z-24' onClick={() => toggleCongestionDisplay()} />}
 
       {/* 혼잡도 패널 (아이콘 우측에 위치) */}
       {showCongestion && (
@@ -328,7 +332,7 @@ export const MapView: React.FC<MapViewProps> = ({
       )}
 
       {/* 날씨 패널 오버레이 */}
-      {showWeather && <div className='fixed inset-0 z-24' onClick={toggleWeatherDisplay} />}
+      {showWeather && <div className='fixed inset-0 z-24' onClick={() => toggleWeatherDisplay()} />}
 
       {/* 날씨 패널 (아이콘 우측에 위치) */}
       {showWeather && (

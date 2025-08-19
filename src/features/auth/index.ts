@@ -4,11 +4,11 @@
  */
 
 // Hooks
-export { useAuth } from './model/use-auth';
+export { useAuth } from '@/shared/lib/hooks/useAuth';
 
 // API
 export * from './api';
 
 // UI Components
-export { AuthProvider } from './ui/AuthProvider';
-export { LogoutModal } from './ui/LogoutModal';
+export { AuthProvider } from '@/shared/ui/auth/AuthProvider';
+export { default as LogoutModal } from '@/shared/ui/auth/LogoutModal';

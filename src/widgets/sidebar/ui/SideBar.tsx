@@ -7,8 +7,8 @@ import { Check, LogOut, Settings, User } from 'lucide-react';
 import { X } from 'lucide-react';
 import type { UserPreferences, FacilityCategory } from '@/lib/types';
 import { FACILITY_CONFIGS } from '@/lib/facilityIcons';
-import { useAuthStore } from '@/store/authStore';
-import WarningModal from '@/components/ui/warning-modal';
+import { useAuthStore } from '@/shared/model/authStore';
+import WarningModal from '@/shared/ui/warning-modal';
 
 interface SidebarProps {
   isOpen: boolean;
