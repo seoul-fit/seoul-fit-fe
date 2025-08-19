@@ -54,7 +54,7 @@ export const MapView: React.FC<MapViewProps> = ({
   onMapClick,
 }) => {
   // 렌더링 확인용 로그
-  console.log('[MapView] 컴포넌트 렌더링됨');
+  // console.log('[MapView] 컴포넌트 렌더링됨');
   
   // Provider에서 데이터 가져오기
   const { mapInstance: contextMapInstance, mapStatus: contextMapStatus } = useMapContext();
@@ -68,12 +68,12 @@ export const MapView: React.FC<MapViewProps> = ({
     currentLocation
   } = useFacilityContext();
   
-  console.log('[MapView] Provider 데이터 확인:', {
-    mapInstance: !!contextMapInstance,
-    mapStatus: contextMapStatus,
-    facilitiesLength: facilities?.length || 0,
-    currentLocation
-  });
+  // console.log('[MapView] Provider 데이터 확인:', {
+  //   mapInstance: !!contextMapInstance,
+  //   mapStatus: contextMapStatus,
+  //   facilitiesLength: facilities?.length || 0,
+  //   currentLocation
+  // });
 
   // 실시간 혼잡도 데이터 훅
   const {
@@ -98,8 +98,8 @@ export const MapView: React.FC<MapViewProps> = ({
   } = useWeather();
 
   // Debug logs
-  console.log('[MapView] 혼잡도 상태:', { showCongestion, congestionData: !!congestionData, congestionLoading, congestionError });
-  console.log('[MapView] 날씨 상태:', { showWeather, weatherData: !!weatherData, weatherLoading, weatherError });
+  // console.log('[MapView] 혼잡도 상태:', { showCongestion, congestionData: !!congestionData, congestionLoading, congestionError });
+  // console.log('[MapView] 날씨 상태:', { showWeather, weatherData: !!weatherData, weatherLoading, weatherError });
 
   // Provider의 데이터 사용
   const effectiveMapInstance = contextMapInstance;
@@ -108,13 +108,13 @@ export const MapView: React.FC<MapViewProps> = ({
   const filteredFacilities = getFilteredFacilities();
 
   // 디버깅 로그 추가
-  console.log(`[MapView] 시설 데이터 상태:`, {
-    totalFacilities: facilities.length,
-    filteredFacilities: filteredFacilities.length,
-    activeCategories: activeCategories,
-    mapStatus: effectiveMapStatus,
-    mapInstance: !!effectiveMapInstance
-  });
+  // console.log(`[MapView] 시설 데이터 상태:`, {
+  //   totalFacilities: facilities.length,
+  //   filteredFacilities: filteredFacilities.length,
+  //   activeCategories: activeCategories,
+  //   mapStatus: effectiveMapStatus,
+  //   mapInstance: !!effectiveMapInstance
+  // });
 
   const handleToggleCategory = toggleCategory;
 
@@ -128,7 +128,7 @@ export const MapView: React.FC<MapViewProps> = ({
   const handleClusterSelect = useCallback(
     (cluster: ClusteredFacility) => {
       // Provider를 통해 클러스터 선택 상태 관리
-      console.log('Cluster selected:', cluster);
+      // console.log('Cluster selected:', cluster);
     },
     []
   );
@@ -180,7 +180,7 @@ export const MapView: React.FC<MapViewProps> = ({
           const lat = center.getLat();
           const lng = center.getLng();
           
-          console.log(`지도 이동: (${lat}, ${lng})`);
+          // console.log(`지도 이동: (${lat}, ${lng})`);
           
           // 병렬로 데이터 로딩 (이전 버전과 동일한 패턴)
           const promises = [
@@ -190,7 +190,7 @@ export const MapView: React.FC<MapViewProps> = ({
           ];
           
           await Promise.allSettled(promises);
-          console.log('위치 기반 데이터 업데이트 완료');
+          // console.log('위치 기반 데이터 업데이트 완료');
         } catch (error) {
           console.error('지도 이동 시 데이터 업데이트 실패:', error);
         }
@@ -236,9 +236,9 @@ export const MapView: React.FC<MapViewProps> = ({
     
     const loadInitialData = async () => {
       try {
-        console.log('[MapView] 초기 위치 기반 데이터 로딩 시작...', currentLocation);
-        console.log('[MapView] fetchCongestionData:', typeof fetchCongestionData);
-        console.log('[MapView] fetchWeatherData:', typeof fetchWeatherData);
+        // console.log('[MapView] 초기 위치 기반 데이터 로딩 시작...', currentLocation);
+        // console.log('[MapView] fetchCongestionData:', typeof fetchCongestionData);
+        // console.log('[MapView] fetchWeatherData:', typeof fetchWeatherData);
         
         const promises = [
           fetchCongestionData(currentLocation.lat, currentLocation.lng),
@@ -246,7 +246,7 @@ export const MapView: React.FC<MapViewProps> = ({
         ];
         
         await Promise.allSettled(promises);
-        console.log('[MapView] 초기 위치 기반 데이터 로딩 완료');
+        // console.log('[MapView] 초기 위치 기반 데이터 로딩 완료');
       } catch (error) {
         console.error('[MapView] 초기 위치 기반 데이터 로딩 실패:', error);
       }

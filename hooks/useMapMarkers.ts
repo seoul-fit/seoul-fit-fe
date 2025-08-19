@@ -177,16 +177,16 @@ export const useMapMarkers = ({
 
   // 마커 생성 (성능 최적화 + 클러스터링)
   const createMarkers = useCallback(() => {
-    console.log(`[useMapMarkers] 마커 생성 시작 - 시설 수: ${visibleFacilities.length}개`);
+    // console.log(`[useMapMarkers] 마커 생성 시작 - 시설 수: ${visibleFacilities.length}개`);
     
     if (!mapInstance || !mapStatus?.success) {
-      console.log('[useMapMarkers] 지도 인스턴스나 상태가 준비되지 않음');
+      // console.log('[useMapMarkers] 지도 인스턴스나 상태가 준비되지 않음');
       return;
     }
 
     const windowWithKakao = window as WindowWithKakao;
     if (!windowWithKakao.kakao?.maps) {
-      console.log('[useMapMarkers] Kakao Maps API가 로드되지 않음');
+      // console.log('[useMapMarkers] Kakao Maps API가 로드되지 않음');
       return;
     }
 
@@ -291,7 +291,7 @@ export const useMapMarkers = ({
     });
 
     customOverlaysRef.current = newOverlays;
-    console.log(`[useMapMarkers] 마커 생성 완료 - 총 ${newOverlays.length}개 마커 생성`);
+    // console.log(`[useMapMarkers] 마커 생성 완료 - 총 ${newOverlays.length}개 마커 생성`);
 
     // 이벤트 바인딩 (약간의 지연 후 실행)
     if (eventBindingTimeoutRef.current) {
@@ -371,7 +371,15 @@ export const useMapMarkers = ({
     mapListenersRef.current = [zoomListener, dragEndListener];
 
     return () => {
-      // 이벤트 리스너 제거는 생략 (메모리 누수 방지를 위해 다른 방법 사용)
+      // 이벤트 리스너 제거
+      const kakaoMaps = windowWithKakao.kakao.maps;
+      mapListenersRef.current.forEach(listener => {
+        try {
+          kakaoMaps.event.removeListener(listener);
+        } catch (error) {
+          console.error('이벤트 리스너 제거 실패:', error);
+        }
+      });
       mapListenersRef.current = [];
     };
   }, [mapInstance, mapStatus?.success, debouncedEventBinding]);
