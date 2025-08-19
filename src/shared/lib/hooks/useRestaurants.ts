@@ -1,37 +1,28 @@
-import { useState, useEffect, useCallback } from 'react';
-import type { Restaurant } from '@/lib/types';
-import { getNearbyRestaurants } from '@/shared/api/restaurant';
+/**
+ * @deprecated 이 훅은 더 이상 사용되지 않습니다.
+ * 대신 @/features/restaurant-search의 useRestaurants를 사용하세요.
+ * 
+ * 마이그레이션 가이드:
+ * - useRestaurants() → useRestaurants({ lat, lng }) 또는 useAllRestaurants()
+ * - React Query 기반으로 변경되어 더 나은 캐싱과 에러 처리 제공
+ */
 
-export function useRestaurants() {
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export { useRestaurants, useAllRestaurants, useNearbyRestaurants } from '@/features/restaurant-search';
 
-  const fetchRestaurants = useCallback(async (lat: number, lng: number) => {
-    setIsLoading(true);
-    setError(null);
+// 기존 인터페이스 호환성을 위한 래퍼 (점진적 마이그레이션용)
+import { useCallback } from 'react';
+import { useNearbyRestaurants as useNearbyRestaurantsNew } from '@/features/restaurant-search';
 
-    try {
-      const data = await getNearbyRestaurants(lat, lng);
-      setRestaurants(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '맛집 데이터를 불러오는데 실패했습니다.');
-      setRestaurants([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const clearRestaurants = useCallback(() => {
-    setRestaurants([]);
-    setError(null);
+export function useRestaurantsLegacy() {
+  console.warn('useRestaurantsLegacy는 deprecated입니다. useRestaurants from @/features/restaurant-search를 사용하세요.');
+  
+  const fetchRestaurants = useCallback((lat: number, lng: number) => {
+    // 새 훅으로 리다이렉트
+    return useNearbyRestaurantsNew(lat, lng);
   }, []);
 
   return {
-    restaurants,
-    isLoading,
-    error,
     fetchRestaurants,
-    clearRestaurants,
+    // 다른 메서드들은 새 React Query 훅으로 대체됨
   };
 }

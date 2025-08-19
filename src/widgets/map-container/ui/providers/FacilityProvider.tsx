@@ -18,6 +18,7 @@ import { useSubwayStations } from '@/shared/lib/hooks/useSubwayStations';
 import { usePOI } from '@/shared/lib/hooks/usePOI';
 import { convertPOIToFacility } from '@/shared/api/poi';
 import { useMapContext } from './MapProvider';
+import type { Restaurant } from '@/entities/restaurant';
 import type { 
   Facility, 
   ClusteredFacility, 
@@ -99,7 +100,7 @@ export function FacilityProvider({
   const { parks, isLoading: parksLoading, fetchAllParksData } = useParks();
   const { libraries, isLoading: librariesLoading, fetchAllLibrariesData } = useLibraries();
   const { culturalSpaces, isLoading: culturalLoading, fetchCulturalSpaces } = useCulturalSpaces();
-  const { restaurants, isLoading: restaurantsLoading, fetchRestaurants } = useRestaurants();
+  const { data: restaurants, isLoading: restaurantsLoading, refetch: fetchRestaurants } = useRestaurants();
   const { facilities: coolingShelters, isLoading: coolingSheltersLoading, fetchCoolingShelters } = useCoolingShelter();
   const { subwayStations, loading: subwayLoading } = useSubwayStations();
   const { pois, loading: poisLoading, error: poisError, fetchNearbyPOIs } = usePOI();
@@ -145,7 +146,7 @@ export function FacilityProvider({
       }
       
       if (fetchRestaurants) {
-        promises.push(fetchRestaurants(lat, lng).catch(err => console.error('맛집 데이터 로딩 실패:', err)));
+        promises.push(fetchRestaurants().catch((err: Error) => console.error('맛집 데이터 로딩 실패:', err)));
       }
       
       if (fetchCoolingShelters) {
@@ -235,7 +236,12 @@ export function FacilityProvider({
     if (parks) combined.push(...parks.map(p => ({ ...p, category: 'park' as const, congestionLevel: 'low' as const })));
     if (libraries) combined.push(...libraries.map(l => ({ ...l, category: 'library' as const, congestionLevel: 'low' as const })));
     if (culturalSpaces) combined.push(...culturalSpaces);
-    if (restaurants) combined.push(...restaurants.map(r => ({ ...r, category: 'restaurant' as const, congestionLevel: 'low' as const })));
+    if (restaurants) combined.push(...restaurants.map((r: Restaurant) => ({ 
+      ...r, 
+      category: 'restaurant' as const, 
+      congestionLevel: 'low' as const,
+      position: { lat: r.latitude, lng: r.longitude }
+    })));
     if (coolingShelters) combined.push(...coolingShelters);
     if (subwayStations) combined.push(...subwayStations);
     

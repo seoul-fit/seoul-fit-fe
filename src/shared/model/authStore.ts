@@ -1,6 +1,7 @@
 import { create } from 'zustand'; // React용 경량 상태 관리 라이브러리
 import { persist } from 'zustand/middleware'; // Zustand 미들웨어 기능 (persist : 데이터 영속성 제공)
 import Cookies from 'js-cookie'; // 브라우저 쿠키 조작 라이브러리
+import { createApiEndpoint } from '@/shared/config/env';
 
 // User 정보
 interface User {
@@ -104,7 +105,7 @@ export const useAuthStore = create<AuthToken>()(
           try {
             // OAuth 정보로 사용자 정보 조회
             const response = await fetch(
-              `http://localhost:8080/api/users/me?oauthUserId=${currentState.user.oauthUserId}&oauthProvider=${currentState.user.oauthProvider}`,
+              createApiEndpoint(`/api/users/me?oauthUserId=${currentState.user.oauthUserId}&oauthProvider=${currentState.user.oauthProvider}`),
               {
                 method: 'GET',
                 headers: {
@@ -151,7 +152,7 @@ export const useAuthStore = create<AuthToken>()(
               const refreshToken = Cookies.get('refresh_token');
 
               if (refreshToken) {
-                const refreshResponse = await fetch('http://localhost:8080/api/auth/refresh', {
+                const refreshResponse = await fetch(createApiEndpoint('/api/auth/refresh'), {
                   method: 'POST',
                   headers: {
                     'Refresh-Token': refreshToken,

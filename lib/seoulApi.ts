@@ -1,7 +1,7 @@
 // lib/seoulApi.ts - 서울 API 직접 호출 서비스
 
 const API_KEY = process.env.SEOUL_API_KEY || '4b46766a7673706939395769456b6b';
-const BASE_URL = 'http://openapi.seoul.go.kr:8088';
+const BASE_URL = process.env.SEOUL_API_BASE_URL || 'http://openapi.seoul.go.kr:8088';
 
 // 지하철 역 정보 타입
 export interface SubwayStationRow {
@@ -107,20 +107,50 @@ async function fetchBikeBatch(startIndex: number, endIndex: number): Promise<Bik
   }
 
   const responseText = await response.text();
-
-  if (responseText.trim().startsWith('<')) {
-    console.error(
-      `[서울API] HTML 응답 받음 (${startIndex}-${endIndex}):`,
-      responseText.substring(0, 300)
-    );
-    throw new Error(`따릉이 API에서 HTML 응답을 받았습니다. API 키나 URL을 확인해주세요.`);
-  }
-
   let data: unknown;
-  try {
-    data = JSON.parse(responseText);
-  } catch (parseError) {
-    throw new Error('따릉이 API 응답을 JSON으로 파싱할 수 없습니다.');
+
+  // XML 응답 체크 및 처리
+  if (responseText.trim().startsWith('<')) {
+    console.warn(
+      `[서울API] XML/HTML 응답 받음 (${startIndex}-${endIndex}), JSON으로 재시도...`
+    );
+    // XML 응답일 경우 URL을 json으로 변경하여 재시도
+    const jsonUrl = apiUrl.replace('/xml/', '/json/');
+    const retryResponse = await fetch(jsonUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!retryResponse.ok) {
+      console.error(`따릉이 API 재시도 실패: ${retryResponse.status}`);
+      // API가 일시적으로 다운되었을 수 있으므로 빈 배열 반환
+      return [];
+    }
+    
+    const retryText = await retryResponse.text();
+    if (retryText.trim().startsWith('<')) {
+      console.error(`따릉이 API가 계속 XML을 반환합니다. API 상태를 확인해주세요.`);
+      // API가 일시적으로 다운되었을 수 있으므로 빈 배열 반환
+      return [];
+    }
+    
+    try {
+      data = JSON.parse(retryText);
+    } catch (parseError) {
+      console.error('[서울API] JSON 파싱 실패:', parseError);
+      // API가 일시적으로 다운되었을 수 있으므로 빈 배열 반환
+      return [];
+    }
+  } else {
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('[서울API] JSON 파싱 실패:', parseError);
+      // API가 일시적으로 다운되었을 수 있으므로 빈 배열 반환
+      return [];
+    }
   }
 
   if (

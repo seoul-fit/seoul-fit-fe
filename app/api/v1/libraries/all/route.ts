@@ -1,71 +1,32 @@
+/**
+ * Libraries V1 API Route (단순 프록시)
+ * 
+ * 역할: Next.js API 라우트 진입점
+ * 실제 로직: src/entities/library에서 처리
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
-import axios from 'axios';
-import { loadAllLibraries, LibraryRow } from '@/lib/seoulApi';
+import { fetchAllLibraries, validateSearchParams } from '@/entities/library';
 
-const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_BASE_URL || 'http://localhost:8080';
-
-// 서울 공공데이터를 앱 타입으로 변환
-function convertLibraryRowToAppFormat(library: LibraryRow) {
-  return {
-    id: Math.random().toString(36).substr(2, 9), // 고유 ID 생성
-    lbrryName: library.LBRRY_NAME,
-    name: library.LBRRY_NAME,
-    adres: library.ADRES,
-    address: library.ADRES,
-    telNo: library.TEL_NO,
-    phoneNumber: library.TEL_NO,
-    hmpgUrl: library.HMPG_URL,
-    website: library.HMPG_URL,
-    xcnts: parseFloat(library.XCNTS) || 0,
-    latitude: parseFloat(library.XCNTS) || 0,
-    ydnts: parseFloat(library.YDNTS) || 0,
-    longitude: parseFloat(library.YDNTS) || 0,
-    opTime: library.OP_TIME,
-    operatingHours: library.OP_TIME,
-    fdrmCloseDate: library.FDRM_CLOSE_DATE,
-  };
-}
-
+/**
+ * GET 전체 도서관 데이터 조회
+ * Query Parameters: page(페이지, 기본값 0), size(페이지 크기, 기본값 100)
+ */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const page = searchParams.get('page') || '0';
-    const size = searchParams.get('size') || '100';
+    const pageParam = searchParams.get('page');
+    const sizeParam = searchParams.get('size');
 
-    // 먼저 백엔드 서버 시도
-    try {
-      const response = await axios.get(`${BACKEND_BASE_URL}/api/v1/libraries/all`, {
-        params: {
-          page: parseInt(page),
-          size: parseInt(size),
-        },
-        timeout: 5000, // 타임아웃을 5초로 단축
-      });
+    // 파라미터 검증
+    const params = validateSearchParams(pageParam, sizeParam);
 
-      console.log('[도서관API] 백엔드에서 데이터 로드 성공');
-      return NextResponse.json(response.data);
-    } catch (backendError) {
-      console.warn('[도서관API] 백엔드 서버 연결 실패, 공공데이터 직접 호출로 전환:', backendError);
-      
-      // 백엔드 실패 시 서울 공공데이터 직접 호출
-      try {
-        const libraryRows = await loadAllLibraries();
-        const formattedLibraries = libraryRows.map(convertLibraryRowToAppFormat);
-        
-        // 페이징 적용
-        const startIndex = parseInt(page) * parseInt(size);
-        const endIndex = startIndex + parseInt(size);
-        const paginatedLibraries = formattedLibraries.slice(startIndex, endIndex);
-        
-        console.log(`[도서관API] 공공데이터에서 직접 로드 성공: ${formattedLibraries.length}개 (페이지: ${paginatedLibraries.length}개)`);
-        return NextResponse.json(paginatedLibraries);
-      } catch (seoulApiError) {
-        console.error('[도서관API] 공공데이터 호출도 실패:', seoulApiError);
-        return NextResponse.json([]);
-      }
-    }
+    // 도서관 데이터 조회 (백엔드 우선, 실패시 공공데이터)
+    const libraries = await fetchAllLibraries(params);
+    
+    return NextResponse.json(libraries);
   } catch (error) {
-    console.error('[도서관API] 전체 도서관 데이터 조회 실패:', error);
+    console.error('[Libraries V1 API] 조회 중 오류:', error);
     return NextResponse.json([]);
   }
 }

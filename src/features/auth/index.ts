@@ -1,14 +1,26 @@
 /**
- * @fileoverview Auth Feature
- * @description 인증 관련 기능 통합 export
+ * @fileoverview Auth Feature Public API
+ * @description 인증 기능 공개 인터페이스
  */
 
+// Components
+export { AuthCallback } from './ui/AuthCallback';
+export { SignupForm } from './ui/SignupForm';
+export { LoadingStates } from './ui/LoadingStates';
+
 // Hooks
+export { useOAuthCallback } from './model/oauth-flow';
+
+// Legacy exports for compatibility
 export { useAuth } from '@/shared/lib/hooks/useAuth';
-
-// API
-export * from './api';
-
-// UI Components
-export { AuthProvider } from '@/shared/ui/auth/AuthProvider';
 export { default as LogoutModal } from '@/shared/ui/auth/LogoutModal';
+
+// Types
+export type {
+  AuthStatus,
+  UserInfo,
+  SignupData,
+  OAuthCallbackParams,
+  AuthResponse,
+  InterestOption
+} from './model/types';

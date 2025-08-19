@@ -1,39 +1,41 @@
+/**
+ * Parks Nearby API Route (단순 프록시)
+ * 
+ * 역할: Next.js API 라우트 진입점
+ * 실제 로직: src/entities/park에서 처리
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
-import axios from 'axios';
+import { fetchNearbyParks, validateLocationWithRadius } from '@/entities/park';
 
-const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_BASE_URL || 'http://localhost:8080';
-
+/**
+ * GET 위치 기반 공원 조회 (반경 설정 가능)
+ * Query Parameters: latitude(위도), longitude(경도), radius(반경km, 기본값 2)
+ */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const latitude = searchParams.get('latitude');
     const longitude = searchParams.get('longitude');
-    const radius = searchParams.get('radius') || '2';
+    const radius = searchParams.get('radius');
 
-    if (!latitude || !longitude) {
-      return NextResponse.json({ error: '위도와 경도가 필요합니다.' }, { status: 400 });
-    }
-
-    const response = await axios.get(`${BACKEND_BASE_URL}/api/parks/nearby`, {
-      params: {
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
-        radius: parseFloat(radius),
-      },
-      timeout: 10000,
-    });
-
-    return NextResponse.json(response.data);
-  } catch (error) {
-    console.error('공원 데이터 조회 실패:', error);
-
-    if (axios.isAxiosError(error)) {
+    // 파라미터 검증
+    const params = validateLocationWithRadius(latitude, longitude, radius);
+    if (!params) {
       return NextResponse.json(
-        { error: '공원 데이터를 가져오는데 실패했습니다.' },
-        { status: error.response?.status || 500 }
+        { error: '올바른 위도와 경도가 필요합니다.' },
+        { status: 400 }
       );
     }
 
-    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
+    // 위치 기반 공원 조회
+    const parks = await fetchNearbyParks(params.lat, params.lng, params.radius);
+    return NextResponse.json(parks);
+  } catch (error) {
+    console.error('[Parks Nearby API] 조회 중 오류:', error);
+    return NextResponse.json(
+      { error: '공원 데이터를 가져오는데 실패했습니다.' },
+      { status: 500 }
+    );
   }
 }

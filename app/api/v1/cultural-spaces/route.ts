@@ -1,40 +1,37 @@
-import { NextRequest, NextResponse } from 'next/server';
+/**
+ * Cultural Spaces V1 API Route (단순 프록시)
+ * 
+ * 역할: Next.js API 라우트 진입점
+ * 실제 로직: src/entities/cultural-space에서 처리
+ */
 
+import { NextRequest, NextResponse } from 'next/server';
+import { fetchNearbyCulturalSpaces, validateLocationParams } from '@/entities/cultural-space';
+
+/**
+ * GET 위치 기반 문화공간 조회
+ * Query Parameters: lat(위도), lng(경도)
+ */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const lat = searchParams.get('lat');
     const lng = searchParams.get('lng');
 
-    if (!lat || !lng) {
-      return NextResponse.json({ error: '위도와 경도가 필요합니다.' }, { status: 400 });
-    }
-
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/v1/cultural-spaces/nearby?latitude=${lat}&longitude=${lng}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
+    // 파라미터 검증
+    const coords = validateLocationParams(lat, lng);
+    if (!coords) {
+      return NextResponse.json(
+        { error: '올바른 위도와 경도가 필요합니다.' },
+        { status: 400 }
       );
-
-      if (!response.ok) {
-        console.warn(`문화공간 API 호출 실패: ${response.status}`);
-        return NextResponse.json([]);
-      }
-
-      const data = await response.json();
-      return NextResponse.json(data);
-    } catch (backendError) {
-      // 백엔드 서버 연결 실패 시 빈 배열 반환 (프론트엔드 동작 유지)
-      console.warn('문화공간 백엔드 서버 연결 실패:', backendError);
-      return NextResponse.json([]);
     }
+
+    // 문화공간 조회
+    const spaces = await fetchNearbyCulturalSpaces(coords);
+    return NextResponse.json(spaces);
   } catch (error) {
-    console.error('문화공간 API 에러:', error);
+    console.error('[Cultural Spaces V1 API] 조회 중 오류:', error);
     return NextResponse.json([]);
   }
 }
