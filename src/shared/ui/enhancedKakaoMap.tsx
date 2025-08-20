@@ -4,19 +4,15 @@ import React, { useState, useRef } from 'react';
 import { Alert, AlertDescription } from '@/shared/ui/alert';
 import { usePreferences } from '@/shared/lib/hooks/usePreferences';
 import { Info } from 'lucide-react';
-import Header, { HeaderRef } from './layout/Header';
+import Header, { HeaderRef } from '@/widgets/header/ui/Header';
 import SideBar from './layout/SideBar';
 import MapContainer, { MapContainerRef } from '@/widgets/map-container/ui/MapContainer';
 import LogoutModal from './auth/LogoutModal';
 import { useKakaoLogin } from '@/shared/lib/hooks/useKakaoLogin';
 import type { SearchItem } from '@/shared/lib/hooks/useSearchCache';
+import type { FacilityCategory } from '@/lib/types';
 
-// 기존 타입 정의들
-interface MapStatus {
-  loading: boolean;
-  error: string | null;
-  success: boolean;
-}
+import type { MapStatus } from '@/shared/types/map';
 export default function SeoulFitMapApp() {
   console.log('[SeoulFitMapApp] 메인 앱 컴포넌트 렌더링 시작');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -86,9 +82,8 @@ export default function SeoulFitMapApp() {
       <SideBar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
-        preferences={preferences}
-        onPreferenceToggle={togglePreference}
-        onPreferencesRefresh={refreshPreferences}
+        activeCategories={Object.keys(preferences).filter(key => preferences[key as keyof typeof preferences]) as FacilityCategory[]}
+        onCategoryToggle={togglePreference}
         showWarning={showWarning}
         onWarningClose={() => setShowWarning(false)}
         onLogin={login}

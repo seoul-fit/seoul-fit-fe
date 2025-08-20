@@ -17,7 +17,7 @@ const debounce = <T extends (...args: never[]) => unknown>(
 
 interface UseCurrentLocationMarkerProps {
   mapInstance: KakaoMap | null;
-  mapStatus: { success: boolean };
+  mapStatus: { success: boolean; loading?: boolean; error?: string | null };
   currentLocation: { coords: { lat: number; lng: number } } | null;
   onLocationChange?: (lat: number, lng: number) => void;
 }
@@ -45,20 +45,76 @@ export const useCurrentLocationMarker = ({
         markerRef.current.setMap(null);
       }
 
-      // 현재 위치 마커 이미지 설정
-      const imageSrc = 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png';
-      const imageSize = new kakaoMaps.Size(24, 35);
-      const markerImage = new kakaoMaps.MarkerImage(imageSrc, imageSize);
-      
-      // 새 마커 생성 (드래그 가능한 마커)
-      const marker = new kakaoMaps.Marker({
+      // 커스텀 오버레이로 현재 위치 마커 생성 (더 명확한 스타일링)
+      const markerContent = `
+        <div style="
+          position: relative;
+          width: 50px;
+          height: 50px;
+          cursor: move;
+        ">
+          <div style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background: #4285F4;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            z-index: 2;
+          "></div>
+          <div style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: rgba(66, 133, 244, 0.2);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+          "></div>
+          <style>
+            @keyframes pulse {
+              0% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.8;
+              }
+              50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 0.4;
+              }
+              100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.8;
+              }
+            }
+          </style>
+        </div>
+      `;
+
+      const customOverlay = new kakaoMaps.CustomOverlay({
         position: new kakaoMaps.LatLng(lat, lng),
-        title: '현재 위치 (드래그하여 이동 가능)',
-        draggable: true,
-        image: markerImage,
+        content: markerContent,
+        xAnchor: 0.5,
+        yAnchor: 0.5,
+        zIndex: 999,
       });
 
-      marker.setMap(mapInstance);
+      customOverlay.setMap(mapInstance);
+
+      // 드래그 기능을 위한 표준 마커 (투명하게 처리)
+      const invisibleMarker = new kakaoMaps.Marker({
+        position: new kakaoMaps.LatLng(lat, lng),
+        draggable: true,
+        opacity: 0,
+        zIndex: 998,
+      });
+
+      invisibleMarker.setMap(mapInstance);
 
       // 드래그 종료 시 위치 업데이트 (디바운싱 적용)
       const debouncedLocationChange = debounce((lat: number, lng: number) => {
@@ -68,10 +124,19 @@ export const useCurrentLocationMarker = ({
         }
       }, 1000); // 1초 디바운싱
 
-      kakaoMaps.event.addListener(marker, 'dragend', () => {
-        const position = marker.getPosition();
+      // 드래그 중일 때 커스텀 오버레이도 함께 이동
+      kakaoMaps.event.addListener(invisibleMarker, 'drag', () => {
+        const position = invisibleMarker.getPosition();
+        customOverlay.setPosition(position);
+      });
+
+      kakaoMaps.event.addListener(invisibleMarker, 'dragend', () => {
+        const position = invisibleMarker.getPosition();
         const newLat = position.getLat();
         const newLng = position.getLng();
+
+        // 커스텀 오버레이 위치 업데이트
+        customOverlay.setPosition(position);
 
         // 지도 중심을 마커 위치로 이동
         mapInstance.setCenter(position);
@@ -80,9 +145,15 @@ export const useCurrentLocationMarker = ({
         debouncedLocationChange(newLat, newLng);
       });
 
-      markerRef.current = marker;
+      // 기존 마커 참조를 커스텀 오버레이와 투명 마커 둘 다 저장
+      markerRef.current = {
+        setMap: (map: any) => {
+          customOverlay.setMap(map);
+          invisibleMarker.setMap(map);
+        },
+      } as KakaoMarker;
     },
-    [mapInstance, mapStatus.success]
+    [mapInstance, mapStatus.success, onLocationChange]
   );
 
   // 현재 위치 있으면 마커 생성

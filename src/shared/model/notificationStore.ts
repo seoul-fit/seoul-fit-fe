@@ -3,6 +3,7 @@ import {
   getUnreadNotificationCount,
   getNotificationHistory,
   markNotificationAsRead,
+  markAllNotificationsAsRead,
 } from '@/shared/api/notifications';
 import { Notification, NotificationHistoryResult, NotificationPage } from '@/lib/types';
 
@@ -15,6 +16,7 @@ interface NotificationState {
   fetchUnreadCount: (userId: number, accessToken: string) => Promise<void>;
   fetchNotificationHistory: (userId: number, accessToken: string, page?: number) => Promise<void>;
   markAsRead: (notificationId: number, userId: number, accessToken: string) => Promise<void>;
+  markAllAsRead: (userId: number, accessToken: string) => Promise<void>;
   setUnreadCount: (count: number) => void;
   decrementUnreadCount: () => void;
 }
@@ -70,6 +72,27 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       get().decrementUnreadCount();
     } catch (error) {
       console.error('알림 읽음 처리 실패:', error);
+    }
+  },
+
+  markAllAsRead: async (userId: number, accessToken: string) => {
+    try {
+      await markAllNotificationsAsRead(userId, accessToken);
+
+      // 로컬 상태 업데이트 - 모든 알림을 읽음 처리
+      const currentNotifications = get().notifications;
+      const updatedNotifications = currentNotifications.map(notification => ({
+        ...notification,
+        status: 'READ' as const,
+        readAt: notification.readAt || new Date().toISOString()
+      }));
+
+      set({ 
+        notifications: updatedNotifications,
+        unreadCount: 0 
+      });
+    } catch (error) {
+      console.error('모든 알림 읽음 처리 실패:', error);
     }
   },
 

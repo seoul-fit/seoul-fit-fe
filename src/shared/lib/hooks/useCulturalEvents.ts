@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getNearbyCulturalEvents } from '@/shared/api/culturalEvents';
+import { getNearbyCulturalEvents } from '@/shared/api/cultural';
 
 export const useCulturalEvents = () => {
   const [culturalEvents, setCulturalEvents] = useState<any[]>([]);

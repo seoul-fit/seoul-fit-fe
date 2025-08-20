@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getNearbyCulturalSpaces } from '@/shared/api/culturalSpaces';
+import { getNearbyCulturalSpaces } from '@/shared/api/cultural';
 
 export const useCulturalSpaces = () => {
   const [culturalSpaces, setCulturalSpaces] = useState<any[]>([]);

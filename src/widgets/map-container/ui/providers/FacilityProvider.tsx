@@ -17,6 +17,8 @@ import { useCoolingShelter } from '@/shared/lib/hooks/useCoolingShelter';
 import { useSubwayStations } from '@/shared/lib/hooks/useSubwayStations';
 import { usePOI } from '@/shared/lib/hooks/usePOI';
 import { useBikeStations } from '@/shared/lib/hooks/useBikeStations';
+import { useSportsFacilities } from '@/shared/lib/hooks/useSportsFacilities';
+import { useRestaurantFacilities } from '@/shared/lib/hooks/useRestaurantFacilities';
 import { convertPOIToFacility } from '@/shared/api/poi';
 import { useMapContext } from './MapProvider';
 import type { Restaurant } from '@/entities/restaurant';
@@ -102,11 +104,12 @@ export function FacilityProvider({
   const { parks, isLoading: parksLoading, fetchAllParksData } = useParks();
   const { libraries, isLoading: librariesLoading, fetchAllLibrariesData } = useLibraries();
   const { culturalSpaces, isLoading: culturalLoading, fetchCulturalSpaces } = useCulturalSpaces();
-  const { data: restaurants, isLoading: restaurantsLoading, refetch: fetchRestaurants } = useRestaurants();
   const { facilities: coolingShelters, isLoading: coolingSheltersLoading, fetchCoolingShelters } = useCoolingShelter();
   const { subwayStations, loading: subwayLoading } = useSubwayStations();
   const { pois, loading: poisLoading, error: poisError, fetchNearbyPOIs } = usePOI();
   const { facilities: bikeStations, loading: bikeLoading, fetchBikeStations } = useBikeStations();
+  const { sportsFacilities, loading: sportsLoading, fetchSportsFacilities } = useSportsFacilities();
+  const { restaurants: restaurantFacilities, loading: restaurantsLoading, fetchRestaurants } = useRestaurantFacilities();
 
   // Debug POI hook
   // console.log('[FacilityProvider] POI hook state:', { 
@@ -178,11 +181,31 @@ export function FacilityProvider({
       }
       
       if (fetchCulturalSpaces) {
-        promises.push(fetchCulturalSpaces(lat, lng, radius).catch(err => console.error('문화공간 데이터 로딩 실패:', err)));
+        promises.push(fetchCulturalSpaces(lat, lng).catch(err => console.error('문화공간 데이터 로딩 실패:', err)));
       }
       
       if (fetchCoolingShelters) {
-        promises.push(fetchCoolingShelters(lat, lng, radius).catch(err => console.error('무더위쉼터 데이터 로딩 실패:', err)));
+        promises.push(fetchCoolingShelters(lat, lng).catch(err => console.error('무더위쉼터 데이터 로딩 실패:', err)));
+      }
+      
+      // 체육시설 데이터 로딩
+      if (fetchSportsFacilities) {
+        promises.push(
+          fetchSportsFacilities(lat, lng, radius).catch(err => {
+            console.error('체육시설 데이터 로딩 실패:', err);
+            return [];
+          })
+        );
+      }
+      
+      // 음식점 데이터 로딩
+      if (fetchRestaurants) {
+        promises.push(
+          fetchRestaurants(lat, lng).catch(err => {
+            console.error('음식점 데이터 로딩 실패:', err);
+            return [];
+          })
+        );
       }
       
       await Promise.all(promises);
@@ -192,7 +215,7 @@ export function FacilityProvider({
     } catch (error) {
       console.error('위치 기반 데이터 로딩 실패:', error);
     }
-  }, [fetchCulturalSpaces, fetchCoolingShelters, fetchNearbyPOIs, fetchBikeStations]);
+  }, [fetchCulturalSpaces, fetchCoolingShelters, fetchNearbyPOIs, fetchBikeStations, fetchSportsFacilities, fetchRestaurants]);
 
   // 컴포넌트 마운트 시 초기 데이터 로딩 (한번만 실행)
   useEffect(() => {
@@ -239,8 +262,8 @@ export function FacilityProvider({
       console.log('[FacilityProvider] 사용자 선호 카테고리로 초기화:', userPreferences.preferredCategories);
       return userPreferences.preferredCategories;
     }
-    // 기본값: 주요 카테고리만 활성화 (체육시설, 맛집 제외)
-    const defaultCategories = ['subway', 'bike', 'library', 'park', 'cooling_shelter', 'culture', 'cultural_event', 'cultural_reservation'] as FacilityCategory[];
+    // 기본값: 주요 카테고리 활성화 (체육시설, 음식점 포함)
+    const defaultCategories = ['subway', 'bike', 'library', 'park', 'cooling_shelter', 'culture', 'cultural_event', 'cultural_reservation', 'sports', 'restaurant'] as FacilityCategory[];
     console.log('[FacilityProvider] 기본 카테고리로 초기화:', defaultCategories);
     return defaultCategories;
   });
@@ -272,18 +295,22 @@ export function FacilityProvider({
     if (parks) combined.push(...parks.map(p => ({ ...p, category: 'park' as const, congestionLevel: 'low' as const })));
     if (libraries) combined.push(...libraries.map(l => ({ ...l, category: 'library' as const, congestionLevel: 'low' as const })));
     if (culturalSpaces) combined.push(...culturalSpaces);
-    if (restaurants) combined.push(...restaurants.map((r: Restaurant) => ({ 
-      ...r, 
-      category: 'restaurant' as const, 
-      congestionLevel: 'low' as const,
-      position: { lat: r.latitude, lng: r.longitude }
-    })));
     if (coolingShelters) combined.push(...coolingShelters);
     if (subwayStations) combined.push(...subwayStations);
     
     // 따릉이 스테이션 추가
     if (bikeStations && bikeStations.length > 0) {
       combined.push(...bikeStations);
+    }
+    
+    // 체육시설 추가
+    if (sportsFacilities && sportsFacilities.length > 0) {
+      combined.push(...sportsFacilities);
+    }
+    
+    // 음식점 추가
+    if (restaurantFacilities && restaurantFacilities.length > 0) {
+      combined.push(...restaurantFacilities);
     }
     
     // 디버깅용 로그 (최초 1회만)
@@ -298,7 +325,8 @@ export function FacilityProvider({
         coolingShelters: coolingShelters?.length || 0,
         subwayStations: subwayStations?.length || 0,
         bikeStations: bikeStations?.length || 0,
-        restaurants: restaurants?.length || 0
+        sportsFacilities: sportsFacilities?.length || 0,
+        restaurants: restaurantFacilities?.length || 0
       });
     }
     
@@ -309,10 +337,11 @@ export function FacilityProvider({
     parks,
     libraries,
     culturalSpaces,
-    restaurants,
     coolingShelters,
     subwayStations,
     bikeStations, // 따릉이 데이터 의존성 추가
+    sportsFacilities, // 체육시설 데이터 의존성 추가
+    restaurantFacilities, // 음식점 데이터 의존성 추가
   ]);
 
   // 클러스터된 시설 데이터 (임시로 빈 배열)
@@ -330,7 +359,9 @@ export function FacilityProvider({
            restaurantsLoading || 
            coolingSheltersLoading || 
            subwayLoading ||
-           poisLoading; // POI 로딩 상태 추가
+           poisLoading || // POI 로딩 상태 추가
+           sportsLoading || // 체육시설 로딩 상태 추가
+           bikeLoading; // 따릉이 로딩 상태 추가
   }, [
     facilitiesLoading,
     parksLoading,
@@ -340,6 +371,8 @@ export function FacilityProvider({
     coolingSheltersLoading,
     subwayLoading,
     poisLoading, // POI 로딩 상태 의존성 추가
+    sportsLoading, // 체육시설 로딩 상태 의존성 추가
+    bikeLoading, // 따릉이 로딩 상태 의존성 추가
   ]);
 
   // 시설 선택 핸들러
@@ -365,7 +398,7 @@ export function FacilityProvider({
     console.log('[FacilityProvider] toggleCategory 호출됨:', category);
     console.log('[FacilityProvider] 현재 activeCategories:', activeCategories);
     
-    // 로컬 상태 업데이트
+    // 로컬 상태 업데이트 (맵 마커 표시/숨김용)
     setActiveCategories(prev => {
       const isActive = prev.includes(category);
       const newCategories = isActive 
@@ -377,9 +410,9 @@ export function FacilityProvider({
       return newCategories;
     });
     
-    // 부모 컴포넌트에 알림
-    onPreferenceChange?.(category);
-  }, [onPreferenceChange, activeCategories]);
+    // 주의: onPreferenceChange는 사이드바에서만 호출해야 함
+    // 맵 토글 버튼에서는 호출하지 않음 (백엔드 업데이트 방지)
+  }, [activeCategories]);
 
   // 시설 새로고침
   const refreshFacilities = useCallback(async () => {
@@ -406,8 +439,8 @@ export function FacilityProvider({
     // activeCategories가 비어있으면 기본 카테고리 반환
     if (activeCategories.length === 0) {
       console.log('[FacilityProvider] getFilteredFacilities: activeCategories 비어있음, 기본 카테고리로 필터링');
-      // 기본 카테고리로 필터링 (sports, restaurant 제외)
-      const defaultCategories = ['subway', 'bike', 'library', 'park', 'cooling_shelter', 'culture', 'cultural_event', 'cultural_reservation'];
+      // 기본 카테고리로 필터링 (sports, restaurant 포함)
+      const defaultCategories = ['subway', 'bike', 'library', 'park', 'cooling_shelter', 'culture', 'cultural_event', 'cultural_reservation', 'sports', 'restaurant'];
       const filtered = facilities.filter(facility => 
         defaultCategories.includes(facility.category)
       );

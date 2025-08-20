@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getNearbyCulturalReservations } from '@/shared/api/culturalReservations';
+import { getNearbyCulturalReservations } from '@/shared/api/cultural';
 
 export const useCulturalReservations = () => {
   const [culturalReservations, setCulturalReservations] = useState<any[]>([]);

@@ -13,11 +13,7 @@ import type { SearchItem } from '@/shared/lib/hooks/useSearchCache';
 import type { HeaderRef, MapContainerRef } from '@/shared/types';
 import type { FacilityCategory } from '@/lib/types';
 
-interface MapStatus {
-  loading: boolean;
-  error: string | null;
-  success: boolean;
-}
+import type { MapStatus } from '@/shared/types/map';
 
 export interface MainAppProps {
   className?: string;

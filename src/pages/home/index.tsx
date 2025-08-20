@@ -65,8 +65,8 @@ export const HomePage: React.FC<HomePageProps> = ({
         <SideBar 
           isOpen={showSidebar}
           onClose={() => setShowSidebar(false)}
-          preferences={preferences}
-          onPreferenceToggle={handlePreferenceToggle}
+          activeCategories={Object.keys(preferences).filter(key => preferences[key as keyof typeof preferences]) as FacilityCategory[]}
+          onCategoryToggle={handlePreferenceToggle}
         />
       </div>
     </div>

@@ -104,13 +104,13 @@ const MapContainerInner: React.FC<MapContainerProps & { forwardedRef: React.Ref<
         <FacilityBottomSheetWrapper />
       </div>
       
-      {/* 사이드바 - FacilityContext에서 activeCategories와 toggleCategory 사용 */}
+      {/* 사이드바 - 맵 마커 토글용 (백엔드 업데이트 없음) */}
       {isSidebarOpen !== undefined && (
         <SideBar
           isOpen={isSidebarOpen}
           onClose={onSidebarClose || (() => {})}
           activeCategories={activeCategories}
-          onCategoryToggle={toggleCategory}
+          onCategoryToggle={toggleCategory} // 로컬 상태만 업데이트
           showWarning={showWarning}
           onWarningClose={onWarningClose}
           onLogin={onLogin}
@@ -187,7 +187,7 @@ const MapContainer = React.forwardRef<MapContainerRef, MapContainerProps>(
       >
         <FacilityProvider
           userPreferences={preferences}
-          onPreferenceChange={onPreferenceToggle}
+          onPreferenceChange={undefined} // 백엔드 업데이트 비활성화
           onFacilitySelect={handleFacilitySelect}
           onClusterSelect={handleClusterSelect}
         >

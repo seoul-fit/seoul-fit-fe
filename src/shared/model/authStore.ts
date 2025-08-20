@@ -24,6 +24,7 @@ interface AuthToken {
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   setAuth: (user: User, accessToken: string, refreshToken?: string) => void;
   clearAuth: () => void;
   checkAuthStatus: () => Promise<boolean>;
@@ -37,6 +38,7 @@ export const useAuthStore = create<AuthToken>()(
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
+      isLoading: false,
 
       // User Token 상태 설정
       setAuth: (user: User, accessToken: string, refreshToken?: string) => {
@@ -81,6 +83,7 @@ export const useAuthStore = create<AuthToken>()(
 
       // User 상태 확인
       checkAuthStatus: async () => {
+        set({ isLoading: true });
         const accessToken = Cookies.get('access_token') || localStorage.getItem('access_token');
 
         // localStorage에서 복원했다면 쿠키에도 다시 저장
@@ -95,6 +98,7 @@ export const useAuthStore = create<AuthToken>()(
         if (!accessToken) {
           // accessToken 없는 경우 User 상태 초기화
           get().clearAuth();
+          set({ isLoading: false });
           return false;
         }
 
@@ -124,6 +128,7 @@ export const useAuthStore = create<AuthToken>()(
                 accessToken,
                 refreshToken: Cookies.get('refresh_token') || null,
                 isAuthenticated: true,
+                isLoading: false,
               });
 
               // 인증 확인 성공 시 현재 위치로 트리거 호출
@@ -190,14 +195,17 @@ export const useAuthStore = create<AuthToken>()(
 
               // 갱신 실패 시, User 상태 초기화
               get().clearAuth();
+              set({ isLoading: false });
               return false;
             } else {
               get().clearAuth();
+              set({ isLoading: false });
               return false;
             }
           } catch (error) {
             console.error('Auth status check failed:', error);
             get().clearAuth();
+            set({ isLoading: false });
             return false;
           }
         } else {
@@ -206,6 +214,7 @@ export const useAuthStore = create<AuthToken>()(
             accessToken,
             refreshToken: Cookies.get('refresh_token') || null,
             isAuthenticated: !!accessToken,
+            isLoading: false,
           });
           return !!accessToken;
         }

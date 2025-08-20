@@ -76,6 +76,7 @@ const Header = React.forwardRef<HeaderRef, HeaderProps>(
       fetchUnreadCount,
       fetchNotificationHistory,
       markAsRead,
+      markAllAsRead,
     } = useNotificationStore();
     const [isFocused, setIsFocused] = useState(false);
     const [suggestions, setSuggestions] = useState<SearchItem[]>([]);
@@ -490,7 +491,24 @@ const Header = React.forwardRef<HeaderRef, HeaderProps>(
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align='end' className='w-80 max-h-96 overflow-y-auto'>
-                    <DropdownMenuItem className='font-medium border-b'>알림 목록</DropdownMenuItem>
+                    <div className='flex items-center justify-between px-3 py-2 border-b'>
+                      <span className='font-medium'>알림 목록</span>
+                      {notifications.some(n => n.status === 'SENT') && (
+                        <button
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (user && accessToken) {
+                              await markAllAsRead(user.id, accessToken);
+                              await fetchUnreadCount(user.id, accessToken);
+                            }
+                          }}
+                          className='text-xs text-blue-600 hover:text-blue-700 font-medium'
+                        >
+                          모두 읽기
+                        </button>
+                      )}
+                    </div>
 
                     {isLoadingHistory ? (
                       <DropdownMenuItem>

@@ -165,7 +165,7 @@ export const MapView: React.FC<MapViewProps> = ({
         11: '16km', 12: '32km', 13: '64km', 14: '128km'
       };
       
-      console.log(`[MapView] 현재 축척: ${scaleInfo[zoomLevel] || 'unknown'}`);
+      console.log(`[MapView] 현재 축척: ${scaleInfo[zoomLevel as keyof typeof scaleInfo] || 'unknown'}`);
       
       return visibleFacilities;
     } catch (error) {
@@ -378,7 +378,11 @@ export const MapView: React.FC<MapViewProps> = ({
   // 현재 위치 마커 표시 (위치 변경 시에만 업데이트)
   useCurrentLocationMarker({
     mapInstance: effectiveMapInstance,
-    mapStatus: effectiveMapStatus,
+    mapStatus: {
+      success: effectiveMapStatus?.success ?? false,
+      loading: effectiveMapStatus?.loading ?? false,
+      error: effectiveMapStatus?.error ?? null
+    },
     currentLocation: { coords: { lat: currentLocation.lat, lng: currentLocation.lng } },
     onLocationChange: React.useCallback((lat: number, lng: number) => {
       // 위치가 크게 변경되었을 때만 업데이트

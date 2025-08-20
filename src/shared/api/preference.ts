@@ -49,6 +49,8 @@ export const updateUserInterests = async (userId: number, interests: string[]): 
   });
 
   if (!response.ok) {
-    throw new Error('사용자 선호도 업데이트에 실패했습니다.');
+    const errorText = await response.text().catch(() => '');
+    console.error('사용자 선호도 업데이트 실패:', response.status, errorText);
+    throw new Error(`사용자 선호도 업데이트에 실패했습니다. (${response.status})`);
   }
 };

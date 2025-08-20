@@ -187,6 +187,46 @@ export const useOAuthCallback = () => {
       });
 
       if (!signUpResponse.ok) {
+        // 409 Conflict는 이미 가입된 사용자 (탈퇴 후 재가입 시도 포함)
+        if (signUpResponse.status === 409) {
+          console.log('이미 가입된 사용자, 로그인 시도...');
+          // 로그인으로 전환
+          const loginResponse = await fetch(`${BACKEND_URL}/api/auth/oauth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              provider: userInfo.provider,
+              authorizationCode: code,
+              redirectUri: KAKAO_REDIRECT_URI,
+            }),
+          });
+
+          if (!loginResponse.ok) {
+            handleError('로그인 실패');
+            return;
+          }
+
+          const loginResult = await loginResponse.json();
+          
+          // 로그인 성공 처리
+          const user = {
+            id: loginResult.user.id || 0,
+            email: loginResult.user.email,
+            nickname: loginResult.user.nickname,
+            oauthProvider: userInfo.provider,
+            oauthUserId: userInfo.oauthUserId,
+            profileImageUrl: loginResult.user.profileImageUrl,
+            interests: loginResult.user.interests || [],
+          };
+
+          auth.setAuth(user, loginResult.token.accessToken, loginResult.token.refreshToken);
+          localStorage.setItem('access_token', loginResult.token.accessToken);
+          
+          setStatus('success');
+          router.push('/');
+          return;
+        }
+        
         handleError('회원가입 실패');
         return;
       }

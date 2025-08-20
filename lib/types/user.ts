@@ -47,6 +47,8 @@ export interface BaseUser {
 export interface User extends BaseUser {
   /** 사용자 관심사 목록 */
   interests: UserInterest[];
+  /** 마지막 위치 정보 */
+  lastLocation?: UserLocation;
 }
 
 // 사용자 선호도 설정

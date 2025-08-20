@@ -109,3 +109,33 @@ export async function markNotificationAsRead(
     throw new Error(`알림 읽음 처리 실패: ${response.status}`);
   }
 }
+
+/**
+ * 모든 알림 읽음 처리
+ */
+export async function markAllNotificationsAsRead(
+  userId: number,
+  accessToken: string
+): Promise<void> {
+  const response = await fetch(
+    `${BASE_URL}/api/notifications/read-all?userId=${userId}`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
+  if (!response.ok) {
+    // JWT 토큰 만료 처리
+    if (response.status === 401) {
+      // 토큰 만료 시 로그아웃 처리
+      const { useAuthStore } = await import('@/shared/model/authStore');
+      useAuthStore.getState().clearAuth();
+      throw new Error('인증이 만료되었습니다. 다시 로그인해주세요.');
+    }
+    throw new Error(`모든 알림 읽음 처리 실패: ${response.status}`);
+  }
+}
