@@ -16,6 +16,7 @@ import {
   Loader2,
   Snowflake,
   Clock,
+  User,
 } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import {
@@ -66,6 +67,7 @@ const getCategoryIcon = (category: SearchItem['category']) => {
 
 const Header = React.forwardRef<HeaderRef, HeaderProps>(
   ({ searchQuery, onSearchChange, onSearchSelect, onSearchClear, onMenuClick }, ref) => {
+    
     const { isAuthenticated, user, accessToken } = useAuthStore();
     const {
       unreadCount: notificationCount,
@@ -290,11 +292,32 @@ const Header = React.forwardRef<HeaderRef, HeaderProps>(
       }),
       [closeSearchSuggestions, blurSearchInput]
     );
+    
+    // 디버깅: 렌더링 직전
 
     return (
       <div className='p-4'>
         {/* 헤더 */}
         <header className='flex items-center justify-between gap-3'>
+          {/* 로고 */}
+          <div className='flex-shrink-0 mr-3'>
+            <div
+              className='w-10 h-10 rounded-lg cursor-pointer hover:opacity-80 transition-opacity bg-[#0F284E] flex items-center justify-center'
+              onClick={() => {
+                console.log('[Header] 로고 클릭');
+                window.location.href = '/';
+              }}
+              title='Seoul Fit'
+            >
+              <svg width="32" height="32" viewBox="0 0 48 49" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M24.0001 11.2046C26.9059 11.2046 29.2618 13.5605 29.2618 16.4663C29.2617 19.974 24.0001 24.6509 24.0001 24.6509C24.0001 24.6509 18.7384 19.974 18.7383 16.4663C18.7383 13.5605 21.0942 11.2046 24.0001 11.2046ZM24.0001 14.2192C22.8237 14.2192 21.8702 15.1727 21.8702 16.3491C21.8702 17.5255 22.8237 18.479 24.0001 18.479C25.1764 18.4789 26.1299 17.5254 26.1299 16.3491C26.1299 15.1728 25.1764 14.2193 24.0001 14.2192Z" fill="white"/>
+                <path d="M19.8088 36.9922V24.6906L13.5467 27.6462V38.59L19.8088 36.9922Z" fill="white"/>
+                <path d="M20.8936 34.3163V25.2897L27.7967 28.3252V37.6714L20.8936 34.3163Z" fill="white"/>
+                <path d="M28.7335 37.6714V23.2926L34.4533 20.5767V34.8356L28.7335 37.6714Z" fill="white"/>
+              </svg>
+            </div>
+          </div>
+
           {/* 검색바 영역 - 반응형으로 전체 너비 활용 */}
           <div className='flex items-center flex-1 relative'>
             <div
@@ -516,6 +539,18 @@ const Header = React.forwardRef<HeaderRef, HeaderProps>(
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
+            )}
+
+            {/* 프로필 버튼 - 로그인 상태에서만 표시 */}
+            {isAuthenticated && (
+              <Button 
+                variant='outline' 
+                size='icon'
+                onClick={() => window.location.href = '/profile'}
+                title={user?.nickname || '내 정보'}
+              >
+                <User className='h-4 w-4' />
+              </Button>
             )}
 
             {/* 메뉴 버튼 */}

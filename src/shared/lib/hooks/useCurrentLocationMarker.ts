@@ -45,11 +45,17 @@ export const useCurrentLocationMarker = ({
         markerRef.current.setMap(null);
       }
 
+      // 현재 위치 마커 이미지 설정
+      const imageSrc = 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png';
+      const imageSize = new kakaoMaps.Size(24, 35);
+      const markerImage = new kakaoMaps.MarkerImage(imageSrc, imageSize);
+      
       // 새 마커 생성 (드래그 가능한 마커)
       const marker = new kakaoMaps.Marker({
         position: new kakaoMaps.LatLng(lat, lng),
         title: '현재 위치 (드래그하여 이동 가능)',
         draggable: true,
+        image: markerImage,
       });
 
       marker.setMap(mapInstance);

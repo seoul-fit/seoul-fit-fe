@@ -1,3 +1,5 @@
+'use client';
+
 import { useRef } from 'react';
 import { useAuthStore } from '@/shared/model/authStore';
 import { evaluateLocationTriggers } from '@/shared/api/triggers';

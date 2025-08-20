@@ -12,7 +12,7 @@ export interface UseUserReturn {
 
   // Actions
   getUser: (userId: number) => Promise<UserResult>;
-  getMyInfo: (authUserId: number) => Promise<UserResult>;
+  getMyInfo: (oauthUserId: string, oauthProvider: string) => Promise<UserResult>;
   updateUser: (userId: number, updateData: userService.UpdateUserRequest) => Promise<UserResult>;
   deleteUser: (userId: number) => Promise<void>;
   getUserInterests: (userId: number) => Promise<any>;
@@ -62,7 +62,7 @@ export function useUser(): UseUserReturn {
   );
 
   const getMyInfo = useCallback(
-    async (authUserId: number): Promise<UserResult> => {
+    async (oauthUserId: string, oauthProvider: string): Promise<UserResult> => {
       if (!accessToken) {
         throw new Error('인증 토큰이 없습니다.');
       }
@@ -71,7 +71,7 @@ export function useUser(): UseUserReturn {
       setError(null);
 
       try {
-        const userData = await userService.getMyInfo(authUserId, accessToken);
+        const userData = await userService.getMyInfo(oauthUserId, oauthProvider, accessToken);
         setUser(userData);
         return userData;
       } catch (err) {

@@ -11,6 +11,7 @@ import { LogoutModal } from '@/features/auth';
 import { useKakaoLogin } from '@/shared/lib/hooks/useKakaoLogin';
 import type { SearchItem } from '@/shared/lib/hooks/useSearchCache';
 import type { HeaderRef, MapContainerRef } from '@/shared/types';
+import type { FacilityCategory } from '@/lib/types';
 
 interface MapStatus {
   loading: boolean;
@@ -23,7 +24,6 @@ export interface MainAppProps {
 }
 
 export const MainApp: React.FC<MainAppProps> = ({ className }) => {
-  console.log('[MainApp] 메인 앱 위젯 렌더링 시작');
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -75,9 +75,9 @@ export const MainApp: React.FC<MainAppProps> = ({ className }) => {
   };
 
   return (
-    <div className={className}>
+    <div className={className || 'h-screen flex flex-col'}>
       {/* 헤더 섹션 - 고정 */}
-      <div className='sticky top-0 z-50 bg-white border-b border-gray-200'>
+      <div className='sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm'>
         <Header
           ref={headerRef}
           searchQuery={searchQuery}
@@ -89,17 +89,6 @@ export const MainApp: React.FC<MainAppProps> = ({ className }) => {
       </div>
 
       {/* 사이드바 */}
-      <SideBar
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        preferences={preferences}
-        onPreferenceToggle={togglePreference}
-        onPreferencesRefresh={refreshPreferences}
-        showWarning={showWarning}
-        onWarningClose={() => setShowWarning(false)}
-        onLogin={login}
-        onLogout={() => setShowLogoutModal(true)}
-      />
 
       {/* 에러 알림 */}
       {mapStatus.error && (
@@ -112,7 +101,7 @@ export const MainApp: React.FC<MainAppProps> = ({ className }) => {
       )}
 
       {/* 지도 영역 - 전체 화면에서 헤더 제외한 나머지 */}
-      <div className='h-[calc(100vh-80px)] relative'>
+      <div className='flex-1 relative'>
         <MapContainer
           ref={mapContainerRef}
           preferences={preferences}
@@ -120,6 +109,12 @@ export const MainApp: React.FC<MainAppProps> = ({ className }) => {
           onMapClick={handleMapClick}
           onLocationReset={() => setSearchQuery('')}
           className="w-full h-full"
+          isSidebarOpen={isSidebarOpen}
+          onSidebarClose={() => setIsSidebarOpen(false)}
+          onLogin={login}
+          onLogout={() => setShowLogoutModal(true)}
+          showWarning={showWarning}
+          onWarningClose={() => setShowWarning(false)}
         />
       </div>
 

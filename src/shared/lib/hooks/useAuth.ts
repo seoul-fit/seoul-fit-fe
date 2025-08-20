@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useCallback } from 'react';
 import { useAuthStore } from '@/shared/model/authStore';
 import * as authService from '@/shared/api/auth';

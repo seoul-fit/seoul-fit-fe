@@ -5,3 +5,4 @@
 
 export { default as MapContainer } from './ui/MapContainer';
 export type { MapContainerRef } from './ui/MapContainer';
+export { FacilityProvider, useFacilityContext } from './ui/providers/FacilityProvider';

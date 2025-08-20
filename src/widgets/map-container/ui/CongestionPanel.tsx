@@ -27,7 +27,7 @@ export const CongestionPanel: React.FC<CongestionPanelProps> = ({
       {/* 헤더 */}
       <div className='flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white rounded-t-lg'>
         <div className='flex items-center gap-2'>
-          <div className='h-2 w-2 bg-blue-500 rounded-full' />
+          <div className='h-2 w-2 bg-blue-500 rounded-full animate-pulse' />
           <h4 className='text-sm font-semibold text-gray-800'>실시간 근처 주요 장소 혼잡도</h4>
         </div>
         <Button
@@ -70,41 +70,49 @@ const LoadingState: React.FC = () => (
   </div>
 );
 
-const CongestionContent: React.FC<{ data: CongestionData }> = ({ data }) => (
-  <div className='space-y-3'>
-    {/* 장소 정보 */}
-    <div className='flex items-center gap-2 p-2 bg-gray-50 rounded-lg'>
-      <div className='flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
-        <Users className='h-4 w-4 text-blue-600' />
+const CongestionContent: React.FC<{ data: CongestionData }> = ({ data }) => {
+  
+  // API 응답 형식 처리 (AREA_CONGEST_LVL 또는 level)
+  const congestionLevel = data.AREA_CONGEST_LVL || data.level || '보통';
+  const areaName = data.AREA_NM || data.facilityId || '현재 위치 주변';
+  const congestionMessage = data.AREA_CONGEST_MSG || '';
+  
+  return (
+    <div className='space-y-3'>
+      {/* 장소 정보 */}
+      <div className='flex items-center gap-2 p-2 bg-gray-50 rounded-lg'>
+        <div className='flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
+          <Users className='h-4 w-4 text-blue-600' />
+        </div>
+        <div className='flex-1 min-w-0'>
+          <div className='text-sm font-semibold text-gray-900'>{areaName}</div>
+          <div className='text-xs text-gray-500 flex items-center gap-1'>
+            <Clock className='h-3 w-3' />
+            실시간 업데이트
+          </div>
+        </div>
       </div>
-      <div className='flex-1 min-w-0'>
-        <div className='text-sm font-medium text-gray-900 truncate'>혼잡도 정보</div>
-        <div className='text-xs text-gray-500 flex items-center gap-1'>
-          <Clock className='h-3 w-3' />
-          실시간 업데이트
+
+      {/* 혼잡도 레벨 */}
+      <div className='flex items-center justify-between p-2 bg-gradient-to-r from-gray-50 to-white rounded-lg border'>
+        <span className='text-sm font-medium text-gray-700'>현재 상태</span>
+        <Badge
+          className={`${getCongestionClass(congestionLevel)} text-xs font-medium px-3 py-1 border`}
+        >
+          <TrendingUp className='h-3 w-3 mr-1' />
+          {congestionLevel}
+        </Badge>
+      </div>
+
+      {/* 혼잡도 메시지 */}
+      <div className='p-2 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg'>
+        <div className='text-xs text-blue-800 leading-relaxed'>
+          💬 {congestionMessage || `${areaName} 지역의 현재 혼잡도는 "${congestionLevel}" 수준입니다.`}
         </div>
       </div>
     </div>
-
-    {/* 혼잡도 레벨 */}
-    <div className='flex items-center justify-between p-2 bg-gradient-to-r from-gray-50 to-white rounded-lg border'>
-      <span className='text-sm font-medium text-gray-700'>현재 상태</span>
-      <Badge
-        className={`${getCongestionClass(data.level || '보통')} text-xs font-medium px-3 py-1`}
-      >
-        <TrendingUp className='h-3 w-3 mr-1' />
-        {data.level || '보통'}
-      </Badge>
-    </div>
-
-    {/* 혼잡도 메시지 */}
-    <div className='p-2 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg'>
-      <div className='text-xs text-blue-800 leading-relaxed'>
-        💬 현재 {data.currentUsers}명이 이용 중입니다 (최대 {data.maxCapacity}명)
-      </div>
-    </div>
-  </div>
-);
+  );
+};
 
 const ErrorState: React.FC = () => (
   <div className='flex flex-col items-center py-6 text-center'>

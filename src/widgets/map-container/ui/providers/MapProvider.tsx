@@ -73,7 +73,7 @@ export function MapProvider({
   onMapClick,
   onMapIdle,
 }: MapProviderProps) {
-  console.log('[MapProvider] 렌더링 시작', { initialCenter, initialZoom, containerId });
+  // console.log('[MapProvider] 렌더링 시작', { initialCenter, initialZoom, containerId });
   // 지도 인스턴스 생성
   const { mapInstance, mapStatus } = useKakaoMap({
     containerId,

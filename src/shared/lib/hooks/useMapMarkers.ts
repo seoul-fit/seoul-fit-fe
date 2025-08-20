@@ -1,5 +1,5 @@
 // hooks/useMapMarkers.ts - Improved version with clustering
-import { useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useEffect, useRef, useCallback, useMemo } from 'react';
 import type { KakaoMap, KakaoCustomOverlay, WindowWithKakao } from '@/lib/kakao-map';
 import { createCustomMarkerContent } from '@/shared/lib/utils/marker';
 import type { Facility, FacilityCategory, ClusteredFacility } from '@/lib/types';
@@ -145,7 +145,7 @@ export const useMapMarkers = ({
   }, [clusteredData, bindMarkerEvent]);
 
   // 최적화된 디바운싱 함수
-  const debouncedEventBinding = useCallback(debounce(bindAllMarkerEvents, 150, false), [
+  const debouncedEventBinding = useCallback(debounce(bindAllMarkerEvents, 50, false), [ // 더 빠른 반응
     bindAllMarkerEvents,
   ]);
 
@@ -170,28 +170,33 @@ export const useMapMarkers = ({
       }
     });
 
+    // DOM에서 직접 마커 엘리먼트 제거 (중복 방지)
+    const allMarkers = document.querySelectorAll('[id^="marker-"]');
+    allMarkers.forEach(marker => {
+      marker.remove();
+    });
+
     customOverlaysRef.current = [];
     facilityDataRef.current.clear();
   }, []);
 
   // 마커 생성 (성능 최적화 + 클러스터링)
   const createMarkers = useCallback(() => {
-    // console.log(`[useMapMarkers] 마커 생성 시작 - 시설 수: ${visibleFacilities.length}개`);
-    
     if (!mapInstance || !mapStatus?.success) {
-      // console.log('[useMapMarkers] 지도 인스턴스나 상태가 준비되지 않음');
       return;
     }
 
     const windowWithKakao = window as WindowWithKakao;
     if (!windowWithKakao.kakao?.maps) {
-      // console.log('[useMapMarkers] Kakao Maps API가 로드되지 않음');
       return;
     }
 
     const kakaoMaps = windowWithKakao.kakao.maps;
+    
+    // 디버깅 로그
+    console.log(`[useMapMarkers] 마커 생성 시작: ${visibleFacilities.length}개 시설`);
 
-    // 기존 마커 제거
+    // 기존 마커 제거 (중요: 먼저 제거)
     clearMarkers();
 
     // 새 커스텀 오버레이 생성 (배치 처리)
@@ -290,7 +295,7 @@ export const useMapMarkers = ({
     });
 
     customOverlaysRef.current = newOverlays;
-    // console.log(`[useMapMarkers] 마커 생성 완료 - 총 ${newOverlays.length}개 마커 생성`);
+    console.log(`[useMapMarkers] 마커 생성 완료: ${newOverlays.length}개 마커, ${clusteredData.clusters.length}개 클러스터`);
 
     // 이벤트 바인딩 (약간의 지연 후 실행)
     if (eventBindingTimeoutRef.current) {
@@ -299,7 +304,7 @@ export const useMapMarkers = ({
 
     eventBindingTimeoutRef.current = setTimeout(() => {
       bindAllMarkerEvents();
-    }, 100);
+    }, 50); // 더 빠른 이벤트 바인딩
   }, [mapInstance, mapStatus?.success, clusteredData, clearMarkers, bindAllMarkerEvents]);
 
   // 특정 시설의 마커 하이라이트 (성능 최적화)
@@ -341,10 +346,17 @@ export const useMapMarkers = ({
     });
   }, []);
 
-  // 시설 변경 시 마커 업데이트
+  // 시설 변경 시 마커 업데이트 (디바운싱 적용)
+  const [updateKey, setUpdateKey] = React.useState(0);
+  
   useEffect(() => {
-    createMarkers();
-  }, [createMarkers]);
+    // 마커 업데이트를 디바운싱하여 중복 생성 방지
+    const timer = setTimeout(() => {
+      createMarkers();
+    }, 200); // 200ms 디바운싱
+    
+    return () => clearTimeout(timer);
+  }, [visibleFacilities, mapInstance, mapStatus?.success]); // createMarkers 의존성 제거
 
   // 지도 이벤트 리스너 등록 (최적화)
   useEffect(() => {

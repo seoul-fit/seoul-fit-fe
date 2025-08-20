@@ -5,19 +5,19 @@ import React, { useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { Check, LogOut, Settings, User } from 'lucide-react';
 import { X } from 'lucide-react';
-import type { UserPreferences, FacilityCategory } from '@/lib/types';
-import { FACILITY_CONFIGS } from '@/lib/facilityIcons';
+import type { FacilityCategory } from '@/lib/types';
+import { FACILITY_CATEGORIES } from '@/lib/types';
+import { FACILITY_CONFIGS } from '@/shared/lib/icons/facility';
 import { useAuthStore } from '@/shared/model/authStore';
 import WarningModal from '@/shared/ui/warning-modal';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  preferences: UserPreferences;
-  onPreferenceToggle: (type: FacilityCategory) => void;
+  activeCategories: FacilityCategory[];
+  onCategoryToggle: (type: FacilityCategory) => void;
   onLogin?: () => void;
   onLogout?: () => void;
-  onPreferencesRefresh?: () => void;
   showWarning?: boolean;
   onWarningClose?: () => void;
 }
@@ -25,11 +25,10 @@ interface SidebarProps {
 export default function SideBar({
   isOpen,
   onClose,
-  preferences,
-  onPreferenceToggle,
+  activeCategories,
+  onCategoryToggle,
   onLogin,
   onLogout,
-  onPreferencesRefresh,
   showWarning,
   onWarningClose,
 }: SidebarProps) {
@@ -37,16 +36,10 @@ export default function SideBar({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  // 사이드바 열릴 때 사용자 관심사 조회 (디바운싱 적용 및 중복 호출 방지)
+  // 사이드바 열릴 때 초기 설정 (필요한 경우)
   useEffect(() => {
-    if (isOpen && isAuthenticated && onPreferencesRefresh) {
-      const timeoutId = setTimeout(() => {
-        onPreferencesRefresh();
-      }, 100);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [isOpen, isAuthenticated]); // onPreferencesRefresh 의존성 제거
+    // 추가 초기화 로직이 필요한 경우 여기에 추가
+  }, [isOpen]);
 
   // 키보드 접근성 및 포커스 관리
   useEffect(() => {
@@ -74,16 +67,18 @@ export default function SideBar({
 
   // 선택된 항목 수 계산 (메모화)
   const selectedCount = React.useMemo(
-    () => Object.values(preferences).filter(Boolean).length,
-    [preferences]
+    () => activeCategories.length,
+    [activeCategories]
   );
 
-  // 선호도 토글 핸들러 (최적화)
+  // 카테고리 토글 핸들러 (최적화)
   const handleToggle = useCallback(
     (type: FacilityCategory) => {
-      onPreferenceToggle(type);
+      console.log('[SideBar] 토글 시도:', type);
+      console.log('[SideBar] 현재 activeCategories:', activeCategories);
+      onCategoryToggle(type);
     },
-    [onPreferenceToggle]
+    [onCategoryToggle, activeCategories]
   );
 
   // 키보드 접근성을 위한 핸들러
@@ -145,7 +140,7 @@ export default function SideBar({
               <div className='flex items-center space-x-3'>
                 <Settings className='w-6 h-6 text-gray-600' />
                 <h2 id='sidebar-title' className='text-xl font-semibold text-gray-800'>
-                  선호도 설정
+                  지도 마커 설정
                 </h2>
               </div>
               <div className='flex items-center space-x-3'>
@@ -162,56 +157,35 @@ export default function SideBar({
               </div>
             </div>
 
-            {/* 로그인 영역 */}
-            {!isAuthenticated ? (
-              <button
-                onClick={onLogin}
-                className='w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-medium py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-yellow-600 transform hover:scale-[1.02] active:scale-[0.98]'
-              >
-                <svg className='w-5 h-5' viewBox='0 0 24 24' fill='currentColor'>
-                  <path d='M12 3c5.799 0 10.5 3.664 10.5 8.185 0 4.52-4.701 8.184-10.5 8.184a13.5 13.5 0 0 1-1.727-.11l-4.408 2.883c-.501.265-.678.236-.472-.413l.892-3.678c-2.88-1.46-4.785-3.99-4.785-6.866C1.5 6.665 6.201 3 12 3z' />
-                </svg>
-                <span>카카오로 로그인</span>
-              </button>
-            ) : (
-              <div className='bg-blue-50 border border-blue-200 rounded-lg p-3 transition-colors duration-200'>
-                <div className='flex items-center space-x-3'>
-                  {user?.profileImageUrl ? (
-                    <Image
-                      src={user.profileImageUrl}
-                      alt='프로필'
-                      width={40}
-                      height={40}
-                      className='w-10 h-10 rounded-full ring-2 ring-blue-200'
-                    />
-                  ) : (
-                    <div className='w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center'>
-                      <User className='w-5 h-5 text-white' />
-                    </div>
-                  )}
-                  <div className='flex-1 min-w-0'>
-                    <p className='font-medium text-gray-900 truncate'>
-                      {user?.nickname || '사용자'}
-                    </p>
-                    <p id='sidebar-description' className='text-xs text-gray-500 mt-1'>
-                      관심사를 선택하여 맞춤 정보를 받아보세요
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* 설명 영역 */}
+            <div className='bg-blue-50 border border-blue-200 rounded-lg p-3 transition-colors duration-200'>
+              <p id='sidebar-description' className='text-sm text-gray-700'>
+                지도에 표시할 마커를 선택하세요. 체크된 카테고리의 시설만 지도에 표시됩니다.
+              </p>
+            </div>
           </div>
 
-          {/* 선호도 목록 (개선된 스크롤과 애니메이션) */}
+          {/* 카테고리 목록 (개선된 스크롤과 애니메이션) */}
           <div
             className='flex-1 p-6 overflow-y-auto overscroll-contain'
             style={{ scrollbarWidth: 'thin' }}
           >
             <div className='space-y-3'>
-              {Object.keys(FACILITY_CONFIGS).map((type, index) => {
-                const facilityType = type as FacilityCategory;
+              {/* 카테고리 순서 재정의 및 필터링 */}
+              {[
+                FACILITY_CATEGORIES.SUBWAY,
+                FACILITY_CATEGORIES.BIKE,
+                FACILITY_CATEGORIES.LIBRARY,
+                FACILITY_CATEGORIES.PARK,
+                FACILITY_CATEGORIES.COOLING_SHELTER,
+                FACILITY_CATEGORIES.CULTURE,
+                FACILITY_CATEGORIES.CULTURAL_EVENT,
+                FACILITY_CATEGORIES.CULTURAL_RESERVATION,
+                // FACILITY_CATEGORIES.SPORTS - hidden 처리
+                // FACILITY_CATEGORIES.RESTAURANT - 제거
+              ].map((facilityType, index) => {
                 const config = FACILITY_CONFIGS[facilityType];
-                const isSelected = preferences.preferredCategories?.includes(facilityType) ?? false;
+                const isSelected = activeCategories.includes(facilityType);
 
                 return (
                   <div
@@ -270,27 +244,47 @@ export default function SideBar({
 
           {/* 푸터 (개선된 레이아웃) */}
           <div className='p-6 border-t border-gray-200 bg-gray-50'>
-            {isAuthenticated ? (
-              <div className='flex items-center justify-between'>
-                <button className='flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-800 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400'>
-                  <User className='w-4 h-4' />
-                  <span>프로필 설정</span>
-                </button>
+            <div className='flex items-center justify-between'>
+              {isAuthenticated ? (
+                <>
+                  <div className='flex items-center space-x-3'>
+                    {user?.profileImageUrl ? (
+                      <Image
+                        src={user.profileImageUrl}
+                        alt='프로필'
+                        width={32}
+                        height={32}
+                        className='w-8 h-8 rounded-full'
+                      />
+                    ) : (
+                      <div className='w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center'>
+                        <User className='w-4 h-4 text-white' />
+                      </div>
+                    )}
+                    <span className='text-sm font-medium text-gray-700'>
+                      {user?.nickname || '사용자'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={onLogout}
+                    className='flex items-center space-x-2 text-sm text-gray-600 hover:text-red-600 transition-colors duration-200 p-2 rounded-lg hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400'
+                  >
+                    <LogOut className='w-4 h-4' />
+                    <span>로그아웃</span>
+                  </button>
+                </>
+              ) : (
                 <button
-                  onClick={onLogout}
-                  className='flex items-center space-x-2 text-sm text-gray-600 hover:text-red-600 transition-colors duration-200 p-2 rounded-lg hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400'
+                  onClick={onLogin}
+                  className='w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-medium py-2.5 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-yellow-600'
                 >
-                  <LogOut className='w-4 h-4' />
-                  <span>로그아웃</span>
+                  <svg className='w-4 h-4' viewBox='0 0 24 24' fill='currentColor'>
+                    <path d='M12 3c5.799 0 10.5 3.664 10.5 8.185 0 4.52-4.701 8.184-10.5 8.184a13.5 13.5 0 0 1-1.727-.11l-4.408 2.883c-.501.265-.678.236-.472-.413l.892-3.678c-2.88-1.46-4.785-3.99-4.785-6.866C1.5 6.665 6.201 3 12 3z' />
+                  </svg>
+                  <span>카카오 로그인</span>
                 </button>
-              </div>
-            ) : (
-              <div className='text-center'>
-                <p className='text-sm text-gray-500 leading-relaxed'>
-                  로그인하면 더 많은 기능을 이용할 수 있어요
-                </p>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </aside>

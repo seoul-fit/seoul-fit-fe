@@ -40,8 +40,8 @@ export async function getUser(userId: number, accessToken: string): Promise<User
 /**
  * 내 정보 조회
  */
-export async function getMyInfo(authUserId: number, accessToken: string): Promise<UserResult> {
-  const response = await fetch(`${BASE_URL}/api/users/me?authUserId=${authUserId}`, {
+export async function getMyInfo(oauthUserId: string, oauthProvider: string, accessToken: string): Promise<UserResult> {
+  const response = await fetch(`${BASE_URL}/api/users/me?oauthUserId=${oauthUserId}&oauthProvider=${oauthProvider}`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${accessToken}`,

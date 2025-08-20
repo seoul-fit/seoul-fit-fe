@@ -29,7 +29,7 @@ interface EnvironmentVariables {
 const defaults: Record<Environment, Partial<EnvironmentVariables>> = {
   development: {
     APP_URL: 'http://localhost:3000',
-    BACKEND_BASE_URL: 'http://172.18.224.1:8080', // WSL 환경
+    BACKEND_BASE_URL: 'http://localhost:8080',
     KAKAO_REDIRECT_URI: 'http://localhost:3000/auth/callback',
     SEOUL_API_BASE_URL: 'http://openapi.seoul.go.kr:8088',
   },
