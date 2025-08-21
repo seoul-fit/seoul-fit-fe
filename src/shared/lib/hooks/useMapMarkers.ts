@@ -46,6 +46,7 @@ export const useMapMarkers = ({
   const facilityDataRef = useRef<Map<string, Facility>>(new Map());
   const mapListenersRef = useRef<any[]>([]);
   const eventBindingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [markersCount, setMarkersCount] = React.useState(0);
 
   // 클러스터링된 데이터 메모화
   const { clusteredData, facilitiesMap } = useMemo(() => {
@@ -106,10 +107,26 @@ export const useMapMarkers = ({
       const handleClick = (e: Event) => {
         e.preventDefault();
         e.stopPropagation();
-        if (isCluster && onClusterSelect) {
-          onClusterSelect(item as ClusteredFacility);
+        
+        if (isCluster) {
+          const cluster = item as ClusteredFacility;
+          console.log('[useMapMarkers] 클러스터 클릭:', {
+            id: cluster.id,
+            count: cluster.count,
+            facilities: cluster.facilities.length,
+            primaryCategory: cluster.primaryCategory
+          });
+          if (onClusterSelect) {
+            onClusterSelect(cluster);
+          }
         } else {
-          onFacilitySelect(item as Facility);
+          const facility = item as Facility;
+          console.log('[useMapMarkers] 마커 클릭:', {
+            id: facility.id,
+            name: facility.name,
+            category: facility.category
+          });
+          onFacilitySelect(facility);
         }
       };
 
@@ -282,7 +299,9 @@ export const useMapMarkers = ({
             position: relative;
             cursor: pointer;
           ">
-            ${primaryIcon.svg}
+            <div style="pointer-events: none;">
+              ${primaryIcon.svg}
+            </div>
             <div style="
               position: absolute;
               top: -5px;
@@ -298,6 +317,7 @@ export const useMapMarkers = ({
               font-size: 11px;
               font-weight: bold;
               border: 2px solid white;
+              pointer-events: none;
             ">
               ${cluster.count}
             </div>
@@ -321,6 +341,7 @@ export const useMapMarkers = ({
     });
 
     customOverlaysRef.current = newOverlays;
+    setMarkersCount(newOverlays.length); // 마커 개수 상태 업데이트
     console.log(`[useMapMarkers] 마커 생성 완료: ${newOverlays.length}개 마커, ${clusteredData.clusters.length}개 클러스터`);
 
     // 이벤트 바인딩 (약간의 지연 후 실행)
@@ -442,6 +463,6 @@ export const useMapMarkers = ({
     clearAllHighlights,
     toggleCategoryMarkers,
     rebindAllMarkerEvents: bindAllMarkerEvents,
-    markersCount: customOverlaysRef.current.length,
+    markersCount, // 상태 변수 사용
   };
 };

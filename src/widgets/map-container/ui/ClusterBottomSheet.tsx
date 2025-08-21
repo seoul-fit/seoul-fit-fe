@@ -52,8 +52,12 @@ const ClusterBottomSheet = React.memo(function ClusterBottomSheet({
   }, [onClose]);
 
   const groupedByCategory = useMemo(() => {
-    if (!cluster?.facilities) return {};
-    return cluster.facilities.reduce(
+    console.log('[ClusterBottomSheet] cluster?.facilities:', cluster?.facilities);
+    if (!cluster?.facilities) {
+      console.log('[ClusterBottomSheet] facilities가 없음');
+      return {};
+    }
+    const grouped = cluster.facilities.reduce(
       (acc, facility) => {
         if (!acc[facility.category]) {
           acc[facility.category] = [];
@@ -63,6 +67,8 @@ const ClusterBottomSheet = React.memo(function ClusterBottomSheet({
       },
       {} as Record<string, Facility[]>
     );
+    console.log('[ClusterBottomSheet] groupedByCategory:', Object.keys(grouped));
+    return grouped;
   }, [cluster?.facilities]);
 
   // isOpen 상태가 변경될 때 상태 초기화
@@ -75,7 +81,14 @@ const ClusterBottomSheet = React.memo(function ClusterBottomSheet({
     }
   }, [isOpen]);
 
-  if (!isOpen || !cluster) return null;
+  console.log('[ClusterBottomSheet] 렌더링 조건:', { isOpen, hasCluster: !!cluster });
+  
+  if (!isOpen || !cluster) {
+    console.log('[ClusterBottomSheet] 렌더링하지 않음 - isOpen:', isOpen, 'cluster:', !!cluster);
+    return null;
+  }
+  
+  console.log('[ClusterBottomSheet] UI 렌더링 시작');
 
   return (
     <div className='fixed inset-0 z-50 flex items-end'>

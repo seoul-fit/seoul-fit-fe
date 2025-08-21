@@ -69,6 +69,7 @@ export const MapView: React.FC<MapViewProps> = ({
     activeCategories,
     toggleCategory,
     selectFacility,
+    selectCluster,
     updateLocation,
     currentLocation
   } = useFacilityContext();
@@ -129,18 +130,26 @@ export const MapView: React.FC<MapViewProps> = ({
       const ne = bounds.getNorthEast();
       const zoomLevel = effectiveMapInstance.getLevel();
       
-      // 줌 레벨별 여유 마진 설정 (더 넓은 영역의 데이터 미리 로드)
-      let marginRatio = 0.2; // 기본 20% 여유
+      // 줌 레벨별 여유 마진 설정 (실제 축척에 맞춰 조정)
+      // 카카오맵 줌 레벨: 1(20m) ~ 14(128km)
+      // 줌 레벨이 낮을수록 가까이 보임
+      let marginRatio = 0;
       
-      // 줌 레벨이 높을수록(멀리 볼수록) 마진을 줄임
       if (zoomLevel <= 3) {
-        marginRatio = 0.1; // 가까이서 볼 때는 10%
-      } else if (zoomLevel <= 6) {
-        marginRatio = 0.15; // 중간 거리 15%
+        // 20m ~ 50m: 화면에 보이는 것만 표시
+        marginRatio = 0;
+      } else if (zoomLevel <= 5) {
+        // 100m ~ 250m: 약간의 여유
+        marginRatio = 0.05;
+      } else if (zoomLevel <= 7) {
+        // 500m ~ 1km: 적당한 여유
+        marginRatio = 0.1;
       } else if (zoomLevel <= 9) {
-        marginRatio = 0.2; // 20%
+        // 2km ~ 4km: 더 많은 여유
+        marginRatio = 0.15;
       } else {
-        marginRatio = 0.25; // 아주 멀리서 볼 때는 25%
+        // 8km 이상: 넓은 영역
+        marginRatio = 0.2;
       }
       
       const latMargin = (ne.getLat() - sw.getLat()) * marginRatio;
@@ -156,7 +165,14 @@ export const MapView: React.FC<MapViewProps> = ({
                lng <= (ne.getLng() + lngMargin);
       });
       
+      // 카테고리별 개수 계산
+      const categoryCounts: Record<string, number> = {};
+      visibleFacilities.forEach(f => {
+        categoryCounts[f.category] = (categoryCounts[f.category] || 0) + 1;
+      });
+      
       console.log(`[MapView] 줌 레벨 ${zoomLevel}: 화면 영역 내 ${visibleFacilities.length}개 시설 (전체 ${categoryFiltered.length}개 중)`);
+      console.log('[MapView] 카테고리별 개수:', categoryCounts);
       
       // 줌 레벨별 축척 정보 (참고용)
       const scaleInfo = {
@@ -165,7 +181,7 @@ export const MapView: React.FC<MapViewProps> = ({
         11: '16km', 12: '32km', 13: '64km', 14: '128km'
       };
       
-      console.log(`[MapView] 현재 축척: ${scaleInfo[zoomLevel as keyof typeof scaleInfo] || 'unknown'}`);
+      console.log(`[MapView] 현재 축척: ${scaleInfo[zoomLevel as keyof typeof scaleInfo] || 'unknown'}, 마진: ${(marginRatio * 100).toFixed(0)}%`);
       
       return visibleFacilities;
     } catch (error) {
@@ -188,7 +204,13 @@ export const MapView: React.FC<MapViewProps> = ({
     const timer = setTimeout(() => {
       const visible = getVisibleFacilities();
       setDebouncedFacilities(visible);
-      console.log(`[MapView] 시설 업데이트: ${visible.length}개 (전체: ${facilities.length}개 중)`);
+      
+      // 카테고리별 개수 로그
+      const counts: Record<string, number> = {};
+      visible.forEach(f => {
+        counts[f.category] = (counts[f.category] || 0) + 1;
+      });
+      console.log(`[MapView] 시설 업데이트: ${visible.length}개 (전체: ${facilities.length}개 중)`, counts);
     }, 50); // 더 빠른 반응을 위해 디바운싱 시간 단축
     
     return () => clearTimeout(timer);
@@ -217,9 +239,10 @@ export const MapView: React.FC<MapViewProps> = ({
   const handleClusterSelect = useCallback(
     (cluster: ClusteredFacility) => {
       // Provider를 통해 클러스터 선택 상태 관리
-      // console.log('Cluster selected:', cluster);
+      console.log('[MapView] Cluster selected:', cluster);
+      selectCluster(cluster);
     },
-    []
+    [selectCluster]
   );
 
   // 지도 이벤트 처리 (클릭 및 이동)
@@ -480,7 +503,8 @@ export const MapView: React.FC<MapViewProps> = ({
       {/* 카테고리 토글 버튼 */}
       <div className='absolute top-4 left-4 z-30 flex gap-2'>
         {Object.entries(FACILITY_CATEGORIES).map(([key, category]) => {
-          const count = effectiveFacilities.filter(f => f.category === category).length;
+          // 화면에 보이는 시설만 카운트 (filteredFacilities 사용)
+          const count = filteredFacilities.filter(f => f.category === category).length;
           const isActive = activeCategories.includes(category);
 
           if (count === 0 || key === 'SUBWAY') return null;
