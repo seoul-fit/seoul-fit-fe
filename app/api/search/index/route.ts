@@ -8,8 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { 
   validateSearchParams, 
-  fetchPOISearchIndex,
-  getErrorMessage 
+  fetchPOISearchIndex
 } from '@/entities/search';
 
 /**

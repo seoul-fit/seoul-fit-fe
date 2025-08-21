@@ -5,14 +5,14 @@
  * 실제 로직: src/entities/subway에서 처리
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { fetchAllSubwayStations } from '@/entities/subway';
 
 /**
  * GET 전체 지하철 역 목록 조회
  * Query Parameters: lat(위도), lng(경도) - 호환성을 위해 유지하지만 사용하지 않음
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // 전체 지하철 역 목록 조회
     const result = await fetchAllSubwayStations();

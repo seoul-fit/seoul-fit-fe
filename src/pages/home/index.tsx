@@ -72,3 +72,6 @@ export const HomePage: React.FC<HomePageProps> = ({
     </div>
   );
 };
+
+// Next.js pages 라우터용 default export
+export default HomePage;

@@ -4,7 +4,7 @@
  * @since 2.0.0
  */
 
-import type { ApiResponse, Pagination } from './common';
+import type { Pagination } from './common';
 import type { User, UserInterest, OAuthProvider } from './user';
 import type { Facility, FacilityFilter } from './facility';
 

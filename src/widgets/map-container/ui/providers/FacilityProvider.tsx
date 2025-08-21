@@ -251,7 +251,7 @@ export function FacilityProvider({
     };
 
     loadInitialData();
-  }, []); // 빈 의존성 배열로 한번만 실행
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 선택 상태 관리
   const [selectedFacility, setSelectedFacility] = React.useState<Facility | null>(null);
@@ -461,7 +461,7 @@ export function FacilityProvider({
   const clusteredFacilities = useMemo<ClusteredFacility[]>(() => {
     // TODO: 실제 클러스터링 로직 구현
     return [];
-  }, [facilities]);
+  }, []);
 
   // 로딩 상태 통합
   const loading = useMemo(() => {

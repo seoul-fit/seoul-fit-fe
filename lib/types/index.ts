@@ -313,7 +313,7 @@ export function isArray<T>(value: unknown): value is T[] {
  * @param value - 확인할 값
  * @returns 값이 함수인지 여부
  */
-export function isFunction(value: unknown): value is Function {
+export function isFunction(value: unknown): value is (...args: any[]) => any {
   return typeof value === 'function';
 }
 

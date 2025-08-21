@@ -37,7 +37,7 @@ export default function TestEnvPage() {
         login: { apiKey: kakaoConfig.login.apiKey ? '✅ 설정됨' : '❌ 누락' }
       }, null, 2)}</pre>
       <h2>카카오맵 테스트:</h2>
-      <div id="testMap" style={{ width: '100%', height: '400px', marginTop: '20px' }}></div>
+      <div id="testMap" style={{ width: '100%', height: '400px', marginTop: '20px' }} />
       <script dangerouslySetInnerHTML={{
         __html: `
           setTimeout(() => {

@@ -8,10 +8,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   findNearestAreaCode,
-  SEOUL_LOCATIONS,
 } from '@/entities/weather';
 import {
-  fetchMultipleCongestionData,
   getCongestionFromCache,
   saveCongestionToCache,
   fetchSeoulCongestionData,
@@ -76,7 +74,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 캐시가 없거나 만료된 경우 API 호출
-    console.log(`혼잡도 데이터 API 호출: ${nearestAreaCode}`);
+    // console.log(`혼잡도 데이터 API 호출: ${nearestAreaCode}`);
     const fetchTime = new Date().toISOString();
     
     const apiResponse = await fetchSeoulCongestionData(nearestAreaCode);

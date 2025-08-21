@@ -172,8 +172,7 @@ describe('AuthStore', () => {
 
     it('validates token with API when user exists', async () => {
       // Setup initial state with user
-      const store = useAuthStore.getState()
-      store.setAuth(mockUser, 'valid-token')
+      useAuthStore.getState().setAuth(mockUser, 'valid-token')
       
       (Cookies.get as jest.Mock).mockReturnValue('valid-token')
       ;(fetch as jest.Mock).mockResolvedValue({
@@ -196,8 +195,7 @@ describe('AuthStore', () => {
     })
 
     it('refreshes token when access token is expired', async () => {
-      const store = useAuthStore.getState()
-      store.setAuth(mockUser, 'expired-token', 'refresh-token')
+      useAuthStore.getState().setAuth(mockUser, 'expired-token', 'refresh-token')
       
       (Cookies.get as jest.Mock)
         .mockReturnValueOnce('expired-token') // access_token
@@ -233,8 +231,7 @@ describe('AuthStore', () => {
     })
 
     it('clears auth when refresh fails', async () => {
-      const store = useAuthStore.getState()
-      store.setAuth(mockUser, 'expired-token')
+      useAuthStore.getState().setAuth(mockUser, 'expired-token')
       
       (Cookies.get as jest.Mock)
         .mockReturnValueOnce('expired-token')
@@ -253,8 +250,7 @@ describe('AuthStore', () => {
     })
 
     it('handles network errors gracefully', async () => {
-      const store = useAuthStore.getState()
-      store.setAuth(mockUser, 'token')
+      useAuthStore.getState().setAuth(mockUser, 'token')
       
       (Cookies.get as jest.Mock).mockReturnValue('token')
       ;(fetch as jest.Mock).mockRejectedValue(new Error('Network error'))

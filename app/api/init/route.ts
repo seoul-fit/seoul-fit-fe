@@ -9,7 +9,7 @@ import { dataScheduler } from '@/lib/scheduler';
  */
 export async function GET() {
   try {
-    console.log('[초기화API] 서버 초기화 시작...');
+    // console.log('[초기화API] 서버 초기화 시작...');
 
     await dataScheduler.initialize();
 

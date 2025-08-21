@@ -23,9 +23,7 @@ import { useUser } from '@/shared/lib/hooks/useUser';
 import { getUserInterests, updateUserInterests } from '@/shared/api/preference';
 import { deleteUser } from '@/shared/api/user';
 import { Button } from '@/shared/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
-import { Label } from '@/shared/ui/label';
-import { Checkbox } from '@/shared/ui/checkbox';
+import { Card, CardContent } from '@/shared/ui/card';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { toast } from '@/shared/lib/utils/toast';
 
@@ -152,8 +150,7 @@ const INTEREST_CATEGORIES: Record<InterestCategory, {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const authStore = useAuthStore();
-  const { user: userData, isLoading: userLoading, error: userError, getMyInfo } = useUser();
+  const { isLoading: userLoading, getMyInfo } = useUser();
   const [isPageReady, setIsPageReady] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [userInterests, setUserInterests] = useState<string[]>([]);
@@ -272,7 +269,7 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto" />
           <p className="mt-4 text-gray-600">로딩 중...</p>
         </div>
       </div>
@@ -616,7 +613,7 @@ export default function ProfilePage() {
                       
                       // 모든 쿠키 삭제
                       document.cookie.split(";").forEach(c => {
-                        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                        document.cookie = `${c.replace(/^ +/, "").replace(/=.*/, "=;expires=")}${new Date().toUTCString()};path=/`;
                       });
                       
                       // 홈으로 이동
