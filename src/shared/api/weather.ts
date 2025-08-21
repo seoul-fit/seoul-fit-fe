@@ -1,4 +1,119 @@
 import { WeatherData } from '@/lib/types';
+import axios from 'axios';
+
+interface WeatherAPIResponse {
+  temperature: number;
+  humidity: number;
+  windSpeed: number;
+  description: string;
+  icon: string;
+  feelsLike: number;
+  pressure: number;
+  visibility: number;
+  clouds: number;
+  sunrise: number;
+  sunset: number;
+}
+
+interface OpenWeatherAPIResponse {
+  main: {
+    temp: number;
+    feels_like: number;
+    humidity: number;
+    pressure: number;
+  };
+  weather: Array<{
+    description: string;
+    icon: string;
+  }>;
+  wind: {
+    speed: number;
+  };
+  visibility: number;
+  clouds: {
+    all: number;
+  };
+  sys: {
+    sunrise: number;
+    sunset: number;
+  };
+}
+
+// Cache implementation
+const weatherCache = new Map<string, { data: WeatherAPIResponse; timestamp: number }>();
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+
+function getCacheKey(lat: number, lng: number): string {
+  return `${lat.toFixed(4)},${lng.toFixed(4)}`;
+}
+
+function isValidCoordinate(lat: number, lng: number): boolean {
+  return !isNaN(lat) && !isNaN(lng) && 
+         lat >= -90 && lat <= 90 && 
+         lng >= -180 && lng <= 180;
+}
+
+function transformAPIResponse(apiResponse: OpenWeatherAPIResponse): WeatherAPIResponse {
+  return {
+    temperature: apiResponse.main.temp,
+    feelsLike: apiResponse.main.feels_like,
+    humidity: apiResponse.main.humidity,
+    pressure: apiResponse.main.pressure,
+    description: apiResponse.weather[0]?.description || '',
+    icon: apiResponse.weather[0]?.icon || '',
+    windSpeed: apiResponse.wind.speed,
+    visibility: apiResponse.visibility,
+    clouds: apiResponse.clouds.all,
+    sunrise: apiResponse.sys.sunrise,
+    sunset: apiResponse.sys.sunset,
+  };
+}
+
+export async function getWeatherData(lat: number, lng: number): Promise<WeatherAPIResponse> {
+  // Validate coordinates
+  if (!isValidCoordinate(lat, lng)) {
+    throw new Error('Invalid coordinates');
+  }
+
+  const cacheKey = getCacheKey(lat, lng);
+  const now = Date.now();
+
+  // Check cache
+  const cached = weatherCache.get(cacheKey);
+  if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+    return cached.data;
+  }
+
+  try {
+    const response = await axios.get('/api/weather', {
+      params: { lat, lng },
+      headers: {
+        'X-API-Key': process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY || 'default-api-key',
+      },
+    });
+
+    let weatherData: WeatherAPIResponse;
+
+    // If response is already in our format, use it directly
+    if (response.data.temperature !== undefined) {
+      weatherData = response.data;
+    } else {
+      // Transform OpenWeather API response
+      weatherData = transformAPIResponse(response.data);
+    }
+
+    // Cache the result
+    weatherCache.set(cacheKey, {
+      data: weatherData,
+      timestamp: now,
+    });
+
+    return weatherData;
+  } catch (error) {
+    // Re-throw the error to match test expectations
+    throw error;
+  }
+}
 
 /**
  * 현재 위치에서 가장 가까운 장소의 날씨 정보 조회

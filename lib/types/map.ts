@@ -5,7 +5,7 @@
  */
 
 import type { Position } from './common';
-import type { Facility, ClusteredFacility } from './facility';
+import type { Facility } from './facility';
 
 // 카카오맵 관련 타입들 (기존 호환성 유지)
 export interface KakaoLatLng {

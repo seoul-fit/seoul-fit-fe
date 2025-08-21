@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 
     // 백엔드 API 호출 - 전체 POI 인덱스 가져오기 (페이징 처리)
     const pageSize = 1000; // 한 번에 가져올 개수
-    let allPOIs: any[] = [];
+    let allPOIs: unknown[] = [];
     let page = 0;
     let hasMore = true;
 
@@ -82,11 +82,12 @@ export async function GET(request: NextRequest) {
     const radiusInMeters = radius * 1000;
     const nearbyPOIs = allPOIs
       .map(poi => {
+        const poiData = poi as any; // 타입 단언
         // 주소에서 좌표 추출 시도 (실제 좌표가 없는 경우)
         // 백엔드에서 좌표 데이터가 제공되면 이 부분 수정 필요
-        const distance = calculateDistance(lat, lng, poi.latitude || lat, poi.longitude || lng);
+        const distance = calculateDistance(lat, lng, poiData.latitude || lat, poiData.longitude || lng);
         return {
-          ...poi,
+          ...poiData,
           distance,
           distanceText: formatDistance(distance),
         };

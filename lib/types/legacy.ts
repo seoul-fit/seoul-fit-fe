@@ -9,7 +9,6 @@
 import type { 
   Position, 
   CongestionLevel, 
-  Status,
   Facility,
   FacilityCategory,
   UserPreferences as NewUserPreferences,

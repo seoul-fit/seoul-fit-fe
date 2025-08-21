@@ -239,3 +239,99 @@ export const toggleMarkerTooltip = (
     markerElement.appendChild(tooltip);
   }
 };
+
+export interface MarkerInfo {
+  name: string;
+  address?: string;
+  description?: string;
+  type?: string;
+  phone?: string;
+  website?: string;
+}
+
+export function createMarkerElement(info: MarkerInfo): HTMLElement {
+  const element = document.createElement('div');
+  element.className = 'custom-marker';
+  element.style.cssText = `
+    width: 32px;
+    height: 32px;
+    background-color: #3b82f6;
+    border: 2px solid white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    cursor: pointer;
+  `;
+  
+  const icon = document.createElement('span');
+  icon.textContent = info.type === 'restaurant' ? '🍽️' : 
+                    info.type === 'park' ? '🌳' :
+                    info.type === 'library' ? '📚' :
+                    info.type === 'bike' ? '🚲' :
+                    info.type === 'cultural' ? '🎭' :
+                    info.type === 'sports' ? '⚽' :
+                    info.type === 'shelter' ? '🏠' : '📍';
+  
+  element.appendChild(icon);
+  return element;
+}
+
+export function getMarkerImage(type: string): string {
+  const baseUrl = '/images/markers';
+  
+  switch (type) {
+    case 'restaurant':
+      return `${baseUrl}/restaurant.png`;
+    case 'park':
+      return `${baseUrl}/park.png`;
+    case 'library':
+      return `${baseUrl}/library.png`;
+    case 'bike':
+      return `${baseUrl}/bike.png`;
+    case 'cultural':
+      return `${baseUrl}/cultural.png`;
+    case 'sports':
+      return `${baseUrl}/sports.png`;
+    case 'shelter':
+      return `${baseUrl}/shelter.png`;
+    default:
+      return `${baseUrl}/default.png`;
+  }
+}
+
+export function formatInfoWindowContent(info: MarkerInfo): string {
+  return `
+    <div class="info-window" style="padding: 12px; min-width: 200px;">
+      <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #333;">
+        ${info.name}
+      </h3>
+      ${info.address ? `
+        <p style="margin: 4px 0; font-size: 14px; color: #666;">
+          📍 ${info.address}
+        </p>
+      ` : ''}
+      ${info.description ? `
+        <p style="margin: 4px 0; font-size: 14px; color: #666;">
+          ${info.description}
+        </p>
+      ` : ''}
+      ${info.phone ? `
+        <p style="margin: 4px 0; font-size: 14px; color: #666;">
+          📞 ${info.phone}
+        </p>
+      ` : ''}
+      ${info.website ? `
+        <p style="margin: 4px 0; font-size: 14px;">
+          <a href="${info.website}" target="_blank" style="color: #3b82f6; text-decoration: none;">
+            🌐 웹사이트 방문
+          </a>
+        </p>
+      ` : ''}
+    </div>
+  `;
+}

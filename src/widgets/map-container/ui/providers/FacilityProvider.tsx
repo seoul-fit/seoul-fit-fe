@@ -20,8 +20,6 @@ import { useBikeStations } from '@/shared/lib/hooks/useBikeStations';
 import { useSportsFacilities } from '@/shared/lib/hooks/useSportsFacilities';
 import { useRestaurantFacilities } from '@/shared/lib/hooks/useRestaurantFacilities';
 import { convertPOIToFacility } from '@/shared/api/poi';
-import { useMapContext } from './MapProvider';
-import type { Restaurant } from '@/entities/restaurant';
 import type { 
   Facility, 
   ClusteredFacility, 
@@ -87,7 +85,7 @@ interface FacilityProviderProps {
  */
 export function FacilityProvider({
   userPreferences,
-  onPreferenceChange,
+  onPreferenceChange: _onPreferenceChange,
   onFacilitySelect,
   onClusterSelect,
   children,
@@ -106,7 +104,7 @@ export function FacilityProvider({
   const { culturalSpaces, isLoading: culturalLoading, fetchCulturalSpaces } = useCulturalSpaces();
   const { facilities: coolingShelters, isLoading: coolingSheltersLoading, fetchCoolingShelters } = useCoolingShelter();
   const { subwayStations, loading: subwayLoading } = useSubwayStations();
-  const { pois, loading: poisLoading, error: poisError, fetchNearbyPOIs } = usePOI();
+  const { pois, loading: poisLoading, error: _poisError, fetchNearbyPOIs } = usePOI();
   const { facilities: bikeStations, loading: bikeLoading, fetchBikeStations } = useBikeStations();
   const { sportsFacilities, loading: sportsLoading, fetchSportsFacilities } = useSportsFacilities();
   const { restaurants: restaurantFacilities, loading: restaurantsLoading, fetchRestaurants } = useRestaurantFacilities();

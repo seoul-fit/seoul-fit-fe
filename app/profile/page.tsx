@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { 
   ArrowLeft, 
   Bell, 
@@ -329,9 +330,11 @@ export default function ProfilePage() {
           <div className="flex items-center gap-4 mb-6">
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white shadow-lg">
               {currentUser?.profileImageUrl ? (
-                <img 
+                <Image 
                   src={currentUser.profileImageUrl} 
                   alt="프로필" 
+                  width={80}
+                  height={80}
                   className="w-full h-full rounded-full object-cover"
                 />
               ) : (

@@ -11,7 +11,149 @@ export interface LocationInfo {
   longitude?: number;
 }
 
-export const useLocation = (mapInstance: any) => {
+// Simple location interface for testing
+export interface SimpleLocation {
+  lat: number;
+  lng: number;
+}
+
+export interface LocationOptions {
+  enableHighAccuracy?: boolean;
+  timeout?: number;
+  maximumAge?: number;
+}
+
+// Simple useLocation hook for testing (overloaded function)
+export function useLocation(): {
+  location: SimpleLocation | null;
+  error: GeolocationPositionError | null;
+  loading: boolean;
+  accuracy: number | null;
+  watchId: number | null;
+  getCurrentLocation: () => void;
+  watchPosition: () => void;
+  stopWatching: () => void;
+};
+
+export function useLocation(options: LocationOptions): {
+  location: SimpleLocation | null;
+  error: GeolocationPositionError | null;
+  loading: boolean;
+  accuracy: number | null;
+  watchId: number | null;
+  getCurrentLocation: () => void;
+  watchPosition: () => void;
+  stopWatching: () => void;
+};
+
+// Kakao Map version
+export function useLocation(mapInstance: any): {
+  currentLocation: LocationInfo | null;
+  moveToCurrentLocation: () => void;
+  setCurrentLocation: (location: LocationInfo | null) => void;
+};
+
+export function useLocation(mapInstanceOrOptions?: any): any {
+  // If no arguments or options object, return simple location hook
+  if (!mapInstanceOrOptions || (mapInstanceOrOptions && typeof mapInstanceOrOptions === 'object' && !mapInstanceOrOptions.setCenter)) {
+    const options = mapInstanceOrOptions as LocationOptions | undefined;
+    const [location, setLocation] = useState<SimpleLocation | null>(null);
+    const [error, setError] = useState<GeolocationPositionError | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [accuracy, setAccuracy] = useState<number | null>(null);
+    const [watchId, setWatchId] = useState<number | null>(null);
+
+    const defaultOptions: PositionOptions = {
+      enableHighAccuracy: true,
+      timeout: 5000,
+      maximumAge: 300000,
+      ...options,
+    };
+
+    const getCurrentLocation = useCallback(() => {
+      if (!navigator.geolocation) {
+        setError({
+          code: 0,
+          message: 'Geolocation is not supported',
+        } as GeolocationPositionError);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+          setAccuracy(position.coords.accuracy);
+          setLoading(false);
+        },
+        (err) => {
+          setError(err);
+          setLoading(false);
+        },
+        defaultOptions
+      );
+    }, [defaultOptions]);
+
+    const watchPosition = useCallback(() => {
+      if (!navigator.geolocation) {
+        setError({
+          code: 0,
+          message: 'Geolocation is not supported',
+        } as GeolocationPositionError);
+        return;
+      }
+
+      const id = navigator.geolocation.watchPosition(
+        (position) => {
+          setLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+          setAccuracy(position.coords.accuracy);
+        },
+        (err) => {
+          setError(err);
+        },
+        defaultOptions
+      );
+
+      setWatchId(id);
+    }, [defaultOptions]);
+
+    const stopWatching = useCallback(() => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        setWatchId(null);
+      }
+    }, [watchId]);
+
+    useEffect(() => {
+      return () => {
+        if (watchId !== null) {
+          navigator.geolocation.clearWatch(watchId);
+        }
+      };
+    }, [watchId]);
+
+    return {
+      location,
+      error,
+      loading,
+      accuracy,
+      watchId,
+      getCurrentLocation,
+      watchPosition,
+      stopWatching,
+    };
+  }
+
+  // Kakao Map version (existing implementation)
+  const mapInstance = mapInstanceOrOptions;
   const [currentLocation, setCurrentLocation] = useState<LocationInfo | null>(null);
   const watchIdRef = useRef<number | null>(null);
   const { handleLocationChange } = useLocationTrigger();
@@ -132,4 +274,4 @@ export const useLocation = (mapInstance: any) => {
     moveToCurrentLocation,
     setCurrentLocation,
   };
-};
+}

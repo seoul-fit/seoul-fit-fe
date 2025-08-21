@@ -93,8 +93,77 @@ if (typeof document !== 'undefined') {
         opacity: 0;
       }
     }
+    .fade-out {
+      animation: fadeOut 0.5s ease-in forwards;
+    }
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+        transform: translateX(-50%);
+      }
+      to {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+      }
+    }
   `;
   document.head.appendChild(style);
 }
 
 export const toast = new Toast();
+
+// Export individual functions for direct use
+export function showToast(message: string, type: ToastType = 'info', duration: number = 3000) {
+  const toastElement = document.createElement('div');
+  toastElement.className = 'toast';
+  toastElement.classList.add(`toast-${type}`);
+  toastElement.textContent = message;
+  
+  // Apply base styles
+  Object.assign(toastElement.style, {
+    position: 'fixed',
+    top: '20px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    padding: '12px 20px',
+    borderRadius: '8px',
+    color: 'white',
+    fontSize: '14px',
+    fontWeight: '500',
+    zIndex: '9999',
+    animation: 'slideIn 0.3s ease-out',
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+  });
+
+  // Apply type-specific styles
+  const typeStyles: Record<ToastType, { backgroundColor: string }> = {
+    success: { backgroundColor: '#10b981' },
+    error: { backgroundColor: '#ef4444' },
+    info: { backgroundColor: '#3b82f6' },
+    warning: { backgroundColor: '#f59e0b' },
+  };
+
+  Object.assign(toastElement.style, typeStyles[type]);
+  
+  document.body.appendChild(toastElement);
+  
+  // Auto-remove with fade-out animation
+  setTimeout(() => {
+    toastElement.classList.add('fade-out');
+    setTimeout(() => {
+      toastElement.remove();
+    }, 500);
+  }, duration - 500);
+}
+
+export function showSuccessToast(message: string, duration: number = 3000) {
+  showToast(message, 'success', duration);
+}
+
+export function showErrorToast(message: string, duration: number = 5000) {
+  showToast(message, 'error', duration);
+}
+
+export function showWarningToast(message: string, duration: number = 4000) {
+  showToast(message, 'warning', duration);
+}
