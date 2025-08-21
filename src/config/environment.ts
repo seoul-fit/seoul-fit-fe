@@ -76,12 +76,12 @@ class EnvironmentConfig {
       BACKEND_BASE_URL: process.env.NEXT_PUBLIC_BACKEND_BASE_URL || currentDefaults.BACKEND_BASE_URL || 'http://localhost:8080',
       
       // 카카오 API
-      KAKAO_CLIENT_ID: process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID || '349f89103b32e7135ad6f15e0a73509b',
-      KAKAO_MAP_API_KEY: process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY || '8bb6267aba6b69af4605b7fd2dd75c96',
+      KAKAO_CLIENT_ID: process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID || '',
+      KAKAO_MAP_API_KEY: process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY || '',
       KAKAO_REDIRECT_URI: process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI || currentDefaults.KAKAO_REDIRECT_URI || 'http://localhost:3000/auth/callback',
       
       // 서울 공공데이터 API
-      SEOUL_API_KEY: process.env.SEOUL_API_KEY || '4b46766a7673706939395769456b6b',
+      SEOUL_API_KEY: process.env.SEOUL_API_KEY || '',
       SEOUL_API_BASE_URL: process.env.SEOUL_API_BASE_URL || currentDefaults.SEOUL_API_BASE_URL || 'http://openapi.seoul.go.kr:8088',
     };
   }

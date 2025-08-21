@@ -39,3 +39,36 @@ export function findNearestAreaCode(lat: number, lng: number): string {
 export function getLocationByCode(code: string): Location | undefined {
   return SEOUL_LOCATIONS.find(location => location.code === code);
 }
+
+/**
+ * 가장 가까운 위치 찾기
+ * @param lat 현재 위치 위도
+ * @param lng 현재 위치 경도
+ * @param locations 위치 목록
+ * @return 가장 가까운 위치 또는 null
+ */
+export function findNearestLocation(
+  lat: number,
+  lng: number,
+  locations: Array<{ name: string; lat: number; lng: number }>
+): { name: string; lat: number; lng: number } | null {
+  if (locations.length === 0) {
+    return null;
+  }
+
+  let minDistance = Infinity;
+  let nearestLocation = locations[0];
+
+  for (const location of locations) {
+    const distance = Math.sqrt(
+      Math.pow(lat - location.lat, 2) + Math.pow(lng - location.lng, 2)
+    );
+
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearestLocation = location;
+    }
+  }
+
+  return nearestLocation;
+}

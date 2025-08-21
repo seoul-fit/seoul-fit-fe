@@ -19,7 +19,7 @@ import {
   cleanStationName,
 } from '../lib/formatter';
 
-const API_KEY = process.env.SEOUL_API_KEY || '6a4166475a7065613533747a62786a';
+const API_KEY = process.env.SEOUL_API_KEY || '';
 const BASE_URL = 'http://swopenapi.seoul.go.kr/api/subway';
 
 /**

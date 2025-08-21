@@ -26,9 +26,9 @@ export const kakaoConfig = {
 // 디버깅용 로그 (개발 환경에서만)
 if (typeof window !== 'undefined' && env.isDevelopment) {
   console.log('[KakaoConfig] 환경 변수 상태:', {
-    mapApiKey: env.kakaoMapApiKey,
-    loginApiKey: env.kakaoClientId,
-    redirectUri: env.kakaoRedirectUri,
+    mapApiKey: env.kakaoMapApiKey ? '✅ 설정됨' : '❌ 누락',
+    loginApiKey: env.kakaoClientId ? '✅ 설정됨' : '❌ 누락',
+    redirectUri: env.kakaoRedirectUri ? '✅ 설정됨' : '❌ 누락',
   });
-  console.log('[KakaoConfig] 최종 설정:', kakaoConfig);
+  console.log('[KakaoConfig] 설정 완료');
 }

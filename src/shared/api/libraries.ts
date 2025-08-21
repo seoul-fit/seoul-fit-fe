@@ -63,7 +63,7 @@ export async function fetchAllLibraries(
   size: number = 100
 ): Promise<LibrariesResponse> {
   try {
-    const response = await axios.get<ApiResponse<Library>>(`${API_BASE_URL}/all`, {
+    const response = await axios.get<Library[]>(`${API_BASE_URL}/all`, {
       params: { page, size },
       timeout: 15000,
       headers: {
@@ -71,10 +71,19 @@ export async function fetchAllLibraries(
       },
     });
 
-    const libraries = response.data.libraries || response.data.data || [];
+    // API가 배열을 직접 반환하는 경우와 객체로 래핑된 경우 모두 처리
+    const libraries = Array.isArray(response.data) 
+      ? response.data 
+      : (response.data as any).libraries || (response.data as any).data || [];
+      
+    console.log('[fetchAllLibraries] 도서관 데이터 수신:', libraries.length, '개');
+    if (libraries.length > 0) {
+      console.log('[fetchAllLibraries] 첫 번째 도서관 데이터:', libraries[0]);
+    }
+    
     return {
       libraries,
-      totalCount: response.data.totalCount || 0,
+      totalCount: libraries.length,
       page,
       size,
     };

@@ -33,7 +33,9 @@ export const kakaoLogout = async () => {
       console.warn('백엔드 로그아웃 요청 실패:', response.status);
     } else {
       const result = await response.json();
-      console.log('로그아웃 성공:', result);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('로그아웃 성공');
+      }
     }
   } catch (error) {
     console.error('로그아웃 중 오류 발생:', error);

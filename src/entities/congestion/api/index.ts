@@ -12,7 +12,7 @@ import type {
 import { parsePopulation } from '../lib/congestion-utils';
 import { getLocationByCode } from '@/entities/weather';
 
-const API_KEY = process.env.SEOUL_API_KEY || '4b46766a7673706939395769456b6b';
+const API_KEY = process.env.SEOUL_API_KEY || '';
 const BASE_URL = 'http://openapi.seoul.go.kr:8088';
 
 // 캐시 설정

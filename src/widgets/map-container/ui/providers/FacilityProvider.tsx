@@ -154,7 +154,9 @@ export function FacilityProvider({
         radius = radiusMap[zoomLevel] || 2.0;
       }
       
-      console.log(`위치 기반 데이터 로딩: (${lat}, ${lng}), 반경: ${radius}km`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`위치 기반 데이터 로딩: (${lat}, ${lng}), 반경: ${radius}km`);
+      }
       
       // 위치 기반 데이터만 업데이트 (전체 데이터는 한번만 로딩)
       const promises = [];
@@ -292,9 +294,120 @@ export function FacilityProvider({
     }
     
     // 각 카테고리별 시설들 추가
-    if (parks) combined.push(...parks.map(p => ({ ...p, category: 'park' as const, congestionLevel: 'low' as const })));
-    if (libraries) combined.push(...libraries.map(l => ({ ...l, category: 'library' as const, congestionLevel: 'low' as const })));
-    if (culturalSpaces) combined.push(...culturalSpaces);
+    if (parks && parks.length > 0) {
+      // 첫 번째 공원 데이터 구조 확인 (디버깅용)
+      console.log('[FacilityProvider] 공원 데이터 샘플:', parks[0]);
+      
+      combined.push(...parks.map((p, index) => {
+        // Park 타입이 이미 position을 가지고 있는지 확인
+        const park = p as any;
+        
+        // latitude/longitude가 있는 경우 우선 사용
+        let position;
+        if (park.latitude !== undefined && park.longitude !== undefined) {
+          position = { 
+            lat: parseFloat(String(park.latitude)) || 0, 
+            lng: parseFloat(String(park.longitude)) || 0 
+          };
+        } else if (park.lat !== undefined && park.lng !== undefined) {
+          position = { 
+            lat: parseFloat(String(park.lat)) || 0, 
+            lng: parseFloat(String(park.lng)) || 0 
+          };
+        } else if (park.position) {
+          position = park.position;
+        } else {
+          console.warn('[FacilityProvider] 공원 좌표 없음:', park.name);
+          position = { lat: 0, lng: 0 };
+        }
+        
+        // 첫 3개 공원의 좌표 변환 확인
+        if (index < 3) {
+          console.log('[FacilityProvider] 공원 좌표 변환:', {
+            이름: park.name,
+            원본: { latitude: park.latitude, longitude: park.longitude, lat: park.lat, lng: park.lng, position: park.position },
+            변환: position
+          });
+        }
+        
+        // 필수 필드 설정
+        const facilityData = {
+          ...park,
+          id: park.id || `park_${index}`,
+          name: park.name || '이름 없음',
+          address: park.address || '',
+          position,
+          category: 'park' as const,
+          congestionLevel: 'low' as const
+        };
+        
+        return facilityData;
+      }));
+    }
+    if (libraries && libraries.length > 0) {
+      // 첫 번째 도서관 데이터 구조 확인 (디버깅용)
+      console.log('[FacilityProvider] 도서관 데이터 샘플:', libraries[0]);
+      
+      combined.push(...libraries.map((l, index) => {
+        // Library 타입이 이미 position을 가지고 있는지 확인
+        const library = l as any;
+        
+        // 다양한 좌표 필드 확인
+        let position;
+        if (library.xcnts !== undefined && library.ydnts !== undefined) {
+          // xcnts는 위도(lat), ydnts는 경도(lng)
+          position = { 
+            lat: parseFloat(String(library.xcnts)) || 0, 
+            lng: parseFloat(String(library.ydnts)) || 0 
+          };
+        } else if (library.latitude !== undefined && library.longitude !== undefined) {
+          position = { 
+            lat: parseFloat(String(library.latitude)) || 0, 
+            lng: parseFloat(String(library.longitude)) || 0 
+          };
+        } else if (library.lat !== undefined && library.lng !== undefined) {
+          position = { 
+            lat: parseFloat(String(library.lat)) || 0, 
+            lng: parseFloat(String(library.lng)) || 0 
+          };
+        } else if (library.position) {
+          position = library.position;
+        } else {
+          console.warn('[FacilityProvider] 도서관 좌표 없음:', library.lbrryName || library.name);
+          position = { lat: 0, lng: 0 };
+        }
+        
+        // 첫 3개 도서관의 좌표 변환 확인
+        if (index < 3) {
+          console.log('[FacilityProvider] 도서관 좌표 변환:', {
+            이름: library.lbrryName || library.name,
+            원본: { xcnts: library.xcnts, ydnts: library.ydnts, latitude: library.latitude, longitude: library.longitude, position: library.position },
+            변환: position
+          });
+        }
+        
+        // name 필드 설정 (lbrryName 우선)
+        const facilityData = {
+          ...library,
+          id: library.id || `library_${library.lbrrySeqNo || index}`,
+          name: library.lbrryName || library.name || '이름 없음',
+          address: library.adres || library.address || '',
+          position,
+          category: 'library' as const,
+          congestionLevel: 'low' as const
+        };
+        
+        return facilityData;
+      }));
+    }
+    if (culturalSpaces) {
+      combined.push(...culturalSpaces.map(cs => ({
+        ...cs,
+        position: { lat: cs.lat, lng: cs.lng },
+        category: 'culture' as const,
+        congestionLevel: 'low' as const
+      })));
+    }
     if (coolingShelters) combined.push(...coolingShelters);
     if (subwayStations) combined.push(...subwayStations);
     

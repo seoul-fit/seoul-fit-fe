@@ -195,6 +195,22 @@ export const useMapMarkers = ({
     
     // 디버깅 로그
     console.log(`[useMapMarkers] 마커 생성 시작: ${visibleFacilities.length}개 시설`);
+    
+    // 카테고리별 시설 수 확인
+    const categoryCount: Record<string, number> = {};
+    visibleFacilities.forEach(f => {
+      categoryCount[f.category] = (categoryCount[f.category] || 0) + 1;
+    });
+    console.log('[useMapMarkers] 카테고리별 시설 수:', categoryCount);
+    
+    // position이 잘못된 시설 확인
+    const invalidPositions = visibleFacilities.filter(f => 
+      !f.position || f.position.lat === 0 || f.position.lng === 0
+    );
+    if (invalidPositions.length > 0) {
+      console.warn('[useMapMarkers] position이 없거나 0인 시설:', invalidPositions.length, '개');
+      console.warn('[useMapMarkers] 문제 시설 샘플:', invalidPositions.slice(0, 3));
+    }
 
     // 기존 마커 제거 (중요: 먼저 제거)
     clearMarkers();
@@ -203,10 +219,20 @@ export const useMapMarkers = ({
     const newOverlays: KakaoCustomOverlay[] = [];
 
     // 단일 시설 마커 생성
-    clusteredData.singleFacilities.forEach(facility => {
+    clusteredData.singleFacilities.forEach((facility, index) => {
       try {
         const facilityConfig = FACILITY_CONFIGS[facility.category];
         if (!facilityConfig) return;
+
+        // 첫 몇 개 시설의 좌표 로그
+        if (index < 3 && (facility.category === 'park' || facility.category === 'library')) {
+          console.log(`[useMapMarkers] ${facility.category} 마커 생성:`, {
+            id: facility.id,
+            name: facility.name,
+            position: facility.position,
+            raw: facility
+          });
+        }
 
         const overlayPosition = new kakaoMaps.LatLng(facility.position.lat, facility.position.lng);
         const markerContent = createCustomMarkerContent(
