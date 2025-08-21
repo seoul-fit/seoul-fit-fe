@@ -73,6 +73,9 @@ export const useKakaoMap = ({ containerId, center, level = 3 }: UseKakaoMapOptio
       return;
     }
 
+    // DOM이 렌더링될 때까지 잠시 대기
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     try {
       setMapStatus({ loading: true, success: false, error: null });
 

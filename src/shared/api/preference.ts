@@ -21,19 +21,39 @@ export interface UserInterestResponse {
 }
 
 export const getUserInterests = async (userId: number): Promise<UserInterestResponse> => {
-  const response = await fetch(`${env.backendBaseUrl}/api/users/interests`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(userId),
-  });
+  try {
+    const response = await fetch(`${env.backendBaseUrl}/api/users/interests`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userId),
+    });
 
-  if (!response.ok) {
-    throw new Error('사용자 관심사를 가져올 수 없습니다.');
+    if (!response.ok) {
+      console.warn(`Failed to get user interests: ${response.status}`);
+      // Return empty interests instead of throwing
+      return {
+        userId,
+        interests: [],
+        totalCount: 0,
+        lastUpdated: new Date().toISOString(),
+        isCompleted: false,
+      };
+    }
+
+    return response.json();
+  } catch (error) {
+    console.warn('Error fetching user interests:', error);
+    // Return empty interests on network error
+    return {
+      userId,
+      interests: [],
+      totalCount: 0,
+      lastUpdated: new Date().toISOString(),
+      isCompleted: false,
+    };
   }
-
-  return response.json();
 };
 
 export const updateUserInterests = async (userId: number, interests: string[]): Promise<void> => {

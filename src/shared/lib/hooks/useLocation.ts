@@ -54,113 +54,97 @@ export function useLocation(mapInstance: any): {
 };
 
 export function useLocation(mapInstanceOrOptions?: any): any {
-  // If no arguments or options object, return simple location hook
-  if (!mapInstanceOrOptions || (mapInstanceOrOptions && typeof mapInstanceOrOptions === 'object' && !mapInstanceOrOptions.setCenter)) {
-    const options = mapInstanceOrOptions as LocationOptions | undefined;
-    const [location, setLocation] = useState<SimpleLocation | null>(null);
-    const [error, setError] = useState<GeolocationPositionError | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [accuracy, setAccuracy] = useState<number | null>(null);
-    const [watchId, setWatchId] = useState<number | null>(null);
-
-    const defaultOptions: PositionOptions = {
-      enableHighAccuracy: true,
-      timeout: 5000,
-      maximumAge: 300000,
-      ...options,
-    };
-
-    const getCurrentLocation = useCallback(() => {
-      if (!navigator.geolocation) {
-        setError({
-          code: 0,
-          message: 'Geolocation is not supported',
-        } as GeolocationPositionError);
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-          setAccuracy(position.coords.accuracy);
-          setLoading(false);
-        },
-        (err) => {
-          setError(err);
-          setLoading(false);
-        },
-        defaultOptions
-      );
-    }, [defaultOptions]);
-
-    const watchPosition = useCallback(() => {
-      if (!navigator.geolocation) {
-        setError({
-          code: 0,
-          message: 'Geolocation is not supported',
-        } as GeolocationPositionError);
-        return;
-      }
-
-      const id = navigator.geolocation.watchPosition(
-        (position) => {
-          setLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-          setAccuracy(position.coords.accuracy);
-        },
-        (err) => {
-          setError(err);
-        },
-        defaultOptions
-      );
-
-      setWatchId(id);
-    }, [defaultOptions]);
-
-    const stopWatching = useCallback(() => {
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
-        setWatchId(null);
-      }
-    }, [watchId]);
-
-    useEffect(() => {
-      return () => {
-        if (watchId !== null) {
-          navigator.geolocation.clearWatch(watchId);
-        }
-      };
-    }, [watchId]);
-
-    return {
-      location,
-      error,
-      loading,
-      accuracy,
-      watchId,
-      getCurrentLocation,
-      watchPosition,
-      stopWatching,
-    };
-  }
-
-  // Kakao Map version (existing implementation)
-  const mapInstance = mapInstanceOrOptions;
+  // All hooks must be declared at the top level, before any conditional logic
+  const [location, setLocation] = useState<SimpleLocation | null>(null);
+  const [error, setError] = useState<GeolocationPositionError | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [accuracy, setAccuracy] = useState<number | null>(null);
+  const [watchId, setWatchId] = useState<number | null>(null);
   const [currentLocation, setCurrentLocation] = useState<LocationInfo | null>(null);
   const watchIdRef = useRef<number | null>(null);
   const { handleLocationChange } = useLocationTrigger();
 
-  // 실시간 위치 추적 시작 (자동)
+  // Determine the mode
+  const isSimpleMode = !mapInstanceOrOptions || (mapInstanceOrOptions && typeof mapInstanceOrOptions === 'object' && !mapInstanceOrOptions.setCenter);
+  const mapInstance = isSimpleMode ? null : mapInstanceOrOptions;
+  const options = isSimpleMode ? (mapInstanceOrOptions as LocationOptions | undefined) : undefined;
+
+  const defaultOptions: PositionOptions = {
+    enableHighAccuracy: true,
+    timeout: 5000,
+    maximumAge: 300000,
+    ...options,
+  };
+
+  // Simple location callbacks
+  const getCurrentLocation = useCallback(() => {
+    if (!isSimpleMode) return;
+    if (!navigator.geolocation) {
+      setError({
+        code: 0,
+        message: 'Geolocation is not supported',
+      } as GeolocationPositionError);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+        setAccuracy(position.coords.accuracy);
+        setLoading(false);
+      },
+      (err) => {
+        setError(err);
+        setLoading(false);
+      },
+      defaultOptions
+    );
+  }, [isSimpleMode, defaultOptions]);
+
+  const watchPosition = useCallback(() => {
+    if (!isSimpleMode) return;
+    if (!navigator.geolocation) {
+      setError({
+        code: 0,
+        message: 'Geolocation is not supported',
+      } as GeolocationPositionError);
+      return;
+    }
+
+    const id = navigator.geolocation.watchPosition(
+      (position) => {
+        setLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+        setAccuracy(position.coords.accuracy);
+      },
+      (err) => {
+        setError(err);
+      },
+      defaultOptions
+    );
+
+    setWatchId(id);
+  }, [isSimpleMode, defaultOptions]);
+
+  const stopWatching = useCallback(() => {
+    if (!isSimpleMode) return;
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      setWatchId(null);
+    }
+  }, [isSimpleMode, watchId]);
+
+  // Kakao Map callbacks
   const startLocationTracking = useCallback(() => {
-    if (!mapInstance || !navigator.geolocation) return;
+    if (isSimpleMode || !mapInstance || !navigator.geolocation) return;
 
     if (watchIdRef.current !== null) {
       console.log('이미 위치 추적 중');
@@ -189,8 +173,7 @@ export function useLocation(mapInstanceOrOptions?: any): any {
           type: 'current',
         });
 
-        // 위치 변화 시 트리거 호출
-        handleLocationChange(coords);
+        // 위치 변화 시 트리거는 useEffect에서 처리
       },
       error => {
         console.error('GPS 오류:', error.message);
@@ -203,11 +186,10 @@ export function useLocation(mapInstanceOrOptions?: any): any {
     );
 
     watchIdRef.current = watchId;
-  }, [mapInstance]);
+  }, [isSimpleMode, mapInstance, setCurrentLocation]); // handleLocationChange 대신 setCurrentLocation 사용
 
-  // 현재 위치로 이동하고 추적 시작
   const moveToCurrentLocation = useCallback(() => {
-    if (!mapInstance || !navigator.geolocation) return;
+    if (isSimpleMode || !mapInstance || !navigator.geolocation) return;
 
     const windowWithKakao = window as WindowWithKakao;
     if (!windowWithKakao.kakao?.maps) return;
@@ -219,8 +201,8 @@ export function useLocation(mapInstanceOrOptions?: any): any {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
 
+        // 지도 중심을 현재 위치로 이동
         mapInstance.setCenter(new kakaoMaps.LatLng(lat, lng));
-        mapInstance.setLevel(3);
 
         const coords = { lat, lng };
         setCurrentLocation({
@@ -229,45 +211,75 @@ export function useLocation(mapInstanceOrOptions?: any): any {
           type: 'current',
         });
 
-        // 위치 변화 시 트리거 호출
-        handleLocationChange(coords);
-
-        // 실시간 추적 시작
-        setTimeout(() => {
-          startLocationTracking();
-        }, 500);
+        // 위치 추적도 자동 시작
+        startLocationTracking();
+        
+        // 위치 트리거는 useEffect에서 처리
       },
       error => {
-        console.error('위치 오류:', error.message);
+        console.error('위치 정보를 가져올 수 없습니다:', error.message);
       },
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 60000,
+        maximumAge: 0,
       }
     );
-  }, [mapInstance, startLocationTracking]);
+  }, [isSimpleMode, mapInstance, startLocationTracking]);
 
-  // 지도 로드 시 자동으로 위치 추적 시작
+  // Effect to handle location changes
   useEffect(() => {
-    if (mapInstance && !currentLocation) {
-      const timer = setTimeout(() => {
-        moveToCurrentLocation();
-      }, 500);
+    if (!isSimpleMode && currentLocation?.coords) {
+      handleLocationChange(currentLocation.coords);
+    }
+  }, [currentLocation, isSimpleMode, handleLocationChange]);
 
+  // Effects
+  useEffect(() => {
+    if (isSimpleMode) {
+      return () => {
+        if (watchId !== null) {
+          navigator.geolocation.clearWatch(watchId);
+        }
+      };
+    }
+  }, [isSimpleMode, watchId]);
+
+  useEffect(() => {
+    if (!isSimpleMode && mapInstance) {
+      // 위치 추적 자동 시작 - 한 번만 실행
+      const timer = setTimeout(() => {
+        startLocationTracking();
+      }, 100);
       return () => clearTimeout(timer);
     }
-  }, [mapInstance, currentLocation, moveToCurrentLocation]);
+  }, [isSimpleMode, mapInstance]); // startLocationTracking를 의존성에서 제거
 
-  // 컴포넌트 언마운트 시 정리
   useEffect(() => {
-    return () => {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
+    if (!isSimpleMode) {
+      // 컴포넌트 언마운트 시 위치 추적 중지
+      return () => {
+        if (watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+          watchIdRef.current = null;
+        }
+      };
+    }
+  }, [isSimpleMode]);
+
+  // Return based on mode
+  if (isSimpleMode) {
+    return {
+      location,
+      error,
+      loading,
+      accuracy,
+      watchId,
+      getCurrentLocation,
+      watchPosition,
+      stopWatching,
     };
-  }, []);
+  }
 
   return {
     currentLocation,
