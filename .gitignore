@@ -56,7 +56,12 @@ next-env.d.ts
 .settings/
 *.sublime-workspace
 *.sublime-project
+.swc/
+
+# Claude and project directories
 .claude/
+claude/
+project/
 
 # OS generated files
 .DS_Store
