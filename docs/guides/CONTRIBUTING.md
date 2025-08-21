@@ -451,7 +451,7 @@ describe('FacilityFilter', () => {
 ## 📞 연락처
 
 - **메인테이너**: [메인테이너 목록]
-- **이메일**: project@example.com
+- **이메일**: gmavsks@gmail.com
 - **트위터**: @SeoulFitApp
 
 ---

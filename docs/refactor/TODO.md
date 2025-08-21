@@ -1,6 +1,6 @@
 # Seoul Fit FE - TODO List
 
-_최종 업데이트: 2025년 8월 20일_
+_최종 업데이트: 2025년 8월 21일_
 
 ## 🚨 우선순위 높음 (Critical Issues)
 

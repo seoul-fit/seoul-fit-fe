@@ -1,6 +1,6 @@
 # OpenAPI Generator 도입 계획
 
-_작성일: 2025년 8월 19일_  
+_작성일: 2025년 8월 21일_  
 _버전: 1.0.0_  
 _대상: Seoul Fit Frontend 프로젝트_
 

@@ -122,7 +122,7 @@ const example = 'Hello World';
 
 - **GitHub Issues**: [이슈 생성](https://github.com/seoul-fit/seoul-fit-fe/issues)
 - **GitHub Discussions**: [토론 참여](https://github.com/seoul-fit/seoul-fit-fe/discussions)
-- **이메일**: project@seoul-fit.com
+- **이메일**: gmavsks@gmail.com
 
 ---
 
